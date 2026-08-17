@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: valora_db
+    restart: always
+    environment:
+      POSTGRES_USER: valora_user
+      POSTGRES_PASSWORD: valora_password
+      POSTGRES_DB: valora_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    container_name: valora_api
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      # Note: We use 'db' here instead of 'localhost' because Docker handles the internal network routing!
+      - DATABASE_URL=postgresql+asyncpg://valora_user:valora_password@db:5432/valora_db
+      - SECRET_KEY=super-secret-development-key-change-in-prod
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+
+volumes:
+  postgres_data:
