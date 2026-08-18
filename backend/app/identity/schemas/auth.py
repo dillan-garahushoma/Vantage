@@ -1,33 +1,45 @@
-"""
-Auth schemas — request/response shapes for authentication endpoints.
-"""
-from pydantic import BaseModel, EmailStr, field_validator
+"""Identity Pydantic schemas — request and response models."""
+from pydantic import BaseModel, EmailStr, Field
 
-from app.common.validators import validate_password_strength
+from app.common.enums import UserRole
+
+
+# --- Auth schemas ---
+
+class RegisterRequest(BaseModel):
+    full_name: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    role: UserRole = UserRole.resident
+    phoneno: str | None = None
+    unit_no: str | None = None
 
 
 class LoginRequest(BaseModel):
-    """Payload for POST /auth/login."""
-
     email: EmailStr
     password: str
 
 
 class TokenResponse(BaseModel):
-    """Returned on successful login or token refresh."""
-
     access_token: str
     token_type: str = "bearer"
 
 
-class RegisterRequest(BaseModel):
-    """Payload for POST /auth/register."""
+# --- User schemas ---
 
-    email: EmailStr
-    password: str
+class UserResponse(BaseModel):
+    user_id: int
+    email: str
     full_name: str
+    role: str
+    unit_no: str | None
+    email_verified: bool
+    hoa_approved: bool
 
-    @field_validator("password")
-    @classmethod
-    def _validate_password(cls, v: str) -> str:
-        return validate_password_strength(v)
+    model_config = {"from_attributes": True}
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse

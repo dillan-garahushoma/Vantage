@@ -1,1 +1,0 @@
-"""providers domain package."""

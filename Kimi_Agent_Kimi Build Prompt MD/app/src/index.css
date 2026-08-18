@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* FibreHood design tokens (see src/config/brand tokens) */
+    --background: 210 25% 98%;
+    --foreground: 208 59% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 208 59% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 208 59% 10%;
+    --primary: 216 82% 15%;
+    --primary-foreground: 48 100% 50%;
+    --secondary: 214 25% 94%;
+    --secondary-foreground: 216 82% 15%;
+    --muted: 214 25% 94%;
+    --muted-foreground: 215 16% 38%;
+    --accent: 48 100% 50%;
+    --accent-foreground: 216 82% 15%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 22% 88%;
+    --input: 214 22% 84%;
+    --ring: 216 82% 25%;
+    --radius: 0.625rem;
+    --sidebar-background: 216 82% 15%;
+    --sidebar-foreground: 210 25% 98%;
+    --sidebar-primary: 48 100% 50%;
+    --sidebar-primary-foreground: 216 82% 15%;
+    --sidebar-accent: 216 60% 22%;
+    --sidebar-accent-foreground: 210 25% 98%;
+    --sidebar-border: 216 50% 25%;
+    --sidebar-ring: 48 100% 50%;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-mist text-ink antialiased;
+  }
+  *:focus-visible {
+    @apply outline-none ring-2 ring-gold ring-offset-2 ring-offset-white;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer utilities {
+  .container-site {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+  /* subtle network-grid hero texture, not decorative noise */
+  .hero-grid {
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(255, 204, 0, 0.16) 1px, transparent 0);
+    background-size: 28px 28px;
+  }
+}
+
+/* Leaflet */
+.leaflet-container {
+  @apply rounded-xl border border-border bg-fog;
+  font-family: inherit;
+}

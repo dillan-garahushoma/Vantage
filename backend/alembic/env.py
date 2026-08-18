@@ -22,9 +22,7 @@ from os.path import abspath, dirname
 sys.path.insert(0, dirname(dirname(abspath(__file__))))
 
 from app.core.config import get_settings
-# Import db.base to ensure all entity modules are registered on Base.metadata
-import app.db.base  # noqa: F401
-from app.db.session import Base
+from app.db.database import Base
 
 settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

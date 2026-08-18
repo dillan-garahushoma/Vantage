@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/VALORA.iml" filepath="$PROJECT_DIR$/.idea/VALORA.iml" />
-      <module fileurl="file://$USER_HOME$/Downloads/bespoke trade/.idea/bespoke trade.iml" filepath="$USER_HOME$/Downloads/bespoke trade/.idea/bespoke trade.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Group8Project.iml" filepath="$PROJECT_DIR$/.idea/Group8Project.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../VALORA/.idea/VALORA.iml" filepath="$PROJECT_DIR$/../VALORA/.idea/VALORA.iml" />
     </modules>
   </component>
 </project>

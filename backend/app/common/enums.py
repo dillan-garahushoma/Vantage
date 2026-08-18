@@ -1,45 +1,32 @@
-"""
-Shared enumerations used across multiple domains.
-"""
-import enum
+from enum import Enum
 
 
-class UserRole(str, enum.Enum):
-    """System-wide user roles."""
-
-    RESIDENT = "resident"
-    HOA_ADMIN = "hoa_admin"
-    INVESTOR = "investor"
-    PROVIDER = "provider"
-    SUPER_ADMIN = "super_admin"
-
-
-class ComplaintStatus(str, enum.Enum):
-    """Lifecycle states for a maintenance complaint."""
-
-    OPEN = "open"
-    UNDER_REVIEW = "under_review"
-    ASSIGNED = "assigned"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    CLOSED = "closed"
-    REJECTED = "rejected"
+class UserRole(str, Enum):
+    """VALORA user roles for RBAC."""
+    casual_visitor = "casual_visitor"
+    resident = "resident"
+    investor = "investor"
+    estate_agent = "estate_agent"
+    hoa_admin = "hoa_admin"
+    service_provider = "service_provider"
 
 
-class PropertyType(str, enum.Enum):
-    """Classification of a property unit."""
-
-    APARTMENT = "apartment"
-    TOWNHOUSE = "townhouse"
-    FREESTANDING = "freestanding"
-    PENTHOUSE = "penthouse"
-    COMMERCIAL = "commercial"
+class ComplaintStatus(str, Enum):
+    submitted = "submitted"
+    under_review = "under_review"
+    in_progress = "in_progress"
+    resolved = "resolved"
+    closed = "closed"
 
 
-class ProviderStatus(str, enum.Enum):
-    """Verification status of a service provider."""
+class WorkOrderStatus(str, Enum):
+    assigned = "assigned"
+    in_progress = "in_progress"
+    completed = "completed"
+    cancelled = "cancelled"
 
-    PENDING = "pending"
-    VERIFIED = "verified"
-    SUSPENDED = "suspended"
-    REJECTED = "rejected"
+
+class ListingStatus(str, Enum):
+    active = "active"
+    sold = "sold"
+    withdrawn = "withdrawn"

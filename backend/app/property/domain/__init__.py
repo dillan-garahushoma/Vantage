@@ -1,1 +1,2 @@
-"""property.domain package."""
+# property domain package
+

@@ -1,1 +1,0 @@
-"""community domain package."""
