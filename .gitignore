@@ -7,13 +7,19 @@ venv/
 env/
 .env
 
-# Cache & Testing
+# Testing / Cache
 .pytest_cache/
 .coverage
 
-# Frontend (deferred development in dev space)
-frontend/
+# Node / Frontend build outputs
 node_modules/
+dist/
+build/
+.next/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # OS
 .DS_Store
