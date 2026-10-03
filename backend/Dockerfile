@@ -16,5 +16,5 @@ COPY . .
 # Expose port 8000 for the FastAPI application
 EXPOSE 8000
 
-# Run Uvicorn when the container launches
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Run Alembic migrations then start Uvicorn when the container launches
+CMD sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"

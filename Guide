@@ -1,0 +1,43 @@
+You will need 
+- Docker Desktop Installed
+- Docker Desktop running
+
+2. Get the latest project
+git clone "https://github.com/RADIANT-NOODLE/Group8Project.git"
+cd Group8Project 
+but if you already cloned it git pull is fine
+
+3. Start Valora
+Go to the backend folder  
+run this command in your terminal:
+    docker compose up -d --build
+then wait for the containers to finish building.
+
+4. Check Docker Desktop
+You should see:
+- valora_db
+- valora_api
+- valora_frontend
+
+5. You can now open valora:
+-Frontend:
+http://localhost:4173
+
+-Backend:
+http://localhost:8000
+
+-API documentation:
+http://localhost:8000/docs
+
+
+6. Test the actual system, create accounts and log in & out.
+It should create actual records on the local PostgreSQL database and the login should return a JWT
+
+Phase 0: Development environment ✅
+Phase 1: Infrastructure (Docker, PostgreSQL, FastAPI, configuration) ✅
+Phase 2: Data layer (SQLAlchemy + Alembic) ✅
+Phase 3: Authentication & RBAC ✅
+Phase 4: Property Intelligence module
+Phase 5: Community Management module
+Phase 6: AI/ML integration
+Phase 7: Production deployment (AWS)

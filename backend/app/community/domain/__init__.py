@@ -1,1 +1,2 @@
-"""community.domain package."""
+# community domain package
+

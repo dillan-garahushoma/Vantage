@@ -4,3 +4,28 @@ __pycache__/
 .env
 .pytest_cache/
 .coverage
+
+# Kai code
+#python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+*.pkl
+
+# Node
+node_modules/
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.sqlite

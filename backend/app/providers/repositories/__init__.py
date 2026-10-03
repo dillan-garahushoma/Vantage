@@ -1,1 +1,5 @@
-"""providers.repositories package — placeholder for Phase 4 repositories."""
+# providers repositories package
+from .review_repository import ReviewRepository
+from .service_provider_repository import ServiceProviderRepository
+
+__all__ = ["ServiceProviderRepository", "ReviewRepository"]

@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+env/
+.env
+
+# Cache & Testing
+.pytest_cache/
+.coverage
+
+# Frontend (deferred development in dev space)
+frontend/
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db

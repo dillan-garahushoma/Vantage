@@ -1,1 +1,2 @@
-"""analytics.domain package."""
+# analytics domain package
+
