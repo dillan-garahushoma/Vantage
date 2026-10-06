@@ -25,7 +25,7 @@ async def get_current_user(
         user_id: str | None = payload.get("sub")
         if user_id is None:
             raise CredentialsException()
-    except JWTError:
+    except (JWTError, TypeError, ValueError):
         raise CredentialsException()
 
     repo = UserRepository(db)

@@ -16,11 +16,14 @@ class WorkOrderRepository:
         stmt: Select,
         *,
         complaint_id: int | None,
+        estate_id: int | None,
         provider_id: int | None,
         status: str | None,
     ) -> Select:
         if complaint_id is not None:
             stmt = stmt.where(MaintenanceworkOrder.complaint_id == complaint_id)
+        if estate_id is not None:
+            stmt = stmt.where(MaintenanceworkOrder.estate_id == estate_id)
         if provider_id is not None:
             stmt = stmt.where(MaintenanceworkOrder.provider_id == provider_id)
         if status is not None:
@@ -33,12 +36,17 @@ class WorkOrderRepository:
         offset: int,
         limit: int,
         complaint_id: int | None = None,
+        estate_id: int | None = None,
         provider_id: int | None = None,
         status: str | None = None,
     ) -> list[MaintenanceworkOrder]:
         stmt = select(MaintenanceworkOrder).order_by(MaintenanceworkOrder.work_order_id.desc())
         stmt = self._apply_filters(
-            stmt, complaint_id=complaint_id, provider_id=provider_id, status=status
+            stmt,
+            complaint_id=complaint_id,
+            estate_id=estate_id,
+            provider_id=provider_id,
+            status=status,
         )
         result = await self._db.execute(stmt.offset(offset).limit(limit))
         return list(result.scalars().all())
@@ -47,12 +55,17 @@ class WorkOrderRepository:
         self,
         *,
         complaint_id: int | None = None,
+        estate_id: int | None = None,
         provider_id: int | None = None,
         status: str | None = None,
     ) -> int:
         stmt = select(func.count()).select_from(MaintenanceworkOrder)
         stmt = self._apply_filters(
-            stmt, complaint_id=complaint_id, provider_id=provider_id, status=status
+            stmt,
+            complaint_id=complaint_id,
+            estate_id=estate_id,
+            provider_id=provider_id,
+            status=status,
         )
         result = await self._db.execute(stmt)
         return int(result.scalar_one())
@@ -65,16 +78,29 @@ class WorkOrderRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_by_id_in_estate(
+        self, *, work_order_id: int, estate_id: int
+    ) -> MaintenanceworkOrder | None:
+        result = await self._db.execute(
+            select(MaintenanceworkOrder).where(
+                MaintenanceworkOrder.work_order_id == work_order_id,
+                MaintenanceworkOrder.estate_id == estate_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def create(
         self,
         *,
         complaint_id: int,
+        estate_id: int,
         provider_id: int,
         job_cost: Decimal | None,
         estimated_completion_date: datetime | None,
     ) -> MaintenanceworkOrder:
         work_order = MaintenanceworkOrder(
             complaint_id=complaint_id,
+            estate_id=estate_id,
             provider_id=provider_id,
             job_cost=job_cost,
             estimated_completion_date=estimated_completion_date,

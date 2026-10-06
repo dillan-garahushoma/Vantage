@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class PropertyResponse(BaseModel):
     unit_id: int = Field(..., serialization_alias="id")
+    estate_id: int | None
     unit_no: str
     complex_name: str
     street_address: str
@@ -24,6 +25,7 @@ class PaginatedPropertiesResponse(BaseModel):
 
 
 class PropertyCreate(BaseModel):
+    estate_id: int = Field(..., gt=0)
     unit_no: str = Field(..., min_length=1, max_length=10)
     complex_name: str = Field(..., min_length=1, max_length=255)
     street_address: str = Field(..., min_length=1, max_length=255)

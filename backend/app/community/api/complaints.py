@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.enums import ComplaintStatus, UserRole
 from app.community.schemas.complaint import (
     ComplaintCreate,
+    ComplaintEventResponse,
     ComplaintResponse,
     ComplaintStatsResponse,
     ComplaintStatusUpdate,
@@ -28,6 +29,7 @@ ResidentOrAdmin = Annotated[
 async def list_complaints(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: CurrentUser,
+    estate_id: Annotated[int, Query(gt=0)],
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
     unit_id: Annotated[int | None, Query(ge=1)] = None,
@@ -42,6 +44,7 @@ async def list_complaints(
         unit_id=unit_id,
         status=status.value if status else None,
         category=category,
+        estate_id=estate_id,
     )
 
 
@@ -49,9 +52,10 @@ async def list_complaints(
 @router.get("/stats", response_model=ComplaintStatsResponse)
 async def complaint_stats(
     db: Annotated[AsyncSession, Depends(get_db)],
-    _admin: AdminOnly,
+    admin: AdminOnly,
+    estate_id: Annotated[int, Query(gt=0)],
 ) -> ComplaintStatsResponse:
-    return await ComplaintService(db).get_stats()
+    return await ComplaintService(db).get_stats(admin, estate_id=estate_id)
 
 
 @router.get("/{complaint_id}", response_model=ComplaintResponse)
@@ -59,8 +63,23 @@ async def get_complaint(
     complaint_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: CurrentUser,
+    estate_id: Annotated[int, Query(gt=0)],
 ) -> ComplaintResponse:
-    return await ComplaintService(db).get_complaint(complaint_id, current_user)
+    return await ComplaintService(db).get_complaint(
+        complaint_id, current_user, estate_id=estate_id
+    )
+
+
+@router.get("/{complaint_id}/events", response_model=list[ComplaintEventResponse])
+async def list_complaint_events(
+    complaint_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: CurrentUser,
+    estate_id: Annotated[int, Query(gt=0)],
+) -> list[ComplaintEventResponse]:
+    return await ComplaintService(db).list_events(
+        complaint_id, current_user, estate_id=estate_id
+    )
 
 
 @router.post("", response_model=ComplaintResponse, status_code=201)
@@ -68,9 +87,12 @@ async def create_complaint(
     payload: ComplaintCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: ResidentOrAdmin,
+    estate_id: Annotated[int, Query(gt=0)],
 ) -> ComplaintResponse:
     """File a complaint. The author is taken from the logged-in user."""
-    return await ComplaintService(db).create_complaint(payload, current_user)
+    return await ComplaintService(db).create_complaint(
+        payload, current_user, estate_id=estate_id
+    )
 
 
 @router.patch("/{complaint_id}/status", response_model=ComplaintResponse)
@@ -79,5 +101,8 @@ async def update_complaint_status(
     payload: ComplaintStatusUpdate,
     db: Annotated[AsyncSession, Depends(get_db)],
     admin: AdminOnly,
+    estate_id: Annotated[int, Query(gt=0)],
 ) -> ComplaintResponse:
-    return await ComplaintService(db).update_status(complaint_id, payload, admin)
+    return await ComplaintService(db).update_status(
+        complaint_id, payload, admin, estate_id=estate_id
+    )

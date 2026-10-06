@@ -9,6 +9,7 @@ class MaintenanceworkOrder(Base):
 
     work_order_id = Column(Integer, primary_key=True, index=True)
     complaint_id = Column(Integer, ForeignKey("complaints.complaint_id", ondelete="CASCADE"), nullable=False)
+    estate_id = Column(Integer, ForeignKey("estates.estate_id", ondelete="RESTRICT"), nullable=True)
     provider_id = Column(Integer, nullable=False)
     assigned_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     resolved_at = Column(TIMESTAMP(timezone=True), nullable=True)

@@ -1,6 +1,7 @@
 """Authentication application service — orchestrates registration and login use cases."""
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.enums import UserRole
 from app.common.validators import normalise_email
 from app.core.exceptions import ConflictException, CredentialsException
 from app.core.security import create_access_token, hash_password, verify_password
@@ -25,7 +26,7 @@ class AuthService:
             full_name=payload.full_name,
             email=email,
             password_hash=password_hash,
-            role=payload.role.value,
+            role=UserRole.resident.value,
             phoneno=payload.phoneno,
             unit_no=payload.unit_no,
         )

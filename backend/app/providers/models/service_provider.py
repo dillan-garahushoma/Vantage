@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, Numeric, String, TIMESTAMP
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, Numeric, String, TIMESTAMP
 from sqlalchemy.sql import func
 
 from app.db.base import Base
@@ -8,6 +8,9 @@ class ServiceProvider(Base):
     __tablename__ = "service_providers"
 
     provider_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.user_id", ondelete="SET NULL"), unique=True, nullable=True
+    )
     full_name = Column(String(100), nullable=False)
     trade = Column(String(50), nullable=False)
     phone = Column(String(20), nullable=False)

@@ -8,6 +8,7 @@ class Announcement(Base):
     __tablename__ = "announcements"
 
     announcement_id = Column(Integer, primary_key=True, index=True)
+    estate_id = Column(Integer, ForeignKey("estates.estate_id", ondelete="RESTRICT"), nullable=True)
     title = Column(String(255), nullable=False)
     message = Column(Text, nullable=False)
     created_by = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
