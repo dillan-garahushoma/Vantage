@@ -12,16 +12,18 @@ from app.community.schemas.announcement import (
 )
 from app.core.exceptions import NotFoundException
 from app.identity.models.user import User
+from app.identity.services.estate_authorization_service import EstateAuthorizationService
 
 
 class AnnouncementService:
     def __init__(self, db: AsyncSession) -> None:
         self._repo = AnnouncementRepository(db)
+        self._estate_authorization = EstateAuthorizationService(db)
 
     async def list_announcements(
-        self, user: User, *, page: int, page_size: int, include_expired: bool = False
+        self, user: User, *, page: int, page_size: int, estate_id: int, include_expired: bool = False
     ) -> PaginatedAnnouncementsResponse:
-        # only HOA admins may see expired announcements
+        await self._estate_authorization.require_membership(user_id=user.user_id, estate_id=estate_id)
         show_expired = include_expired and user.role == UserRole.hoa_admin.value
         now = utcnow()
         items = await self._repo.search(
@@ -29,8 +31,9 @@ class AnnouncementService:
             limit=page_size,
             include_expired=show_expired,
             now=now,
+            estate_id=estate_id,
         )
-        total = await self._repo.count(include_expired=show_expired, now=now)
+        total = await self._repo.count(include_expired=show_expired, now=now, estate_id=estate_id)
         return PaginatedAnnouncementsResponse(
             count=total,
             page=page,
@@ -38,28 +41,32 @@ class AnnouncementService:
             announcements=[AnnouncementResponse.model_validate(a) for a in items],
         )
 
-    async def get_announcement(self, announcement_id: int, user: User) -> AnnouncementResponse:
-        announcement = await self._get_or_404(announcement_id)
+    async def get_announcement(self, announcement_id: int, user: User, *, estate_id: int) -> AnnouncementResponse:
+        await self._estate_authorization.require_membership(user_id=user.user_id, estate_id=estate_id)
+        announcement = await self._get_or_404(announcement_id, estate_id=estate_id)
         is_expired = announcement.expires_at is not None and announcement.expires_at <= utcnow()
         if is_expired and user.role != UserRole.hoa_admin.value:
             raise NotFoundException(f"Announcement with id {announcement_id} was not found.")
         return AnnouncementResponse.model_validate(announcement)
 
     async def create_announcement(
-        self, payload: AnnouncementCreate, admin: User
+        self, payload: AnnouncementCreate, admin: User, *, estate_id: int
     ) -> AnnouncementResponse:
+        await self._estate_authorization.require_role(actor=admin, estate_id=estate_id, allowed_roles=(UserRole.hoa_admin.value,))
         announcement = await self._repo.create(
             title=payload.title.strip(),
             message=payload.message.strip(),
             created_by=admin.user_id,
+            estate_id=estate_id,
             expires_at=payload.expires_at,
         )
         return AnnouncementResponse.model_validate(announcement)
 
     async def update_announcement(
-        self, announcement_id: int, payload: AnnouncementUpdate
+        self, announcement_id: int, payload: AnnouncementUpdate, admin: User, *, estate_id: int
     ) -> AnnouncementResponse:
-        announcement = await self._get_or_404(announcement_id)
+        await self._estate_authorization.require_role(actor=admin, estate_id=estate_id, allowed_roles=(UserRole.hoa_admin.value,))
+        announcement = await self._get_or_404(announcement_id, estate_id=estate_id)
         changes = payload.model_dump(exclude_unset=True)
         for required_field in ("title", "message"):
             if required_field in changes and changes[required_field] is None:
@@ -69,12 +76,13 @@ class AnnouncementService:
         announcement = await self._repo.save(announcement)
         return AnnouncementResponse.model_validate(announcement)
 
-    async def delete_announcement(self, announcement_id: int) -> None:
-        announcement = await self._get_or_404(announcement_id)
+    async def delete_announcement(self, announcement_id: int, admin: User, *, estate_id: int) -> None:
+        await self._estate_authorization.require_role(actor=admin, estate_id=estate_id, allowed_roles=(UserRole.hoa_admin.value,))
+        announcement = await self._get_or_404(announcement_id, estate_id=estate_id)
         await self._repo.delete(announcement)
 
-    async def _get_or_404(self, announcement_id: int) -> Announcement:
-        announcement = await self._repo.get_by_id(announcement_id)
+    async def _get_or_404(self, announcement_id: int, *, estate_id: int) -> Announcement:
+        announcement = await self._repo.get_by_id_in_estate(announcement_id=announcement_id, estate_id=estate_id)
         if announcement is None:
             raise NotFoundException(f"Announcement with id {announcement_id} was not found.")
         return announcement

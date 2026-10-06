@@ -31,6 +31,12 @@ class ServiceProviderRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_by_user_id(self, user_id: int) -> ServiceProvider | None:
+        result = await self._db.execute(
+            select(ServiceProvider).where(ServiceProvider.user_id == user_id)
+        )
+        return result.scalar_one_or_none()
+
     async def get_by_email(self, email: str) -> ServiceProvider | None:
         result = await self._db.execute(
             select(ServiceProvider).where(ServiceProvider.email == email)

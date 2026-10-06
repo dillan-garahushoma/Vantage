@@ -8,17 +8,20 @@ when Alembic generates or runs migrations. Add new models here as they are creat
 from app.db.base import Base  # noqa: F401 — ensures metadata is available
 
 # Identity domain
+from app.identity.models.estate_membership import EstateMembership  # noqa: F401
 from app.identity.models.user import User  # noqa: F401
 from app.identity.models.session import Session  # noqa: F401
 from app.identity.models.login_attempt import LoginAttempts  # noqa: F401
 
 # Property domain
+from app.property.models.estate import Estate  # noqa: F401
 from app.property.models.property import Property  # noqa: F401
 from app.property.models.listing import Listing  # noqa: F401
 from app.property.models.sale import Sale  # noqa: F401
 
 # Community domain
 from app.community.models.complaint import Complaint  # noqa: F401
+from app.community.models.complaint_event import ComplaintEvent  # noqa: F401
 from app.community.models.maintenance_work_order import MaintenanceworkOrder  # noqa: F401
 from app.community.models.announcement import Announcement  # noqa: F401
 

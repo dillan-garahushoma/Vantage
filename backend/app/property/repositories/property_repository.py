@@ -14,6 +14,7 @@ class PropertyRepository:
         *,
         bedrooms: int | None,
         bathrooms: int | None,
+        estate_id: int | None,
         min_size_m2: Decimal | None,
         max_size_m2: Decimal | None,
     ) -> Select:
@@ -21,6 +22,8 @@ class PropertyRepository:
             stmt = stmt.where(Property.bedrooms == bedrooms)
         if bathrooms is not None:
             stmt = stmt.where(Property.bathrooms == bathrooms)
+        if estate_id is not None:
+            stmt = stmt.where(Property.estate_id == estate_id)
         if min_size_m2 is not None:
             stmt = stmt.where(Property.size_m2 >= min_size_m2)
         if max_size_m2 is not None:
@@ -36,6 +39,7 @@ class PropertyRepository:
         bathrooms: int | None = None,
         min_size_m2: Decimal | None = None,
         max_size_m2: Decimal | None = None,
+        estate_id: int | None = None,
     ) -> list[Property]:
         stmt = select(Property).order_by(Property.unit_id)
         stmt = self._apply_filters(
@@ -44,6 +48,7 @@ class PropertyRepository:
             bathrooms=bathrooms,
             min_size_m2=min_size_m2,
             max_size_m2=max_size_m2,
+            estate_id=estate_id,
         )
         result = await self._db.execute(stmt.offset(offset).limit(limit))
         return list(result.scalars().all())
@@ -55,6 +60,7 @@ class PropertyRepository:
         bathrooms: int | None = None,
         min_size_m2: Decimal | None = None,
         max_size_m2: Decimal | None = None,
+        estate_id: int | None = None,
     ) -> int:
         stmt = select(func.count()).select_from(Property)
         stmt = self._apply_filters(
@@ -63,12 +69,25 @@ class PropertyRepository:
             bathrooms=bathrooms,
             min_size_m2=min_size_m2,
             max_size_m2=max_size_m2,
+            estate_id=estate_id,
         )
         result = await self._db.execute(stmt)
         return int(result.scalar_one())
 
     async def get_by_id(self, unit_id: int) -> Property | None:
         result = await self._db.execute(select(Property).where(Property.unit_id == unit_id))
+        return result.scalar_one_or_none()
+
+    async def get_by_id_in_estate(
+        self, *, unit_id: int, estate_id: int
+    ) -> Property | None:
+        """Return a property only when it belongs to the requested estate."""
+        result = await self._db.execute(
+            select(Property).where(
+                Property.unit_id == unit_id,
+                Property.estate_id == estate_id,
+            )
+        )
         return result.scalar_one_or_none()
 
     async def get_by_unit_no(self, unit_no: str) -> Property | None:

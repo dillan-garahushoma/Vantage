@@ -13,9 +13,12 @@ class UserRole(str, Enum):
 
 class ComplaintStatus(str, Enum):
     submitted = "submitted"
-    under_review = "under_review"
+    reviewed = "reviewed"
+    assigned = "assigned"
     in_progress = "in_progress"
     resolved = "resolved"
+    rated = "rated"
+    # Retained only so existing legacy records can still be read.
     closed = "closed"
 
 

@@ -29,6 +29,7 @@ class AnnouncementUpdate(BaseModel):
 
 class AnnouncementResponse(BaseModel):
     announcement_id: int = Field(..., serialization_alias="id")
+    estate_id: int | None
     title: str
     message: str
     created_by: int

@@ -1,18 +1,23 @@
 """Identity Pydantic schemas — request and response models."""
-from pydantic import BaseModel, EmailStr, Field
-
-from app.common.enums import UserRole
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 # --- Auth schemas ---
 
 class RegisterRequest(BaseModel):
+    """Public registration contract.
+
+    Privileged roles are deliberately absent: HOA and provider access is
+    provisioned through an existing estate membership, never self-selected.
+    """
+
     full_name: str = Field(..., min_length=2, max_length=100)
     email: EmailStr
     password: str = Field(..., min_length=8)
-    role: UserRole = UserRole.resident
     phoneno: str | None = None
     unit_no: str | None = None
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class LoginRequest(BaseModel):

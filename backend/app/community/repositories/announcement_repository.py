@@ -15,18 +15,18 @@ class AnnouncementRepository:
         return stmt.where(or_(Announcement.expires_at.is_(None), Announcement.expires_at > now))
 
     async def search(
-        self, *, offset: int, limit: int, include_expired: bool, now: datetime
+        self, *, offset: int, limit: int, include_expired: bool, now: datetime, estate_id: int
     ) -> list[Announcement]:
         stmt = select(Announcement).order_by(
             Announcement.created_at.desc(), Announcement.announcement_id.desc()
-        )
+        ).where(Announcement.estate_id == estate_id)
         if not include_expired:
             stmt = self._only_active(stmt, now)
         result = await self._db.execute(stmt.offset(offset).limit(limit))
         return list(result.scalars().all())
 
-    async def count(self, *, include_expired: bool, now: datetime) -> int:
-        stmt = select(func.count()).select_from(Announcement)
+    async def count(self, *, include_expired: bool, now: datetime, estate_id: int) -> int:
+        stmt = select(func.count()).select_from(Announcement).where(Announcement.estate_id == estate_id)
         if not include_expired:
             stmt = self._only_active(stmt, now)
         result = await self._db.execute(stmt)
@@ -38,11 +38,15 @@ class AnnouncementRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_by_id_in_estate(self, *, announcement_id: int, estate_id: int) -> Announcement | None:
+        result = await self._db.execute(select(Announcement).where(Announcement.announcement_id == announcement_id, Announcement.estate_id == estate_id))
+        return result.scalar_one_or_none()
+
     async def create(
-        self, *, title: str, message: str, created_by: int, expires_at: datetime | None
+        self, *, title: str, message: str, created_by: int, estate_id: int, expires_at: datetime | None
     ) -> Announcement:
         announcement = Announcement(
-            title=title, message=message, created_by=created_by, expires_at=expires_at
+            title=title, message=message, created_by=created_by, estate_id=estate_id, expires_at=expires_at
         )
         self._db.add(announcement)
         await self._db.commit()
