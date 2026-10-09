@@ -23,8 +23,8 @@ class AnnouncementService:
     async def list_announcements(
         self, user: User, *, page: int, page_size: int, estate_id: int, include_expired: bool = False
     ) -> PaginatedAnnouncementsResponse:
-        await self._estate_authorization.require_membership(user_id=user.user_id, estate_id=estate_id)
-        show_expired = include_expired and user.role == UserRole.hoa_admin.value
+        access = await self._estate_authorization.resolve_access(user, estate_id=estate_id)
+        show_expired = include_expired and access.is_estate_admin
         now = utcnow()
         items = await self._repo.search(
             offset=(page - 1) * page_size,
@@ -42,10 +42,10 @@ class AnnouncementService:
         )
 
     async def get_announcement(self, announcement_id: int, user: User, *, estate_id: int) -> AnnouncementResponse:
-        await self._estate_authorization.require_membership(user_id=user.user_id, estate_id=estate_id)
+        access = await self._estate_authorization.resolve_access(user, estate_id=estate_id)
         announcement = await self._get_or_404(announcement_id, estate_id=estate_id)
         is_expired = announcement.expires_at is not None and announcement.expires_at <= utcnow()
-        if is_expired and user.role != UserRole.hoa_admin.value:
+        if is_expired and not access.is_estate_admin:
             raise NotFoundException(f"Announcement with id {announcement_id} was not found.")
         return AnnouncementResponse.model_validate(announcement)
 

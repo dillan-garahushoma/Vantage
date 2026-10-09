@@ -4,8 +4,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.analytics.schemas.living_score import LivingScoreResponse
-from app.analytics.services.living_score_service import LivingScoreService
+from app.analytics.schemas.living_score import LegacyPropertyScoreResponse
+from app.analytics.services.living_score_service import LegacyPropertyScoreService
 from app.db.session import get_db
 from app.identity.api.dependencies import CurrentUser
 from app.property.schemas.property import (
@@ -56,18 +56,22 @@ async def get_property(
     )
 
 
-@router.get("/{unit_id}/living-score", response_model=LivingScoreResponse)
+@router.get(
+    "/{unit_id}/living-score",
+    response_model=LegacyPropertyScoreResponse,
+    deprecated=True,
+)
 async def get_living_score(
     unit_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
     estate_id: Annotated[int, Query(gt=0)],
     current_user: CurrentUser,
-) -> LivingScoreResponse:
+) -> LegacyPropertyScoreResponse:
     """Read the legacy property score only inside an authorized estate scope."""
     await PropertyService(db).get_property(
         unit_id=unit_id, estate_id=estate_id, actor=current_user
     )
-    return await LivingScoreService(db).get_living_score(unit_id)
+    return await LegacyPropertyScoreService(db).get_living_score(unit_id)
 
 
 @router.post("", response_model=PropertyResponse, status_code=201)

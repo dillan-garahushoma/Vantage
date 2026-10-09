@@ -43,6 +43,12 @@ class FakeWorkOrders:
             return self.work_order
         return None
 
+    async def get_by_id_in_estate_for_update(self, *, work_order_id: int, estate_id: int):
+        return await self.get_by_id_in_estate(work_order_id=work_order_id, estate_id=estate_id)
+
+    async def save(self, work_order, commit=True):
+        return work_order
+
 
 class FakeProviders:
     def __init__(self, provider):
@@ -78,7 +84,7 @@ async def test_resident_cannot_rate_a_work_order_twice() -> None:
     service._repo = FakeWorkOrders(work_order)
     service._estate_authorization = FakeEstateAuthorization()
     service._complaint_repo = SimpleNamespace(
-        get_by_id=lambda complaint_id: _async(SimpleNamespace(user_id=8))
+        get_by_id_in_estate=lambda **kwargs: _async(SimpleNamespace(user_id=8, status="resolved"))
     )
     resident = SimpleNamespace(user_id=8, role=UserRole.resident.value)
 

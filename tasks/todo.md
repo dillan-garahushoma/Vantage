@@ -35,9 +35,30 @@
 - [x] HOA/provider capability requires an explicit existing membership/profile.
 - [x] Cross-estate/property access is forbidden.
 
-**Verification (2026-10-06):** Nine focused backend tests pass. The registration DTO rejects a supplied role, the application service always creates residents, and the estate authorization service rejects missing/capability-mismatched memberships. Property reads and creation now require a persisted estate membership and are estate-filtered at repository level.
+**Verification (2026-10-06):** Nine focused backend tests passed. The registration DTO rejects a supplied role, the application service always creates residents, and the estate authorization service rejects missing/capability-mismatched memberships. Property reads and creation require persisted estate membership and are estate-filtered at repository level. The earlier verification did not establish that malformed JWT subjects return 401; that behavior was corrected and explicitly tested in Hardening pass H, Batch A.
 
 **Dependencies:** Task 2
+
+## Hardening pass H — Phase 0
+
+**Status:** Batches T and A–F implemented. See `docs/progress/phase0-partial.md` and the per-batch reports for exact verification evidence and remaining database gates.
+
+- [x] Add a test harness that skips integration tests without `TEST_DATABASE_URL` and refuses database names without `test`.
+- [x] Return the standard 401 envelope for malformed, missing, expired, tampered, and deleted-user JWT cases; reject privileged registration roles.
+- [x] Resolve tenant authorization from estate memberships and enforce estate/resource scoping.
+- [x] Preserve complaint/work-order state integrity and make resident rating the single writer of the provider rating aggregate.
+- [x] Add database integrity constraints and verify offline Alembic SQL through `d4a7e1c9b3f2`.
+- [x] Gate legacy listing, sales, provider review/write, and score routes by default.
+- [x] Add CI test, compile, offline migration, and flake8 steps; constrain CI installs from the known-good backend environment.
+- [x] Put the frontend behind the Compose `frontend` profile and configure the API's explicit CORS origins.
+- [x] Document estate authorization, legacy isolation, rating writes, and the anonymity limitation.
+- [ ] Run integration tests against disposable PostgreSQL and apply migrations to a clean/live test database.
+
+**Known anonymity limitation:** An anonymous complaint's author ID is scrubbed from event responses for other viewers, but the HOA can still infer the author from `unit_id`.
+
+**Contract notes:** Invalid lifecycle transitions use 409 Conflict rather than 403 Forbidden. Legacy routes are absent from OpenAPI and return 404 by default. Provider profile reads are limited to an HOA administrator with estate membership or the provider reading their own profile.
+
+**Verification:** The checkboxes above reflect implementation evidence; the full suite and Batch F CI-equivalent commands are recorded in `docs/progress/phase0-F.md`. Integration database tests and a live migration apply remain unrun.
 
 ## Operational loop
 

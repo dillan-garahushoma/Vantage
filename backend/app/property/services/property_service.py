@@ -80,7 +80,7 @@ class PropertyService:
             estate_id=payload.estate_id,
             allowed_roles=(UserRole.hoa_admin.value,),
         )
-        if await self._repo.get_by_unit_no(payload.unit_no) is not None:
-            raise ConflictException(f"A property with unit number {payload.unit_no} already exists.")
+        if await self._repo.get_by_unit_no_in_estate(estate_id=payload.estate_id, unit_no=payload.unit_no) is not None:
+            raise ConflictException(f"A property with unit number {payload.unit_no} already exists in this estate.")
         property_ = await self._repo.create(**payload.model_dump())
         return PropertyResponse.model_validate(property_)

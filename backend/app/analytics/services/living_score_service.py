@@ -2,8 +2,8 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.analytics.repositories.living_score_repository import LivingScoreRepository
-from app.analytics.schemas.living_score import LivingScoreResponse
+from app.analytics.repositories.living_score_repository import LegacyPropertyScoreRepository
+from app.analytics.schemas.living_score import LegacyPropertyScoreResponse
 from app.core.exceptions import NotFoundException
 from app.property.repositories.property_repository import PropertyRepository
 
@@ -26,12 +26,12 @@ def _round2(value: Decimal) -> Decimal:
     return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
-class LivingScoreService:
+class LegacyPropertyScoreService:
     def __init__(self, db: AsyncSession) -> None:
-        self._repo = LivingScoreRepository(db)
+        self._repo = LegacyPropertyScoreRepository(db)
         self._property_repo = PropertyRepository(db)
 
-    async def get_living_score(self, unit_id: int) -> LivingScoreResponse:
+    async def get_living_score(self, unit_id: int) -> LegacyPropertyScoreResponse:
         property_ = await self._property_repo.get_by_id(unit_id)
         if property_ is None:
             raise NotFoundException(f"Property with id {unit_id} was not found.")
@@ -51,7 +51,7 @@ class LivingScoreService:
         )
         score = int(_clamp(raw_score).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
-        return LivingScoreResponse(
+        return LegacyPropertyScoreResponse(
             property_id=unit_id,
             score=score,
             community_health_factor=_round2(community_health),

@@ -3,7 +3,7 @@ from decimal import Decimal
 from pydantic import BaseModel
 
 
-class LivingScoreResponse(BaseModel):
+class LegacyPropertyScoreResponse(BaseModel):
     property_id: int
     score: int
     community_health_factor: Decimal

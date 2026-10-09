@@ -4,15 +4,23 @@ from app.analytics.api.router import router as analytics_router
 from app.community.api.router import router as community_router
 from app.contact.api.router import router as contact_router
 from app.identity.api.router import router as identity_router
-from app.property.api.router import router as property_router
-from app.providers.api.router import router as providers_router
+from app.core.config import get_settings
+from app.property.api.router import create_router as create_property_router
+from app.providers.api.router import create_router as create_providers_router
 
 
-api_router = APIRouter(prefix="/api/v1")
+def create_api_router(enable_legacy_routes: bool | None = None) -> APIRouter:
+    if enable_legacy_routes is None:
+        enable_legacy_routes = get_settings().ENABLE_LEGACY_ROUTES
 
-api_router.include_router(identity_router)
-api_router.include_router(property_router)
-api_router.include_router(community_router)
-api_router.include_router(providers_router)
-api_router.include_router(analytics_router)
-api_router.include_router(contact_router)
+    router = APIRouter(prefix="/api/v1")
+    router.include_router(identity_router)
+    router.include_router(create_property_router(enable_legacy_routes))
+    router.include_router(community_router)
+    router.include_router(create_providers_router(enable_legacy_routes))
+    router.include_router(analytics_router)
+    router.include_router(contact_router)
+    return router
+
+
+api_router = create_api_router()

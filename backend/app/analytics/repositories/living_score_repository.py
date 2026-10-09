@@ -7,7 +7,7 @@ from app.community.models.maintenance_work_order import MaintenanceworkOrder
 from app.providers.models.service_provider import ServiceProvider
 
 
-class LivingScoreRepository:
+class LegacyPropertyScoreRepository:
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
 

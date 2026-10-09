@@ -24,7 +24,6 @@ class ComplaintCreate(BaseModel):
 
 class ComplaintStatusUpdate(BaseModel):
     status: ComplaintStatus
-    assigned_to: str | None = Field(default=None, max_length=100)
     note: str | None = Field(default=None, max_length=2000)
 
 
