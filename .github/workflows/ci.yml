@@ -32,6 +32,11 @@ jobs:
     - name: Run backend tests
       run: pytest backend/tests -q
 
+    - name: Verify committed OpenAPI contract
+      run: |
+        python -m app.cli export-openapi
+        git diff --exit-code -- docs/openapi.json
+
     - name: Compile backend application
       run: python -m compileall -q backend/app
 

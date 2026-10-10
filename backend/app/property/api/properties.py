@@ -4,12 +4,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.pagination import Page
 from app.analytics.schemas.living_score import LegacyPropertyScoreResponse
 from app.analytics.services.living_score_service import LegacyPropertyScoreService
 from app.db.session import get_db
 from app.identity.api.dependencies import CurrentUser
 from app.property.schemas.property import (
-    PaginatedPropertiesResponse,
     PropertyCreate,
     PropertyResponse,
 )
@@ -18,22 +18,22 @@ from app.property.services.property_service import PropertyService
 router = APIRouter(prefix="/properties", tags=["property"])
 
 
-@router.get("", response_model=PaginatedPropertiesResponse)
+@router.get("", response_model=Page[PropertyResponse])
 async def search_properties(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: CurrentUser,
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    size: Annotated[int, Query(ge=1, le=100)] = 20,
     bedrooms: Annotated[int | None, Query(ge=0, description="Exact number of bedrooms")] = None,
     bathrooms: Annotated[int | None, Query(ge=0, description="Exact number of bathrooms")] = None,
     min_size_m2: Annotated[Decimal | None, Query(ge=0, description="Minimum size in m²")] = None,
     max_size_m2: Annotated[Decimal | None, Query(ge=0, description="Maximum size in m²")] = None,
     estate_id: Annotated[int, Query(gt=0)] = ...,
-) -> PaginatedPropertiesResponse:
+) -> Page[PropertyResponse]:
     """List properties, optionally filtered by bedrooms, bathrooms, and size range."""
     return await PropertyService(db).search_properties(
         page=page,
-        page_size=page_size,
+        size=size,
         bedrooms=bedrooms,
         bathrooms=bathrooms,
         min_size_m2=min_size_m2,

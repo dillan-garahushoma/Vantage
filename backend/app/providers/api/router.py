@@ -4,13 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.enums import UserRole
+from app.common.pagination import Page, PaginationParams
 from app.core.config import get_settings
 from app.db.session import get_db
 from app.identity.api.dependencies import CurrentUser, require_roles
 from app.identity.models.user import User
 from app.providers.schemas.review import PaginatedReviewsResponse, ReviewCreate, ReviewResponse
 from app.providers.schemas.service_provider import (
-    PaginatedProvidersResponse,
     ServiceProviderCreate,
     ServiceProviderResponse,
     ServiceProviderUpdate,
@@ -28,16 +28,19 @@ def create_router(enable_legacy_routes: bool | None = None) -> APIRouter:
 
     router = APIRouter(prefix="/providers", tags=["providers"])
 
-    @router.get("", response_model=PaginatedProvidersResponse)
+    @router.get("", response_model=Page[ServiceProviderResponse])
     async def list_providers(
         db: Annotated[AsyncSession, Depends(get_db)],
         current_user: CurrentUser,
+        pagination: Annotated[PaginationParams, Depends()],
         trade: Annotated[str | None, Query(max_length=50, description="e.g. plumber")] = None,
         verified: Annotated[bool | None, Query()] = None,
         emergency_available: Annotated[bool | None, Query()] = None,
-    ) -> PaginatedProvidersResponse:
+    ) -> Page[ServiceProviderResponse]:
         return await ServiceProviderService(db).list_providers(
             actor=current_user,
+            page=pagination.page,
+            size=pagination.size,
             trade=trade,
             verified=verified,
             emergency_available=emergency_available,

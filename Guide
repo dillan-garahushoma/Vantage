@@ -1,43 +1,49 @@
-You will need 
-- Docker Desktop Installed
-- Docker Desktop running
+# VALORA / VANTAGE Development Guide
 
-2. Get the latest project
-git clone "https://github.com/RADIANT-NOODLE/Group8Project.git"
-cd Group8Project 
-but if you already cloned it git pull is fine
+## Prerequisites
 
-3. Start Valora
-Go to the backend folder  
-run this command in your terminal:
-    docker compose up -d --build
-then wait for the containers to finish building.
+- Docker Desktop installed and running
+- Git
 
-4. Check Docker Desktop
-You should see:
-- valora_db
-- valora_api
-- valora_frontend
+## Get the project
 
-5. You can now open valora:
--Frontend:
-http://localhost:4173
+```powershell
+git clone "https://github.com/dillan-garahushoma/Vantage.git"
+cd Vantage
+```
 
--Backend:
-http://localhost:8000
+If you already have a clone, use `git pull` on the branch you intend to work from.
 
--API documentation:
-http://localhost:8000/docs
+## Start the current backend stack
 
+The checked-in Docker Compose stack currently supports PostgreSQL and the FastAPI API. The React frontend is not yet checked into this repository, so do not expect the `valora_frontend` service or `http://localhost:4173` to be available.
 
-6. Test the actual system, create accounts and log in & out.
-It should create actual records on the local PostgreSQL database and the login should return a JWT
+```powershell
+docker compose -f backend/docker-compose.yml up -d --build db api
+```
 
-Phase 0: Development environment ✅
-Phase 1: Infrastructure (Docker, PostgreSQL, FastAPI, configuration) ✅
-Phase 2: Data layer (SQLAlchemy + Alembic) ✅
-Phase 3: Authentication & RBAC ✅
-Phase 4: Property Intelligence module
-Phase 5: Community Management module
-Phase 6: AI/ML integration
-Phase 7: Production deployment (AWS)
+You should see these containers:
+
+- `valora_db`
+- `valora_api`
+
+## API endpoints
+
+- API: `http://localhost:8000`
+- OpenAPI documentation: `http://localhost:8000/docs`
+- Health check: `http://localhost:8000/health`
+
+## Database migrations
+
+Run migrations from the backend directory after PostgreSQL is available:
+
+```powershell
+cd backend
+.\venv\Scripts\python.exe -m alembic -c alembic.ini upgrade head
+```
+
+## Current delivery status
+
+The VALORA operational foundation is in active development. Estate tenancy, resident-only signup, estate authorization, complaint lifecycle history, and provider-authorized work orders are implemented. Security incidents, deterministic Living Score v1, seed data, frontend, and final end-to-end validation are still in progress.
+
+See `tasks/todo.md` and the documents in `docs/` for the current implementation plan and product specification.

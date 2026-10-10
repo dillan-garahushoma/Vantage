@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.pagination import Page
 from app.common.datetime_utils import utcnow
 from app.common.enums import UserRole
 from app.community.models.announcement import Announcement
@@ -8,7 +9,6 @@ from app.community.schemas.announcement import (
     AnnouncementCreate,
     AnnouncementResponse,
     AnnouncementUpdate,
-    PaginatedAnnouncementsResponse,
 )
 from app.core.exceptions import NotFoundException
 from app.identity.models.user import User
@@ -21,24 +21,24 @@ class AnnouncementService:
         self._estate_authorization = EstateAuthorizationService(db)
 
     async def list_announcements(
-        self, user: User, *, page: int, page_size: int, estate_id: int, include_expired: bool = False
-    ) -> PaginatedAnnouncementsResponse:
+        self, user: User, *, page: int, size: int, estate_id: int, include_expired: bool = False
+    ) -> Page[AnnouncementResponse]:
         access = await self._estate_authorization.resolve_access(user, estate_id=estate_id)
         show_expired = include_expired and access.is_estate_admin
         now = utcnow()
         items = await self._repo.search(
-            offset=(page - 1) * page_size,
-            limit=page_size,
+            offset=(page - 1) * size,
+            limit=size,
             include_expired=show_expired,
             now=now,
             estate_id=estate_id,
         )
         total = await self._repo.count(include_expired=show_expired, now=now, estate_id=estate_id)
-        return PaginatedAnnouncementsResponse(
-            count=total,
+        return Page[AnnouncementResponse](
+            items=[AnnouncementResponse.model_validate(a) for a in items],
+            total=total,
             page=page,
-            page_size=page_size,
-            announcements=[AnnouncementResponse.model_validate(a) for a in items],
+            size=size,
         )
 
     async def get_announcement(self, announcement_id: int, user: User, *, estate_id: int) -> AnnouncementResponse:

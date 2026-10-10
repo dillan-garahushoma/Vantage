@@ -96,8 +96,19 @@ class ComplaintRepository:
         estate_id: int | None = None,
         status: str | None = None,
         category: str | None = None,
+        sort: str = "-created_at",
     ) -> list[Complaint]:
-        stmt = select(Complaint).order_by(Complaint.created_at.desc(), Complaint.complaint_id.desc())
+        sort_fields = {
+            "created_at": Complaint.created_at,
+            "priority": Complaint.priority,
+            "status": Complaint.status,
+        }
+        descending = sort.startswith("-")
+        field = sort_fields[sort[1:] if descending else sort]
+        stmt = select(Complaint).order_by(
+            field.desc() if descending else field.asc(),
+            Complaint.complaint_id.desc(),
+        )
         stmt = self._apply_filters(
             stmt,
             user_id=user_id,

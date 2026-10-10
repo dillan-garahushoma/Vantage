@@ -111,5 +111,5 @@ r7 = doc.add_paragraph(style='List Bullet')
 r7.add_run('Property to AIAnalytic (One-to-Many): ').bold = True
 r7.add_run('A property has multiple analytics records generated over time to track its Living Score and value.')
 
-doc.save(r'C:\Users\garah\PycharmProjects\Group8Project\docs\Valora_Architectural_Design.docx')
+doc.save(r'C:\Users\garah\PycharmProjects\VANTAGE\docs\Valora_Architectural_Design.docx')
 print("File created successfully.")

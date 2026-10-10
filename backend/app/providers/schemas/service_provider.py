@@ -2,7 +2,6 @@ from decimal import Decimal
 
 from pydantic import BaseModel, EmailStr, Field
 
-
 class ServiceProviderCreate(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=100)
     trade: str = Field(..., min_length=2, max_length=50)
@@ -32,9 +31,4 @@ class ServiceProviderResponse(BaseModel):
     verified: bool
     emergency_available: bool
 
-    model_config = {"from_attributes": True, "populate_by_name": True}
-
-
-class PaginatedProvidersResponse(BaseModel):
-    count: int
-    providers: list[ServiceProviderResponse]
+    model_config = {"from_attributes": True, "populate_by_name": True, "serialize_by_alias": True}

@@ -1,9 +1,11 @@
 import logging
+import re
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.routing import APIRoute
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.router import api_router
@@ -24,14 +26,21 @@ logger = logging.getLogger(__name__)
 # 2. Get environment settings
 settings = get_settings()
 
+
+def stable_operation_id(route: APIRoute) -> str:
+    tag = route.tags[0] if route.tags else ""
+    prefix = re.sub(r"[^a-zA-Z0-9]+", "_", tag).strip("_").lower()
+    name = re.sub(r"[^a-zA-Z0-9]+", "_", route.name).strip("_").lower()
+    return f"{prefix}_{name}" if prefix else name
+
+
 app = FastAPI(
     title="VALORA API",
     description="Property Health Intelligence Platform",
-    version="1.0.0"
+    version="1.0.0",
+    generate_unique_id_function=stable_operation_id,
 )
 
-
-import re
 
 REQUEST_ID_REGEX = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 

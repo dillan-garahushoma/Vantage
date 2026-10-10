@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.pagination import Page
 from app.common.datetime_utils import utcnow
 from app.common.enums import ComplaintStatus, UserRole
 from app.community.models.complaint import Complaint
@@ -10,7 +11,6 @@ from app.community.schemas.complaint import (
     ComplaintResponse,
     ComplaintStatsResponse,
     ComplaintStatusUpdate,
-    PaginatedComplaintsResponse,
 )
 from app.core.exceptions import ConflictException, ForbiddenException, NotFoundException
 from app.identity.models.user import User
@@ -76,12 +76,13 @@ class ComplaintService:
         user: User,
         *,
         page: int,
-        page_size: int,
+        size: int,
+        sort: str = "-created_at",
         unit_id: int | None = None,
         status: str | None = None,
         category: str | None = None,
         estate_id: int,
-    ) -> PaginatedComplaintsResponse:
+    ) -> Page[ComplaintResponse]:
         access = await self._estate_authorization.resolve_access(user, estate_id)
         # HOA admins see every complaint; everyone else only sees their own.
         scope_user_id = None if access.is_estate_admin else user.user_id
@@ -93,14 +94,14 @@ class ComplaintService:
             category=category,
         )
         complaints = await self._repo.search(
-            offset=(page - 1) * page_size, limit=page_size, **filters
+            offset=(page - 1) * size, limit=size, sort=sort, **filters
         )
         total = await self._repo.count(**filters)
-        return PaginatedComplaintsResponse(
-            count=total,
+        return Page[ComplaintResponse](
+            items=[self._to_response(c, user) for c in complaints],
+            total=total,
             page=page,
-            page_size=page_size,
-            complaints=[self._to_response(c, user) for c in complaints],
+            size=size,
         )
 
     async def get_complaint(

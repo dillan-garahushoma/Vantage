@@ -13,7 +13,6 @@ from app.db.session import get_db
 from app.identity.api.dependencies import get_current_user
 from app.providers.schemas.review import PaginatedReviewsResponse, ReviewResponse
 from app.providers.schemas.service_provider import (
-    PaginatedProvidersResponse,
     ServiceProviderResponse,
 )
 from app.property.schemas.listing import PaginatedListingsResponse
@@ -138,6 +137,7 @@ def _provider(provider_id: int = 1, user_id: int | None = None) -> SimpleNamespa
 async def test_provider_list_requires_hoa_admin_membership(monkeypatch: pytest.MonkeyPatch) -> None:
     repo = SimpleNamespace(
         get_all=AsyncMock(return_value=[_provider()]),
+        count_all=AsyncMock(return_value=1),
     )
     authorization = SimpleNamespace(
         has_membership_role_in_any_estate=AsyncMock(return_value=True)
@@ -151,8 +151,11 @@ async def test_provider_list_requires_hoa_admin_membership(monkeypatch: pytest.M
         lambda _db: authorization,
     )
     admin = SimpleNamespace(user_id=10, role="hoa_admin")
-    result = await ServiceProviderService(object()).list_providers(actor=admin)
-    assert result.count == 1
+    result = await ServiceProviderService(object()).list_providers(
+        actor=admin, page=1, size=20
+    )
+    assert result.total == 1
+    assert len(result.items) == 1
     authorization.has_membership_role_in_any_estate.assert_awaited_once_with(
         user_id=10, membership_role="hoa_admin"
     )
@@ -166,6 +169,7 @@ async def test_provider_reads_deny_residents_and_admins_without_membership(
 
     repo = SimpleNamespace(
         get_all=AsyncMock(return_value=[]),
+        count_all=AsyncMock(return_value=0),
         get_by_id=AsyncMock(return_value=_provider()),
         get_by_user_id=AsyncMock(return_value=_provider(user_id=11)),
     )
@@ -183,9 +187,13 @@ async def test_provider_reads_deny_residents_and_admins_without_membership(
     service = ServiceProviderService(object())
 
     with pytest.raises(ForbiddenException):
-        await service.list_providers(actor=SimpleNamespace(user_id=10, role="hoa_admin"))
+        await service.list_providers(
+            actor=SimpleNamespace(user_id=10, role="hoa_admin"), page=1, size=20
+        )
     with pytest.raises(ForbiddenException):
-        await service.list_providers(actor=SimpleNamespace(user_id=12, role="resident"))
+        await service.list_providers(
+            actor=SimpleNamespace(user_id=12, role="resident"), page=1, size=20
+        )
     with pytest.raises(ForbiddenException):
         await service.get_provider(1, SimpleNamespace(user_id=12, role="resident"))
     with pytest.raises(ForbiddenException):

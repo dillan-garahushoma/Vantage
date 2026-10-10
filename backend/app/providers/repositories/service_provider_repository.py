@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.providers.models.service_provider import ServiceProvider
@@ -11,6 +11,8 @@ class ServiceProviderRepository:
     async def get_all(
         self,
         *,
+        offset: int,
+        limit: int,
         trade: str | None = None,
         verified: bool | None = None,
         emergency_available: bool | None = None,
@@ -22,8 +24,25 @@ class ServiceProviderRepository:
             stmt = stmt.where(ServiceProvider.verified == verified)
         if emergency_available is not None:
             stmt = stmt.where(ServiceProvider.emergency_available == emergency_available)
-        result = await self._db.execute(stmt)
+        result = await self._db.execute(stmt.offset(offset).limit(limit))
         return list(result.scalars().all())
+
+    async def count_all(
+        self,
+        *,
+        trade: str | None = None,
+        verified: bool | None = None,
+        emergency_available: bool | None = None,
+    ) -> int:
+        stmt = select(func.count()).select_from(ServiceProvider)
+        if trade is not None:
+            stmt = stmt.where(ServiceProvider.trade.ilike(trade))
+        if verified is not None:
+            stmt = stmt.where(ServiceProvider.verified == verified)
+        if emergency_available is not None:
+            stmt = stmt.where(ServiceProvider.emergency_available == emergency_available)
+        result = await self._db.execute(stmt)
+        return int(result.scalar_one())
 
     async def get_by_id(self, provider_id: int) -> ServiceProvider | None:
         result = await self._db.execute(

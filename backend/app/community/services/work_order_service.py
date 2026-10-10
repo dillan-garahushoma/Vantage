@@ -2,13 +2,13 @@ from decimal import Decimal
 from types import SimpleNamespace
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.pagination import Page
 from app.common.datetime_utils import utcnow
 from app.common.enums import UserRole, WorkOrderStatus
 from app.community.models.maintenance_work_order import MaintenanceworkOrder
 from app.community.repositories.complaint_repository import ComplaintRepository
 from app.community.repositories.work_order_repository import WorkOrderRepository
 from app.community.schemas.work_order import (
-    PaginatedWorkOrdersResponse,
     WorkOrderCreate,
     WorkOrderRating,
     WorkOrderResponse,
@@ -42,13 +42,14 @@ class WorkOrderService:
         self,
         *,
         page: int,
-        page_size: int,
+        size: int,
+        sort: str = "-created_at",
         complaint_id: int | None = None,
         provider_id: int | None = None,
         status: str | None = None,
         estate_id: int,
         actor: User,
-    ) -> PaginatedWorkOrdersResponse:
+    ) -> Page[WorkOrderResponse]:
         await self._estate_authorization.require_role(
             actor=actor, estate_id=estate_id, allowed_roles=(UserRole.hoa_admin.value,)
         )
@@ -59,14 +60,14 @@ class WorkOrderService:
             status=status,
         )
         work_orders = await self._repo.search(
-            offset=(page - 1) * page_size, limit=page_size, **filters
+            offset=(page - 1) * size, limit=size, sort=sort, **filters
         )
         total = await self._repo.count(**filters)
-        return PaginatedWorkOrdersResponse(
-            count=total,
+        return Page[WorkOrderResponse](
+            items=[WorkOrderResponse.model_validate(w) for w in work_orders],
+            total=total,
             page=page,
-            page_size=page_size,
-            work_orders=[WorkOrderResponse.model_validate(w) for w in work_orders],
+            size=size,
         )
 
     async def get_work_order(

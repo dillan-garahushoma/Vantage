@@ -39,8 +39,18 @@ class WorkOrderRepository:
         estate_id: int | None = None,
         provider_id: int | None = None,
         status: str | None = None,
+        sort: str = "-created_at",
     ) -> list[MaintenanceworkOrder]:
-        stmt = select(MaintenanceworkOrder).order_by(MaintenanceworkOrder.work_order_id.desc())
+        sort_fields = {
+            "created_at": MaintenanceworkOrder.created_at,
+            "status": MaintenanceworkOrder.status,
+        }
+        descending = sort.startswith("-")
+        field = sort_fields[sort[1:] if descending else sort]
+        stmt = select(MaintenanceworkOrder).order_by(
+            field.desc() if descending else field.asc(),
+            MaintenanceworkOrder.work_order_id.desc(),
+        )
         stmt = self._apply_filters(
             stmt,
             complaint_id=complaint_id,

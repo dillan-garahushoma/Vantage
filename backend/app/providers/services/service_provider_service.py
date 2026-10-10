@@ -1,13 +1,13 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.enums import UserRole
+from app.common.pagination import Page
 from app.common.validators import normalise_email
 from app.core.exceptions import ConflictException, ForbiddenException, NotFoundException
 from app.identity.services.estate_authorization_service import EstateAuthorizationService
 from app.identity.models.user import User
 from app.providers.repositories.service_provider_repository import ServiceProviderRepository
 from app.providers.schemas.service_provider import (
-    PaginatedProvidersResponse,
     ServiceProviderCreate,
     ServiceProviderResponse,
     ServiceProviderUpdate,
@@ -23,17 +23,26 @@ class ServiceProviderService:
         self,
         *,
         actor: User,
+        page: int,
+        size: int,
         trade: str | None = None,
         verified: bool | None = None,
         emergency_available: bool | None = None,
-    ) -> PaginatedProvidersResponse:
+    ) -> Page[ServiceProviderResponse]:
         await self._require_hoa_admin_membership(actor)
         providers = await self._repo.get_all(
+            offset=(page - 1) * size,
+            limit=size,
             trade=trade, verified=verified, emergency_available=emergency_available
         )
-        return PaginatedProvidersResponse(
-            count=len(providers),
-            providers=[ServiceProviderResponse.model_validate(p) for p in providers],
+        total = await self._repo.count_all(
+            trade=trade, verified=verified, emergency_available=emergency_available
+        )
+        return Page[ServiceProviderResponse](
+            items=[ServiceProviderResponse.model_validate(p) for p in providers],
+            total=total,
+            page=page,
+            size=size,
         )
 
     async def get_provider(self, provider_id: int, actor: User) -> ServiceProviderResponse:

@@ -1,0 +1,3399 @@
+{
+  "components": {
+    "schemas": {
+      "AnnouncementCreate": {
+        "properties": {
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "message": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "message"
+        ],
+        "title": "AnnouncementCreate",
+        "type": "object"
+      },
+      "AnnouncementResponse": {
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "integer"
+          },
+          "estate_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estate Id"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "id",
+          "estate_id",
+          "title",
+          "message",
+          "created_by",
+          "expires_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AnnouncementResponse",
+        "type": "object"
+      },
+      "AnnouncementUpdate": {
+        "properties": {
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "maxLength": 10000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "AnnouncementUpdate",
+        "type": "object"
+      },
+      "AuthResponse": {
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "token_type": {
+            "default": "bearer",
+            "title": "Token Type",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          }
+        },
+        "required": [
+          "access_token",
+          "user"
+        ],
+        "title": "AuthResponse",
+        "type": "object"
+      },
+      "ComplaintCreate": {
+        "properties": {
+          "category": {
+            "maxLength": 50,
+            "minLength": 2,
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 5000,
+            "minLength": 5,
+            "title": "Description",
+            "type": "string"
+          },
+          "is_anonymous": {
+            "default": false,
+            "title": "Is Anonymous",
+            "type": "boolean"
+          },
+          "priority": {
+            "default": "normal",
+            "pattern": "^(low|normal|high|urgent)$",
+            "title": "Priority",
+            "type": "string"
+          },
+          "unit_id": {
+            "minimum": 1.0,
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unit_id",
+          "category",
+          "description"
+        ],
+        "title": "ComplaintCreate",
+        "type": "object"
+      },
+      "ComplaintEventResponse": {
+        "properties": {
+          "actor_user_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor User Id"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "from_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Status"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "to_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Status"
+          }
+        },
+        "required": [
+          "id",
+          "actor_user_id",
+          "event_type",
+          "from_status",
+          "to_status",
+          "note",
+          "occurred_at"
+        ],
+        "title": "ComplaintEventResponse",
+        "type": "object"
+      },
+      "ComplaintResponse": {
+        "properties": {
+          "assigned_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned At"
+          },
+          "assigned_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned To"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "estate_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estate Id"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_anonymous": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Anonymous"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "string"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "estate_id",
+          "unit_id",
+          "category",
+          "description",
+          "priority",
+          "is_anonymous",
+          "status",
+          "assigned_to",
+          "reviewed_at",
+          "assigned_at",
+          "started_at",
+          "resolved_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ComplaintResponse",
+        "type": "object"
+      },
+      "ComplaintStatsResponse": {
+        "properties": {
+          "avg_resolution_hours": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Resolution Hours"
+          },
+          "by_category": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "By Category",
+            "type": "object"
+          },
+          "by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "By Status",
+            "type": "object"
+          },
+          "resolution_rate_pct": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Resolution Rate Pct",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "by_status",
+          "by_category",
+          "resolution_rate_pct",
+          "avg_resolution_hours"
+        ],
+        "title": "ComplaintStatsResponse",
+        "type": "object"
+      },
+      "ComplaintStatus": {
+        "enum": [
+          "submitted",
+          "reviewed",
+          "assigned",
+          "in_progress",
+          "resolved",
+          "rated",
+          "closed"
+        ],
+        "title": "ComplaintStatus",
+        "type": "string"
+      },
+      "ComplaintStatusUpdate": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ComplaintStatus"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "ComplaintStatusUpdate",
+        "type": "object"
+      },
+      "ContactRequest": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "message": {
+            "maxLength": 5000,
+            "minLength": 10,
+            "title": "Message",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "maxLength": 150,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "message"
+        ],
+        "title": "ContactRequest",
+        "type": "object"
+      },
+      "ContactResponse": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "subject",
+          "created_at"
+        ],
+        "title": "ContactResponse",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "LegacyPropertyScoreResponse": {
+        "properties": {
+          "community_health_factor": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Community Health Factor",
+            "type": "string"
+          },
+          "complaints_considered": {
+            "title": "Complaints Considered",
+            "type": "integer"
+          },
+          "maintenance_factor": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Maintenance Factor",
+            "type": "string"
+          },
+          "property_id": {
+            "title": "Property Id",
+            "type": "integer"
+          },
+          "provider_reliability_factor": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Provider Reliability Factor",
+            "type": "string"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "work_orders_considered": {
+            "title": "Work Orders Considered",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "property_id",
+          "score",
+          "community_health_factor",
+          "maintenance_factor",
+          "provider_reliability_factor",
+          "complaints_considered",
+          "work_orders_considered"
+        ],
+        "title": "LegacyPropertyScoreResponse",
+        "type": "object"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "type": "object"
+      },
+      "Page_AnnouncementResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnnouncementResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[AnnouncementResponse]",
+        "type": "object"
+      },
+      "Page_ComplaintResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ComplaintResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[ComplaintResponse]",
+        "type": "object"
+      },
+      "Page_PropertyResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PropertyResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[PropertyResponse]",
+        "type": "object"
+      },
+      "Page_ServiceProviderResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ServiceProviderResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[ServiceProviderResponse]",
+        "type": "object"
+      },
+      "Page_WorkOrderResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WorkOrderResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[WorkOrderResponse]",
+        "type": "object"
+      },
+      "PropertyCreate": {
+        "properties": {
+          "bathrooms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bathrooms"
+          },
+          "bedrooms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bedrooms"
+          },
+          "complex_name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Complex Name",
+            "type": "string"
+          },
+          "estate_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "size_m2": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,9}0*$)\\d{0,6}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size M2"
+          },
+          "street_address": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Street Address",
+            "type": "string"
+          },
+          "suburb": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suburb"
+          },
+          "unit_no": {
+            "maxLength": 10,
+            "minLength": 1,
+            "title": "Unit No",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estate_id",
+          "unit_no",
+          "complex_name",
+          "street_address"
+        ],
+        "title": "PropertyCreate",
+        "type": "object"
+      },
+      "PropertyResponse": {
+        "properties": {
+          "bathrooms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bathrooms"
+          },
+          "bedrooms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bedrooms"
+          },
+          "complex_name": {
+            "title": "Complex Name",
+            "type": "string"
+          },
+          "estate_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estate Id"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "size_m2": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size M2"
+          },
+          "street_address": {
+            "title": "Street Address",
+            "type": "string"
+          },
+          "suburb": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suburb"
+          },
+          "unit_no": {
+            "title": "Unit No",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "estate_id",
+          "unit_no",
+          "complex_name",
+          "street_address",
+          "suburb",
+          "size_m2",
+          "bedrooms",
+          "bathrooms"
+        ],
+        "title": "PropertyResponse",
+        "type": "object"
+      },
+      "RegisterRequest": {
+        "additionalProperties": false,
+        "description": "Public registration contract.\n\nPrivileged roles are deliberately absent: HOA and provider access is\nprovisioned through an existing estate membership, never self-selected.",
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "full_name": {
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Full Name",
+            "type": "string"
+          },
+          "password": {
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          },
+          "phoneno": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phoneno"
+          },
+          "unit_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit No"
+          }
+        },
+        "required": [
+          "full_name",
+          "email",
+          "password"
+        ],
+        "title": "RegisterRequest",
+        "type": "object"
+      },
+      "ServiceProviderResponse": {
+        "properties": {
+          "avg_rating": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Rating"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "emergency_available": {
+            "title": "Emergency Available",
+            "type": "boolean"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "phone": {
+            "title": "Phone",
+            "type": "string"
+          },
+          "total_reviews": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Reviews"
+          },
+          "trade": {
+            "title": "Trade",
+            "type": "string"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "full_name",
+          "trade",
+          "phone",
+          "email",
+          "avg_rating",
+          "total_reviews",
+          "verified",
+          "emergency_available"
+        ],
+        "title": "ServiceProviderResponse",
+        "type": "object"
+      },
+      "UserResponse": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "email_verified": {
+            "title": "Email Verified",
+            "type": "boolean"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "hoa_approved": {
+            "title": "Hoa Approved",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "unit_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit No"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "full_name",
+          "role",
+          "unit_no",
+          "email_verified",
+          "hoa_approved"
+        ],
+        "title": "UserResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "WorkOrderCreate": {
+        "properties": {
+          "complaint_id": {
+            "minimum": 1.0,
+            "title": "Complaint Id",
+            "type": "integer"
+          },
+          "estimated_completion_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Completion Date"
+          },
+          "job_cost": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Cost"
+          },
+          "provider_id": {
+            "minimum": 1.0,
+            "title": "Provider Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "complaint_id",
+          "provider_id"
+        ],
+        "title": "WorkOrderCreate",
+        "type": "object"
+      },
+      "WorkOrderRating": {
+        "properties": {
+          "rating": {
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Rating",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rating"
+        ],
+        "title": "WorkOrderRating",
+        "type": "object"
+      },
+      "WorkOrderResponse": {
+        "properties": {
+          "actual_completion_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Completion Date"
+          },
+          "assigned_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned At"
+          },
+          "complaint_id": {
+            "title": "Complaint Id",
+            "type": "integer"
+          },
+          "completion_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Notes"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "estimated_completion_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Completion Date"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "job_cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Cost"
+          },
+          "provider_id": {
+            "title": "Provider Id",
+            "type": "integer"
+          },
+          "resident_rating": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resident Rating"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "id",
+          "complaint_id",
+          "provider_id",
+          "assigned_at",
+          "resolved_at",
+          "job_cost",
+          "resident_rating",
+          "completion_notes",
+          "status",
+          "estimated_completion_date",
+          "actual_completion_date",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "WorkOrderResponse",
+        "type": "object"
+      },
+      "WorkOrderStatus": {
+        "enum": [
+          "assigned",
+          "in_progress",
+          "completed",
+          "cancelled"
+        ],
+        "title": "WorkOrderStatus",
+        "type": "string"
+      },
+      "WorkOrderUpdate": {
+        "properties": {
+          "completion_notes": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Notes"
+          },
+          "estimated_completion_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Completion Date"
+          },
+          "job_cost": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Cost"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkOrderStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "WorkOrderUpdate",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "/api/v1/auth/login"
+          }
+        },
+        "type": "oauth2"
+      }
+    }
+  },
+  "info": {
+    "description": "Property Health Intelligence Platform",
+    "title": "VALORA API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "root",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Root"
+      }
+    },
+    "/api/v1/analytics/status": {
+      "get": {
+        "operationId": "analytics_analytics_status",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Analytics Status",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/announcements": {
+      "get": {
+        "operationId": "announcements_list_announcements",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "HOA admins only",
+            "in": "query",
+            "name": "include_expired",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "HOA admins only",
+              "title": "Include Expired",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "1-based page number.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "1-based page number.",
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Items per page.",
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "description": "Items per page.",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_AnnouncementResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Announcements",
+        "tags": [
+          "announcements"
+        ]
+      },
+      "post": {
+        "description": "Publish an announcement. The author is taken from the logged-in admin.",
+        "operationId": "announcements_create_announcement",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Announcement",
+        "tags": [
+          "announcements"
+        ]
+      }
+    },
+    "/api/v1/announcements/{announcement_id}": {
+      "delete": {
+        "operationId": "announcements_delete_announcement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "announcement_id",
+            "required": true,
+            "schema": {
+              "title": "Announcement Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Delete Announcement",
+        "tags": [
+          "announcements"
+        ]
+      },
+      "get": {
+        "operationId": "announcements_get_announcement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "announcement_id",
+            "required": true,
+            "schema": {
+              "title": "Announcement Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Announcement",
+        "tags": [
+          "announcements"
+        ]
+      },
+      "patch": {
+        "operationId": "announcements_update_announcement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "announcement_id",
+            "required": true,
+            "schema": {
+              "title": "Announcement Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Announcement",
+        "tags": [
+          "announcements"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "Authenticate and return a JWT.",
+        "operationId": "identity_login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "description": "Return the currently authenticated user's profile.",
+        "operationId": "identity_me",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Me",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "description": "Register a new user and return a JWT.",
+        "operationId": "identity_register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/complaints": {
+      "get": {
+        "description": "HOA admins see all complaints; other users only see their own.",
+        "operationId": "complaints_list_complaints",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "-created_at",
+              "enum": [
+                "created_at",
+                "-created_at",
+                "priority",
+                "-priority",
+                "status",
+                "-status"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unit_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Unit Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ComplaintStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 50,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ComplaintResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Complaints",
+        "tags": [
+          "complaints"
+        ]
+      },
+      "post": {
+        "description": "File a complaint. The author is taken from the logged-in user.",
+        "operationId": "complaints_create_complaint",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComplaintCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComplaintResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Complaint",
+        "tags": [
+          "complaints"
+        ]
+      }
+    },
+    "/api/v1/complaints/stats": {
+      "get": {
+        "operationId": "complaints_complaint_stats",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComplaintStatsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Complaint Stats",
+        "tags": [
+          "complaints"
+        ]
+      }
+    },
+    "/api/v1/complaints/{complaint_id}": {
+      "get": {
+        "operationId": "complaints_get_complaint",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "complaint_id",
+            "required": true,
+            "schema": {
+              "title": "Complaint Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComplaintResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Complaint",
+        "tags": [
+          "complaints"
+        ]
+      }
+    },
+    "/api/v1/complaints/{complaint_id}/events": {
+      "get": {
+        "operationId": "complaints_list_complaint_events",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "complaint_id",
+            "required": true,
+            "schema": {
+              "title": "Complaint Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ComplaintEventResponse"
+                  },
+                  "title": "Response Complaints List Complaint Events",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Complaint Events",
+        "tags": [
+          "complaints"
+        ]
+      }
+    },
+    "/api/v1/complaints/{complaint_id}/status": {
+      "patch": {
+        "operationId": "complaints_update_complaint_status",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "complaint_id",
+            "required": true,
+            "schema": {
+              "title": "Complaint Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComplaintStatusUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComplaintResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Complaint Status",
+        "tags": [
+          "complaints"
+        ]
+      }
+    },
+    "/api/v1/contact": {
+      "post": {
+        "operationId": "contact_submit_contact_message",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Contact Message",
+        "tags": [
+          "contact"
+        ]
+      }
+    },
+    "/api/v1/properties": {
+      "get": {
+        "description": "List properties, optionally filtered by bedrooms, bathrooms, and size range.",
+        "operationId": "property_search_properties",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Exact number of bedrooms",
+            "in": "query",
+            "name": "bedrooms",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Exact number of bedrooms",
+              "title": "Bedrooms"
+            }
+          },
+          {
+            "description": "Exact number of bathrooms",
+            "in": "query",
+            "name": "bathrooms",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Exact number of bathrooms",
+              "title": "Bathrooms"
+            }
+          },
+          {
+            "description": "Minimum size in m²",
+            "in": "query",
+            "name": "min_size_m2",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                {
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Minimum size in m²",
+              "title": "Min Size M2"
+            }
+          },
+          {
+            "description": "Maximum size in m²",
+            "in": "query",
+            "name": "max_size_m2",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                {
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Maximum size in m²",
+              "title": "Max Size M2"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": false,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PropertyResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Search Properties",
+        "tags": [
+          "property"
+        ]
+      },
+      "post": {
+        "description": "Register a new unit/property (HOA admins only).",
+        "operationId": "property_create_property",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PropertyCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Property",
+        "tags": [
+          "property"
+        ]
+      }
+    },
+    "/api/v1/properties/{unit_id}": {
+      "get": {
+        "description": "Fetch a single property by id.",
+        "operationId": "property_get_property",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "unit_id",
+            "required": true,
+            "schema": {
+              "title": "Unit Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Property",
+        "tags": [
+          "property"
+        ]
+      }
+    },
+    "/api/v1/properties/{unit_id}/living-score": {
+      "get": {
+        "deprecated": true,
+        "description": "Read the legacy property score only inside an authorized estate scope.",
+        "operationId": "property_get_living_score",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "unit_id",
+            "required": true,
+            "schema": {
+              "title": "Unit Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyPropertyScoreResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Living Score",
+        "tags": [
+          "property"
+        ]
+      }
+    },
+    "/api/v1/providers": {
+      "get": {
+        "operationId": "providers_list_providers",
+        "parameters": [
+          {
+            "description": "e.g. plumber",
+            "in": "query",
+            "name": "trade",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 50,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "e.g. plumber",
+              "title": "Trade"
+            }
+          },
+          {
+            "in": "query",
+            "name": "verified",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Verified"
+            }
+          },
+          {
+            "in": "query",
+            "name": "emergency_available",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Emergency Available"
+            }
+          },
+          {
+            "description": "1-based page number.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "1-based page number.",
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Items per page.",
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "description": "Items per page.",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ServiceProviderResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Providers",
+        "tags": [
+          "providers"
+        ]
+      }
+    },
+    "/api/v1/providers/{provider_id}": {
+      "get": {
+        "operationId": "providers_get_provider",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider_id",
+            "required": true,
+            "schema": {
+              "title": "Provider Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceProviderResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Provider",
+        "tags": [
+          "providers"
+        ]
+      }
+    },
+    "/api/v1/work-orders": {
+      "get": {
+        "operationId": "work_orders_list_work_orders",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "-created_at",
+              "enum": [
+                "created_at",
+                "-created_at",
+                "status",
+                "-status"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "complaint_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Complaint Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "provider_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Provider Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkOrderStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_WorkOrderResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Work Orders",
+        "tags": [
+          "work orders"
+        ]
+      },
+      "post": {
+        "description": "Assign a service provider to a complaint.",
+        "operationId": "work_orders_create_work_order",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkOrderCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Work Order",
+        "tags": [
+          "work orders"
+        ]
+      }
+    },
+    "/api/v1/work-orders/{work_order_id}": {
+      "get": {
+        "description": "HOA admins, or the resident who raised the linked complaint.",
+        "operationId": "work_orders_get_work_order",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_order_id",
+            "required": true,
+            "schema": {
+              "title": "Work Order Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Work Order",
+        "tags": [
+          "work orders"
+        ]
+      },
+      "patch": {
+        "description": "Assigned provider updates progress or completion evidence.",
+        "operationId": "work_orders_update_work_order",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_order_id",
+            "required": true,
+            "schema": {
+              "title": "Work Order Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkOrderUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Work Order",
+        "tags": [
+          "work orders"
+        ]
+      }
+    },
+    "/api/v1/work-orders/{work_order_id}/rating": {
+      "post": {
+        "description": "Resident rates (1-5) a completed job. Feeds the Living Score maintenance factor.",
+        "operationId": "work_orders_rate_work_order",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_order_id",
+            "required": true,
+            "schema": {
+              "title": "Work Order Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkOrderRating"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Rate Work Order",
+        "tags": [
+          "work orders"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_check",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Check"
+      }
+    }
+  }
+}
