@@ -1,5 +1,5 @@
 """Identity Pydantic schemas — request and response models."""
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 # --- Auth schemas ---
@@ -18,6 +18,13 @@ class RegisterRequest(BaseModel):
     unit_no: str | None = None
 
     model_config = ConfigDict(extra="forbid")
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_length(cls, v: str) -> str:
+        if len(v.encode("utf-8")) > 72:
+            raise ValueError("Password must not exceed 72 bytes.")
+        return v
 
 
 class LoginRequest(BaseModel):

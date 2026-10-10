@@ -3,7 +3,7 @@
 > **Version:** 1.1  
 > **Date:** 15 July 2026  
 > **Status:** Draft  
-> **Author:** Group 8  
+> **Author:** VALORA Product Engineering
 
 ---
 

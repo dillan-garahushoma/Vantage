@@ -6,7 +6,7 @@ import pytest
 from app.common.enums import ComplaintStatus, UserRole
 from app.community.schemas.complaint import ComplaintStatusUpdate
 from app.community.services.complaint_service import ComplaintService
-from app.core.exceptions import ForbiddenException, NotFoundException
+from app.core.exceptions import ConflictException, NotFoundException
 
 
 def _complaint(status: str = "submitted") -> SimpleNamespace:
@@ -69,15 +69,13 @@ async def test_lifecycle_allows_only_the_next_transition_and_records_evidence() 
 
     assert response.status == ComplaintStatus.reviewed.value
     assert complaint.reviewed_at is not None
-    assert repository.transitions == [
-        {
-            "complaint": complaint,
-            "actor_user_id": 1,
-            "from_status": ComplaintStatus.submitted.value,
-            "to_status": ComplaintStatus.reviewed.value,
-            "note": "Initial triage complete.",
-        }
-    ]
+    assert len(repository.transitions) == 1
+    t = repository.transitions[0]
+    assert t["complaint"] == complaint
+    assert t["actor_user_id"] == 1
+    assert t["from_status"] == ComplaintStatus.submitted.value
+    assert t["to_status"] == ComplaintStatus.reviewed.value
+    assert t["note"] == "Initial triage complete."
 
 
 @pytest.mark.asyncio
@@ -88,7 +86,8 @@ async def test_lifecycle_rejects_skipping_review_or_assigning_without_assignee()
     service._estate_authorization = FakeEstateAuthorization()
     admin = SimpleNamespace(user_id=1, role=UserRole.hoa_admin.value)
 
-    with pytest.raises(ForbiddenException):
+    # Invalid transitions raise ConflictException (409)
+    with pytest.raises(ConflictException):
         await service.update_status(
             31,
             ComplaintStatusUpdate(status=ComplaintStatus.in_progress),
@@ -97,7 +96,7 @@ async def test_lifecycle_rejects_skipping_review_or_assigning_without_assignee()
         )
 
     complaint.status = ComplaintStatus.reviewed.value
-    with pytest.raises(ForbiddenException):
+    with pytest.raises(ConflictException):
         await service.update_status(
             31,
             ComplaintStatusUpdate(status=ComplaintStatus.assigned),

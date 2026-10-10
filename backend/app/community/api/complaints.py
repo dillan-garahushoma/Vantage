@@ -1,8 +1,10 @@
 from typing import Annotated
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.pagination import Page
 from app.common.enums import ComplaintStatus, UserRole
 from app.community.schemas.complaint import (
     ComplaintCreate,
@@ -10,7 +12,6 @@ from app.community.schemas.complaint import (
     ComplaintResponse,
     ComplaintStatsResponse,
     ComplaintStatusUpdate,
-    PaginatedComplaintsResponse,
 )
 from app.community.services.complaint_service import ComplaintService
 from app.db.session import get_db
@@ -25,22 +26,26 @@ ResidentOrAdmin = Annotated[
 ]
 
 
-@router.get("", response_model=PaginatedComplaintsResponse)
+@router.get("", response_model=Page[ComplaintResponse])
 async def list_complaints(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: CurrentUser,
     estate_id: Annotated[int, Query(gt=0)],
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    size: Annotated[int, Query(ge=1, le=100)] = 20,
+    sort: Literal[
+        "created_at", "-created_at", "priority", "-priority", "status", "-status"
+    ] = Query(default="-created_at"),
     unit_id: Annotated[int | None, Query(ge=1)] = None,
     status: Annotated[ComplaintStatus | None, Query()] = None,
     category: Annotated[str | None, Query(max_length=50)] = None,
-) -> PaginatedComplaintsResponse:
+) -> Page[ComplaintResponse]:
     """HOA admins see all complaints; other users only see their own."""
     return await ComplaintService(db).list_complaints(
         current_user,
         page=page,
-        page_size=page_size,
+        size=size,
+        sort=sort,
         unit_id=unit_id,
         status=status.value if status else None,
         category=category,

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Index, Integer, String, TIMESTAMP, UniqueConstraint, text
 from sqlalchemy.sql import func
 
 from app.db.base import Base
@@ -10,6 +10,13 @@ class EstateMembership(Base):
     __tablename__ = "estate_memberships"
     __table_args__ = (
         UniqueConstraint("user_id", "estate_id", "property_id", name="uq_membership_scope"),
+        Index(
+            "uq_estate_memberships_user_estate_null_property",
+            "user_id",
+            "estate_id",
+            unique=True,
+            postgresql_where=text("property_id IS NULL"),
+        ),
     )
 
     membership_id = Column(Integer, primary_key=True, index=True)

@@ -50,11 +50,4 @@ class WorkOrderResponse(BaseModel):
     created_at: datetime | None
     updated_at: datetime | None
 
-    model_config = {"from_attributes": True, "populate_by_name": True}
-
-
-class PaginatedWorkOrdersResponse(BaseModel):
-    count: int
-    page: int
-    page_size: int
-    work_orders: list[WorkOrderResponse]
+    model_config = {"from_attributes": True, "populate_by_name": True, "serialize_by_alias": True}

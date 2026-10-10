@@ -94,6 +94,18 @@ class PropertyRepository:
         result = await self._db.execute(select(Property).where(Property.unit_no == unit_no))
         return result.scalar_one_or_none()
 
+    async def get_by_unit_no_in_estate(
+        self, *, estate_id: int, unit_no: str
+    ) -> Property | None:
+        """Return a property matching unit_no within a specific estate."""
+        result = await self._db.execute(
+            select(Property).where(
+                Property.estate_id == estate_id,
+                Property.unit_no == unit_no,
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def create(self, **fields) -> Property:
         property_ = Property(**fields)
         self._db.add(property_)

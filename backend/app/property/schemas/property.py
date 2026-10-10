@@ -2,7 +2,6 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
-
 class PropertyResponse(BaseModel):
     unit_id: int = Field(..., serialization_alias="id")
     estate_id: int | None
@@ -14,15 +13,7 @@ class PropertyResponse(BaseModel):
     bedrooms: int | None
     bathrooms: int | None
 
-    model_config = {"from_attributes": True, "populate_by_name": True}
-
-
-class PaginatedPropertiesResponse(BaseModel):
-    count: int
-    page: int
-    page_size: int
-    properties: list[PropertyResponse]
-
+    model_config = {"from_attributes": True, "populate_by_name": True, "serialize_by_alias": True}
 
 class PropertyCreate(BaseModel):
     estate_id: int = Field(..., gt=0)

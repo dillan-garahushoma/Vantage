@@ -17,16 +17,45 @@ class EstateMembershipRepository:
         )
         return result.scalar_one_or_none() is not None
 
+    async def has_membership_role_for_user(
+        self, *, user_id: int, membership_role: str
+    ) -> bool:
+        result = await self._db.execute(
+            select(EstateMembership.membership_id)
+            .where(
+                EstateMembership.user_id == user_id,
+                EstateMembership.membership_role == membership_role,
+            )
+            .limit(1)
+        )
+        return result.scalar_one_or_none() is not None
+
+    async def list_for_user_and_estate(
+        self, *, user_id: int, estate_id: int
+    ) -> list[EstateMembership]:
+        result = await self._db.execute(
+            select(EstateMembership)
+            .where(
+                EstateMembership.user_id == user_id,
+                EstateMembership.estate_id == estate_id,
+            )
+            .order_by(EstateMembership.membership_id)
+        )
+        return list(result.scalars().all())
+
     async def get_for_user_and_estate(
         self, *, user_id: int, estate_id: int
     ) -> EstateMembership | None:
         result = await self._db.execute(
-            select(EstateMembership).where(
+            select(EstateMembership)
+            .where(
                 EstateMembership.user_id == user_id,
                 EstateMembership.estate_id == estate_id,
             )
+            .order_by(EstateMembership.membership_id)
+            .limit(1)
         )
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     async def get_for_user_and_property(
         self, *, user_id: int, property_id: int

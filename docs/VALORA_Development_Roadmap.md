@@ -1,5 +1,7 @@
 # VALORA Development Roadmap
 
+> This original roadmap is retained as historical product context. The current execution sequence and migration checkpoint are tracked in [EXECUTION_ROADMAP.md](EXECUTION_ROADMAP.md); implementation truth is in [VALORA_IMPLEMENTATION_STATUS.md](VALORA_IMPLEMENTATION_STATUS.md).
+
 ## Philosophy
 
 Build **business capabilities**, not screens. Every phase should produce a complete slice of business value before moving to the next.

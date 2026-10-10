@@ -1,9 +1,11 @@
 import logging
+import re
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.routing import APIRoute
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.router import api_router
@@ -24,20 +26,69 @@ logger = logging.getLogger(__name__)
 # 2. Get environment settings
 settings = get_settings()
 
+
+def stable_operation_id(route: APIRoute) -> str:
+    tag = route.tags[0] if route.tags else ""
+    prefix = re.sub(r"[^a-zA-Z0-9]+", "_", tag).strip("_").lower()
+    name = re.sub(r"[^a-zA-Z0-9]+", "_", route.name).strip("_").lower()
+    return f"{prefix}_{name}" if prefix else name
+
+
 app = FastAPI(
     title="VALORA API",
     description="Property Health Intelligence Platform",
-    version="1.0.0"
+    version="1.0.0",
+    generate_unique_id_function=stable_operation_id,
 )
 
 
-@app.middleware("http")
-async def request_id_middleware(request: Request, call_next):
-    request.state.request_id = request.headers.get("X-Request-ID", str(uuid4()))
-    response = await call_next(request)
-    response.headers["X-Request-ID"] = request.state.request_id
-    return response
+REQUEST_ID_REGEX = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 
+
+class RequestIdMiddleware:
+    """Pure ASGI middleware guaranteeing X-Request-ID on all responses including 500s."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        raw_id = None
+        for name, value in scope.get("headers", []):
+            if name.lower() == b"x-request-id":
+                raw_id = value.decode("latin1", errors="ignore")
+                break
+
+        if raw_id and REQUEST_ID_REGEX.match(raw_id):
+            req_id = raw_id
+        else:
+            req_id = str(uuid4())
+
+        if "state" not in scope:
+            scope["state"] = {}
+        scope["state"]["request_id"] = req_id
+
+        async def send_wrapper(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                replaced = False
+                for i, (h_name, _) in enumerate(headers):
+                    if h_name.lower() == b"x-request-id":
+                        headers[i] = (b"x-request-id", req_id.encode("latin1"))
+                        replaced = True
+                        break
+                if not replaced:
+                    headers.append((b"x-request-id", req_id.encode("latin1")))
+                message["headers"] = headers
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
+
+
+app.add_middleware(RequestIdMiddleware)
 
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(StarletteHTTPException, starlette_exception_handler)

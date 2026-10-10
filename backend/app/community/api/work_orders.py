@@ -1,11 +1,12 @@
 from typing import Annotated
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.pagination import Page
 from app.common.enums import UserRole, WorkOrderStatus
 from app.community.schemas.work_order import (
-    PaginatedWorkOrdersResponse,
     WorkOrderCreate,
     WorkOrderRating,
     WorkOrderResponse,
@@ -23,20 +24,24 @@ ResidentOnly = Annotated[User, require_roles(UserRole.resident.value)]
 ProviderOnly = Annotated[User, require_roles(UserRole.service_provider.value)]
 
 
-@router.get("", response_model=PaginatedWorkOrdersResponse)
+@router.get("", response_model=Page[WorkOrderResponse])
 async def list_work_orders(
     db: Annotated[AsyncSession, Depends(get_db)],
     admin: AdminOnly,
     estate_id: Annotated[int, Query(gt=0)],
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    size: Annotated[int, Query(ge=1, le=100)] = 20,
+    sort: Literal["created_at", "-created_at", "status", "-status"] = Query(
+        default="-created_at"
+    ),
     complaint_id: Annotated[int | None, Query(ge=1)] = None,
     provider_id: Annotated[int | None, Query(ge=1)] = None,
     status: Annotated[WorkOrderStatus | None, Query()] = None,
-) -> PaginatedWorkOrdersResponse:
+) -> Page[WorkOrderResponse]:
     return await WorkOrderService(db).list_work_orders(
         page=page,
-        page_size=page_size,
+        size=size,
+        sort=sort,
         complaint_id=complaint_id,
         provider_id=provider_id,
         status=status.value if status else None,

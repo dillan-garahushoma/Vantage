@@ -22,6 +22,7 @@ services:
       - "8000:8000"
     environment:
       - ENVIRONMENT=development
+      - CORS_ORIGINS=["http://localhost:5173","http://127.0.0.1:5173"]
       # Note: We use 'db' here instead of 'localhost' because Docker handles the internal network routing!
       - DATABASE_URL=postgresql+asyncpg://valora_user:valora_password@db:5432/valora_db
       - SECRET_KEY=super-secret-development-key-change-in-prod
@@ -31,17 +32,19 @@ services:
       - .:/app
 
   frontend:
+    profiles:
+      - frontend
     image: node:20-alpine
     container_name: valora_frontend
     restart: always
     working_dir: /app
     ports:
-      - "4173:4173"
+      - "5173:5173"
     environment:
       - VITE_API_BASE_URL=http://localhost:8000
     volumes:
-      - ../FrontEnd:/app
-    command: sh -c "npm install && npm run dev"
+      - ../frontend:/app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     depends_on:
       - api
 

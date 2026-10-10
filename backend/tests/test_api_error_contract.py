@@ -1,13 +1,17 @@
-from fastapi.testclient import TestClient
+import httpx
+import pytest
 
 from app.main import app
 
 
-client = TestClient(app)
-
-
-def test_not_found_errors_include_a_request_id() -> None:
-    response = client.get("/api/v1/not-a-real-route", headers={"X-Request-ID": "req-test-404"})
+@pytest.mark.asyncio
+async def test_not_found_errors_include_a_request_id() -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get(
+            "/api/v1/not-a-real-route",
+            headers={"X-Request-ID": "req-test-404"},
+        )
 
     assert response.status_code == 404
     assert response.headers["X-Request-ID"] == "req-test-404"
@@ -20,8 +24,11 @@ def test_not_found_errors_include_a_request_id() -> None:
     }
 
 
-def test_validation_errors_include_safe_machine_and_human_details() -> None:
-    response = client.post("/api/v1/auth/register", json={})
+@pytest.mark.asyncio
+async def test_validation_errors_include_safe_machine_and_human_details() -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post("/api/v1/auth/register", json={})
 
     assert response.status_code == 422
     error = response.json()["detail"]

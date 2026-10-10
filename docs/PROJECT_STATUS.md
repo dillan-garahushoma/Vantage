@@ -2,6 +2,8 @@
 
 This document tracks the ongoing development progress of VALORA, acting as the current source of truth for what has been completed and what is up next.
 
+> **Current source of truth:** See [VALORA_IMPLEMENTATION_STATUS.md](VALORA_IMPLEMENTATION_STATUS.md) and [EXECUTION_ROADMAP.md](EXECUTION_ROADMAP.md). The original phase checklist below predates the Phase 0 hardening work and is retained as historical context.
+
 ---
 
 ## 🚀 Current Phase: Phase 0 — Foundation ✅ COMPLETE

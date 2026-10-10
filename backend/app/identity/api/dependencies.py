@@ -22,14 +22,21 @@ async def get_current_user(
     """Decode JWT and return the authenticated user ORM object."""
     try:
         payload = decode_access_token(token)
-        user_id: str | None = payload.get("sub")
-        if user_id is None:
+        if "exp" not in payload:
             raise CredentialsException()
-    except (JWTError, TypeError, ValueError):
+        user_id_raw = payload.get("sub")
+        if user_id_raw is None:
+            raise CredentialsException()
+        if not isinstance(user_id_raw, (str, int)):
+            raise CredentialsException()
+        if isinstance(user_id_raw, str) and not user_id_raw.isdigit():
+            raise CredentialsException()
+        user_id = int(user_id_raw)
+    except (JWTError, TypeError, ValueError, CredentialsException):
         raise CredentialsException()
 
     repo = UserRepository(db)
-    user = await repo.get_by_id(int(user_id))
+    user = await repo.get_by_id(user_id)
     if user is None:
         raise CredentialsException()
     return user

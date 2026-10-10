@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.pagination import Page
 from app.core.exceptions import ConflictException, NotFoundException
 from app.common.enums import UserRole
 from app.identity.models.user import User
@@ -9,7 +10,6 @@ from app.identity.services.estate_authorization_service import EstateAuthorizati
 from app.property.models.property import Property
 from app.property.repositories.property_repository import PropertyRepository
 from app.property.schemas.property import (
-    PaginatedPropertiesResponse,
     PropertyCreate,
     PropertyResponse,
 )
@@ -24,21 +24,21 @@ class PropertyService:
         self,
         *,
         page: int,
-        page_size: int,
+        size: int,
         bedrooms: int | None = None,
         bathrooms: int | None = None,
         min_size_m2: Decimal | None = None,
         max_size_m2: Decimal | None = None,
         estate_id: int,
         actor: User,
-    ) -> PaginatedPropertiesResponse:
+    ) -> Page[PropertyResponse]:
         await self._estate_authorization.require_membership(
             user_id=actor.user_id, estate_id=estate_id
         )
-        offset = (page - 1) * page_size
+        offset = (page - 1) * size
         properties = await self._repo.search(
             offset=offset,
-            limit=page_size,
+            limit=size,
             bedrooms=bedrooms,
             bathrooms=bathrooms,
             min_size_m2=min_size_m2,
@@ -52,11 +52,11 @@ class PropertyService:
             max_size_m2=max_size_m2,
             estate_id=estate_id,
         )
-        return PaginatedPropertiesResponse(
-            count=total,
+        return Page[PropertyResponse](
+            items=[PropertyResponse.model_validate(p) for p in properties],
+            total=total,
             page=page,
-            page_size=page_size,
-            properties=[PropertyResponse.model_validate(p) for p in properties],
+            size=size,
         )
 
     async def get_property(
@@ -80,7 +80,7 @@ class PropertyService:
             estate_id=payload.estate_id,
             allowed_roles=(UserRole.hoa_admin.value,),
         )
-        if await self._repo.get_by_unit_no(payload.unit_no) is not None:
-            raise ConflictException(f"A property with unit number {payload.unit_no} already exists.")
+        if await self._repo.get_by_unit_no_in_estate(estate_id=payload.estate_id, unit_no=payload.unit_no) is not None:
+            raise ConflictException(f"A property with unit number {payload.unit_no} already exists in this estate.")
         property_ = await self._repo.create(**payload.model_dump())
         return PropertyResponse.model_validate(property_)

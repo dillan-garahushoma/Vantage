@@ -24,7 +24,6 @@ class ComplaintCreate(BaseModel):
 
 class ComplaintStatusUpdate(BaseModel):
     status: ComplaintStatus
-    assigned_to: str | None = Field(default=None, max_length=100)
     note: str | None = Field(default=None, max_length=2000)
 
 
@@ -37,7 +36,7 @@ class ComplaintEventResponse(BaseModel):
     note: str | None
     occurred_at: datetime
 
-    model_config = {"from_attributes": True, "populate_by_name": True}
+    model_config = {"from_attributes": True, "populate_by_name": True, "serialize_by_alias": True}
 
 
 class ComplaintResponse(BaseModel):
@@ -59,11 +58,4 @@ class ComplaintResponse(BaseModel):
     created_at: datetime | None
     updated_at: datetime | None
 
-    model_config = {"from_attributes": True, "populate_by_name": True}
-
-
-class PaginatedComplaintsResponse(BaseModel):
-    count: int
-    page: int
-    page_size: int
-    complaints: list[ComplaintResponse]
+    model_config = {"from_attributes": True, "populate_by_name": True, "serialize_by_alias": True}

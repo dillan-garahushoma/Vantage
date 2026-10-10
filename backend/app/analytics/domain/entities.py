@@ -4,7 +4,7 @@ from decimal import Decimal
 
 
 @dataclass
-class LivingScoreEntity:
+class LegacyPropertyScoreEntity:
     property_id: int
     score: int
     community_health_factor: Decimal

@@ -10,6 +10,10 @@ from app.identity.repositories.user_repository import UserRepository
 from app.identity.schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserResponse
 
 
+# Precomputed bcrypt hash for constant-time dummy comparison when user is not found
+DUMMY_PASSWORD_HASH = "$2b$12$e80e1yJ0M.685i37g0nE3.YtB9Q.q51Nrk2GZ01/5eU2mB2z4Q8/."
+
+
 class AuthService:
     def __init__(self, db: AsyncSession) -> None:
         self._repo = UserRepository(db)
@@ -37,7 +41,11 @@ class AuthService:
         email = normalise_email(payload.email)
         user = await self._repo.get_by_email(email)
 
-        if user is None or not verify_password(payload.password, user.password_hash):
+        if user is None:
+            verify_password(payload.password, DUMMY_PASSWORD_HASH)
+            raise CredentialsException("Invalid email or password.")
+
+        if not verify_password(payload.password, user.password_hash):
             raise CredentialsException("Invalid email or password.")
 
         return self._build_auth_response(user)
