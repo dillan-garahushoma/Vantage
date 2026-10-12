@@ -5,7 +5,17 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import NullPool
 
 
-os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/valora_test")
+# When a throwaway test database is provided, point the whole app at it before
+# any app module imports Settings. alembic's env.py builds its engine from
+# settings.DATABASE_URL rather than from the URL conftest sets on the Alembic
+# Config, so the environment is the single lever that keeps migrations off the
+# developer's own database. The name still has to contain "test" (guard below).
+if os.getenv("TEST_DATABASE_URL"):
+    os.environ["DATABASE_URL"] = os.environ["TEST_DATABASE_URL"]
+else:
+    os.environ.setdefault(
+        "DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/valora_test"
+    )
 os.environ.setdefault("SECRET_KEY", "test-secret-not-for-production")
 os.environ.setdefault("CORS_ORIGINS", '["http://localhost:5173"]')
 
@@ -34,6 +44,24 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
             )
 
 
+import pytest_asyncio
+
+
+@pytest.fixture(autouse=True)
+def reset_join_attempt_limiter():
+    """Keep the process-wide join limiter out of the way between tests.
+
+    The join rate limiter is deliberately in-process state (ADR-007). Tests
+    exhaust it and assert windows on it, so it must start and end each test
+    empty - otherwise one test's failed attempts would 429 the next test's user.
+    """
+    from app.identity.services.join_attempt_limiter import join_attempt_limiter
+
+    join_attempt_limiter.reset_all()
+    yield
+    join_attempt_limiter.reset_all()
+
+
 @pytest.fixture(scope="session")
 def apply_migrations():
     test_db_url = os.getenv("TEST_DATABASE_URL")
@@ -51,7 +79,7 @@ def apply_migrations():
     command.upgrade(alembic_cfg, "head")
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_db_engine():
     test_db_url = os.getenv("TEST_DATABASE_URL")
     if not test_db_url:
@@ -61,7 +89,7 @@ async def test_db_engine():
     await engine.dispose()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_db_sessionmaker(test_db_engine):
     return async_sessionmaker(
         bind=test_db_engine,
@@ -70,7 +98,7 @@ async def test_db_sessionmaker(test_db_engine):
     )
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def db_session(test_db_engine, test_db_sessionmaker, apply_migrations):
     from sqlalchemy import text
 
@@ -90,7 +118,7 @@ async def db_session(test_db_engine, test_db_sessionmaker, apply_migrations):
         yield session
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_client(test_db_sessionmaker):
     import httpx
     from app.main import app

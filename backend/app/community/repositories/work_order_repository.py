@@ -123,6 +123,29 @@ class WorkOrderRepository:
         )
         return result.scalars().first()
 
+    async def get_latest_for_complaint(
+        self, *, complaint_id: int, estate_id: int
+    ) -> MaintenanceworkOrder | None:
+        """The most recent work order for one complaint inside one estate.
+
+        At most one work order can be active per complaint, and a completed one is
+        terminal, so the latest row is also the one the resident and the admin are
+        both looking at. Newest id first is a stable tie-break on equal timestamps.
+        """
+        result = await self._db.execute(
+            select(MaintenanceworkOrder)
+            .where(
+                MaintenanceworkOrder.complaint_id == complaint_id,
+                MaintenanceworkOrder.estate_id == estate_id,
+            )
+            .order_by(
+                MaintenanceworkOrder.created_at.desc(),
+                MaintenanceworkOrder.work_order_id.desc(),
+            )
+            .limit(1)
+        )
+        return result.scalars().first()
+
     async def get_provider_rating_aggregate(
         self, *, provider_id: int
     ) -> tuple[Decimal | None, int]:

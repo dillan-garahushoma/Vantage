@@ -24,3 +24,7 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Uploaded estate photos: local files, never committed
+backend/uploads/
+uploads/

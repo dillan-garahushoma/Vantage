@@ -37,8 +37,8 @@ async def get_sale(
 async def create_sale(
     payload: SaleCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _actor: Annotated[
+    actor: Annotated[
         User, require_roles(UserRole.estate_agent.value, UserRole.hoa_admin.value)
     ],
 ) -> SaleResponse:
-    return await SaleService(db).create_sale(payload)
+    return await SaleService(db).create_sale(payload, actor)

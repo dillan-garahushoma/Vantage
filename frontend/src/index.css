@@ -1,0 +1,130 @@
+@import 'tailwindcss';
+
+/*
+  VALORA — "Calm Intelligence, Technical Edge"
+  80% clean prop-tech, 20% retro-technical signature.
+  See docs/design/VALORA-DESIGN-DIRECTION.md for the rationale.
+
+  Rules encoded here:
+  - one accent colour with real meaning (never decoration)
+  - hard hairlines, near-zero radius, near-no shadow
+  - a monospace face for every figure so numbers align and compare
+*/
+@theme {
+  --color-ink: #14181c;
+  --color-ink-soft: #4a5157;
+  --color-ink-muted: #63686e;
+  --color-paper: #f6f4ef;
+  --color-surface: #ffffff;
+  --color-accent: #1f6f5c;
+  --color-accent-ink: #175647;
+  --color-accent-wash: #e7efec;
+  /* --color-signal is a 3.35:1 fill/accent. For *text* use --color-signal-ink. */
+  --color-signal: #e4572e;
+  --color-signal-ink: #9e3413;
+  --color-signal-wash: #fceee9;
+  /* --color-ochre is a 2.76:1 fill (score bars, chips). For text use --color-ochre-ink. */
+  --color-ochre: #c08a2e;
+  --color-ochre-ink: #6f4f10;
+  --color-ochre-wash: #f8f0dd;
+  --color-brick: #b3261e;
+  --color-brick-ink: #8c1c16;
+  --color-brick-wash: #f9e9e7;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, monospace;
+
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+
+  --shadow-lift: 4px 4px 0 0 var(--color-ink);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  /* Every figure in VALORA is a measurement: tabular mono, always. */
+  .num {
+    @apply font-mono tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply text-ink font-semibold;
+    letter-spacing: -0.01em;
+  }
+
+  /* Retro-technical focus ring: a dotted survey line, and genuinely usable. */
+  :focus-visible {
+    outline: 2px dotted var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 1px;
+  }
+
+  ::selection {
+    background: var(--color-accent-wash);
+  }
+}
+
+@layer utilities {
+  /* The single hard offset shadow, reserved for the one primary action. */
+  .lift {
+    box-shadow: var(--shadow-lift);
+  }
+
+  .hairline {
+    border: 1px solid color-mix(in srgb, var(--color-ink) 14%, transparent);
+  }
+
+  .rule {
+    border-top: 1px solid color-mix(in srgb, var(--color-ink) 14%, transparent);
+  }
+
+  /* Faint surveyor grid — a technical-edge nod that stays quiet. */
+  .survey-grid {
+    background-image:
+      linear-gradient(to right, color-mix(in srgb, var(--color-ink) 6%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--color-ink) 6%, transparent) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .rise {
+    animation: rise 160ms ease-out both;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

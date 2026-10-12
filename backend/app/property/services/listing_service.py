@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.enums import UserRole
 from app.core.exceptions import ForbiddenException, NotFoundException
 from app.identity.models.user import User
+from app.identity.services.estate_authorization_service import EstateAuthorizationService
 from app.property.models.listing import Listing
 from app.property.repositories.listing_repository import ListingRepository
 from app.property.repositories.property_repository import PropertyRepository
@@ -20,6 +21,7 @@ class ListingService:
     def __init__(self, db: AsyncSession) -> None:
         self._repo = ListingRepository(db)
         self._property_repo = PropertyRepository(db)
+        self._estate_authorization = EstateAuthorizationService(db)
 
     async def search_listings(
         self,
@@ -52,8 +54,13 @@ class ListingService:
         return ListingResponse.model_validate(await self._get_or_404(listing_id))
 
     async def create_listing(self, payload: ListingCreate, agent: User) -> ListingResponse:
-        if await self._property_repo.get_by_id(payload.unit_id) is None:
+        property_ = await self._property_repo.get_by_id(payload.unit_id)
+        if property_ is None:
             raise NotFoundException(f"Property with id {payload.unit_id} was not found.")
+        if agent.role == UserRole.hoa_admin.value:
+            # An estate admin may only list inside an estate they administer. A
+            # legacy NULL-estate unit is denied outright.
+            await self._require_estate_admin_membership(property_.estate_id, agent)
         listing = await self._repo.create(
             unit_id=payload.unit_id,
             agent_id=agent.user_id,
@@ -63,11 +70,28 @@ class ListingService:
         )
         return ListingResponse.model_validate(listing)
 
+    async def _require_estate_admin_membership(
+        self, estate_id: int | None, actor: User
+    ) -> None:
+        """Require the global hoa_admin role AND an hoa_admin membership in the unit's estate."""
+        if estate_id is None:
+            raise ForbiddenException("This unit is not attached to an estate.")
+        access = await self._estate_authorization.resolve_access(actor, estate_id)
+        if not access.is_estate_admin:
+            raise ForbiddenException(
+                "An HOA administrator membership in this unit's estate is required."
+            )
+
     async def update_listing(
         self, listing_id: int, payload: ListingUpdate, actor: User
     ) -> ListingResponse:
         listing = await self._get_or_404(listing_id)
-        if actor.role != UserRole.hoa_admin.value and listing.agent_id != actor.user_id:
+        if actor.role == UserRole.hoa_admin.value:
+            property_ = await self._property_repo.get_by_id(listing.unit_id)
+            if property_ is None:
+                raise NotFoundException(f"Property with id {listing.unit_id} was not found.")
+            await self._require_estate_admin_membership(property_.estate_id, actor)
+        elif listing.agent_id != actor.user_id:
             raise ForbiddenException("You can only edit your own listings.")
 
         changes = payload.model_dump(exclude_unset=True)

@@ -23,19 +23,29 @@ class ServiceProviderService:
         self,
         *,
         actor: User,
+        estate_id: int,
         page: int,
         size: int,
         trade: str | None = None,
         verified: bool | None = None,
         emergency_available: bool | None = None,
     ) -> Page[ServiceProviderResponse]:
-        await self._require_hoa_admin_membership(actor)
-        providers = await self._repo.get_all(
+        """This estate's provider directory, for an HOA admin of this estate.
+
+        Only providers who hold a service_provider membership of *this* estate are
+        returned, and the caller must administer it. Provider phone numbers and
+        email addresses are part of the response and are shown **only** here (and
+        on ``GET /providers/me`` for the provider themself), never to a resident.
+        """
+        await self._require_estate_admin(actor, estate_id)
+        providers = await self._repo.get_all_in_estate(
+            estate_id=estate_id,
             offset=(page - 1) * size,
             limit=size,
             trade=trade, verified=verified, emergency_available=emergency_available
         )
-        total = await self._repo.count_all(
+        total = await self._repo.count_in_estate(
+            estate_id=estate_id,
             trade=trade, verified=verified, emergency_available=emergency_available
         )
         return Page[ServiceProviderResponse](
@@ -45,11 +55,17 @@ class ServiceProviderService:
             size=size,
         )
 
-    async def get_provider(self, provider_id: int, actor: User) -> ServiceProviderResponse:
+    async def get_provider(
+        self, provider_id: int, actor: User, *, estate_id: int
+    ) -> ServiceProviderResponse:
+        """One provider of this estate: an HOA admin may read any, a provider only themself."""
         if actor.role == UserRole.hoa_admin.value:
-            await self._require_hoa_admin_membership(actor)
-            provider = await self._repo.get_by_id(provider_id)
+            await self._require_estate_admin(actor, estate_id)
+            provider = await self._repo.get_by_id_in_estate(
+                provider_id=provider_id, estate_id=estate_id
+            )
         elif actor.role == UserRole.service_provider.value:
+            await self._require_estate_provider(actor, estate_id)
             provider = await self._repo.get_by_user_id(actor.user_id)
             if provider is not None and provider.provider_id != provider_id:
                 raise ForbiddenException("You may only access your own service provider profile.")
@@ -60,18 +76,29 @@ class ServiceProviderService:
             raise NotFoundException(f"Service provider with id {provider_id} was not found.")
         return ServiceProviderResponse.model_validate(provider)
 
-    async def _require_hoa_admin_membership(self, actor: User) -> None:
-        has_admin_membership = (
-            actor.role == UserRole.hoa_admin.value
-            and await self._estate_authorization.has_membership_role_in_any_estate(
-                user_id=actor.user_id,
-                membership_role=UserRole.hoa_admin.value,
-            )
+    async def get_my_provider(self, actor: User) -> ServiceProviderResponse:
+        """The signed-in service provider's own profile, wherever they work."""
+        if actor.role != UserRole.service_provider.value:
+            raise ForbiddenException("Only a service provider has a provider profile.")
+        provider = await self._repo.get_by_user_id(actor.user_id)
+        if provider is None:
+            raise NotFoundException("Your account has no service provider profile.")
+        return ServiceProviderResponse.model_validate(provider)
+
+    async def _require_estate_admin(self, actor: User, estate_id: int) -> None:
+        """Both credential halves: the global role *and* an admin membership here."""
+        await self._estate_authorization.require_role(
+            actor=actor,
+            estate_id=estate_id,
+            allowed_roles=(UserRole.hoa_admin.value,),
         )
-        if not has_admin_membership:
-            raise ForbiddenException(
-                "An HOA administrator membership in at least one estate is required."
-            )
+
+    async def _require_estate_provider(self, actor: User, estate_id: int) -> None:
+        await self._estate_authorization.require_role(
+            actor=actor,
+            estate_id=estate_id,
+            allowed_roles=(UserRole.service_provider.value,),
+        )
 
     async def create_provider(self, payload: ServiceProviderCreate) -> ServiceProviderResponse:
         email = normalise_email(str(payload.email))

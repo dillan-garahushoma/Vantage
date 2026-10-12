@@ -70,6 +70,75 @@ class WorkOrderService:
             size=size,
         )
 
+    async def list_my_work_orders(
+        self,
+        actor: User,
+        *,
+        estate_id: int,
+        page: int,
+        size: int,
+        status: str | None = None,
+    ) -> Page[WorkOrderResponse]:
+        """One page of the work assigned to the signed-in provider in this estate.
+
+        A ``service_provider`` member sees only rows whose ``provider_id`` is their
+        own profile. An account with the provider role but no linked profile (or no
+        membership) gets an empty page rather than an error: there is simply no
+        work to show and nothing about anybody else's is revealed.
+        """
+        await self._estate_authorization.require_role(
+            actor=actor,
+            estate_id=estate_id,
+            allowed_roles=(UserRole.service_provider.value,),
+        )
+        provider = await self._provider_repo.get_by_user_id(actor.user_id)
+        if provider is None:
+            return Page[WorkOrderResponse](items=[], total=0, page=page, size=size)
+
+        filters = dict(
+            complaint_id=None,
+            estate_id=estate_id,
+            provider_id=provider.provider_id,
+            status=status,
+        )
+        work_orders = await self._repo.search(
+            offset=(page - 1) * size, limit=size, sort="-created_at", **filters
+        )
+        total = await self._repo.count(**filters)
+        return Page[WorkOrderResponse](
+            items=[WorkOrderResponse.model_validate(w) for w in work_orders],
+            total=total,
+            page=page,
+            size=size,
+        )
+
+    async def get_for_complaint(
+        self, complaint_id: int, actor: User, *, estate_id: int
+    ) -> WorkOrderResponse:
+        """The work order raised for one complaint: its author, or an estate admin.
+
+        Any other member of the estate is a 403 (they are a member but the
+        complaint is not theirs) and a complaint from another estate is a 404.
+        """
+        access = await self._estate_authorization.resolve_access(actor, estate_id=estate_id)
+        complaint = await self._complaint_repo.get_by_id_in_estate(
+            complaint_id=complaint_id, estate_id=estate_id
+        )
+        if complaint is None:
+            raise NotFoundException(f"Complaint with id {complaint_id} was not found.")
+        if not access.is_estate_admin and complaint.user_id != actor.user_id:
+            raise ForbiddenException(
+                "You can only view the work order for your own complaint."
+            )
+        work_order = await self._repo.get_latest_for_complaint(
+            complaint_id=complaint_id, estate_id=estate_id
+        )
+        if work_order is None:
+            raise NotFoundException(
+                f"No work order has been created for complaint {complaint_id} yet."
+            )
+        return WorkOrderResponse.model_validate(work_order)
+
     async def get_work_order(
         self, work_order_id: int, user: User, *, estate_id: int
     ) -> WorkOrderResponse:

@@ -91,7 +91,9 @@ def test_legacy_routes_work_when_enabled(monkeypatch: pytest.MonkeyPatch) -> Non
         ServiceProviderService, "update_provider", AsyncMock(return_value=provider_response)
     )
 
-    client = _client(True)
+    # Provider create/update is a platform-operator action (ONB-1), so this
+    # client carries platform_admin; the listing/sale reads ignore the role.
+    client = _client(True, role="platform_admin")
     paths = client.get("/openapi.json").json()["paths"]
     assert "/api/v1/listings" in paths
     assert "/api/v1/sales" in paths
@@ -134,14 +136,15 @@ def _provider(provider_id: int = 1, user_id: int | None = None) -> SimpleNamespa
 
 
 @pytest.mark.asyncio
-async def test_provider_list_requires_hoa_admin_membership(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_provider_directory_requires_that_estate_admin_membership(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """ONB master P1: the directory is estate-scoped, not "any estate I admin"."""
     repo = SimpleNamespace(
-        get_all=AsyncMock(return_value=[_provider()]),
-        count_all=AsyncMock(return_value=1),
+        get_all_in_estate=AsyncMock(return_value=[_provider()]),
+        count_in_estate=AsyncMock(return_value=1),
     )
-    authorization = SimpleNamespace(
-        has_membership_role_in_any_estate=AsyncMock(return_value=True)
-    )
+    authorization = SimpleNamespace(require_role=AsyncMock(return_value=None))
     monkeypatch.setattr(
         "app.providers.services.service_provider_service.ServiceProviderRepository",
         lambda _db: repo,
@@ -152,13 +155,16 @@ async def test_provider_list_requires_hoa_admin_membership(monkeypatch: pytest.M
     )
     admin = SimpleNamespace(user_id=10, role="hoa_admin")
     result = await ServiceProviderService(object()).list_providers(
-        actor=admin, page=1, size=20
+        actor=admin, estate_id=5, page=1, size=20
     )
     assert result.total == 1
     assert len(result.items) == 1
-    authorization.has_membership_role_in_any_estate.assert_awaited_once_with(
-        user_id=10, membership_role="hoa_admin"
+    authorization.require_role.assert_awaited_once_with(
+        actor=admin, estate_id=5, allowed_roles=("hoa_admin",)
     )
+    repo.get_all_in_estate.assert_awaited_once()
+    assert repo.get_all_in_estate.await_args.kwargs["estate_id"] == 5
+    assert repo.count_in_estate.await_args.kwargs["estate_id"] == 5
 
 
 @pytest.mark.asyncio
@@ -168,13 +174,15 @@ async def test_provider_reads_deny_residents_and_admins_without_membership(
     from app.core.exceptions import ForbiddenException
 
     repo = SimpleNamespace(
-        get_all=AsyncMock(return_value=[]),
-        count_all=AsyncMock(return_value=0),
-        get_by_id=AsyncMock(return_value=_provider()),
+        get_all_in_estate=AsyncMock(return_value=[]),
+        count_in_estate=AsyncMock(return_value=0),
+        get_by_id_in_estate=AsyncMock(return_value=_provider()),
         get_by_user_id=AsyncMock(return_value=_provider(user_id=11)),
     )
     authorization = SimpleNamespace(
-        has_membership_role_in_any_estate=AsyncMock(return_value=False)
+        require_role=AsyncMock(
+            side_effect=ForbiddenException("You do not have access to this estate.")
+        )
     )
     monkeypatch.setattr(
         "app.providers.services.service_provider_service.ServiceProviderRepository",
@@ -188,16 +196,20 @@ async def test_provider_reads_deny_residents_and_admins_without_membership(
 
     with pytest.raises(ForbiddenException):
         await service.list_providers(
-            actor=SimpleNamespace(user_id=10, role="hoa_admin"), page=1, size=20
+            actor=SimpleNamespace(user_id=10, role="hoa_admin"), estate_id=5, page=1, size=20
         )
     with pytest.raises(ForbiddenException):
         await service.list_providers(
-            actor=SimpleNamespace(user_id=12, role="resident"), page=1, size=20
+            actor=SimpleNamespace(user_id=12, role="resident"), estate_id=5, page=1, size=20
         )
     with pytest.raises(ForbiddenException):
-        await service.get_provider(1, SimpleNamespace(user_id=12, role="resident"))
+        await service.get_provider(
+            1, SimpleNamespace(user_id=12, role="resident"), estate_id=5
+        )
     with pytest.raises(ForbiddenException):
-        await service.get_provider(1, SimpleNamespace(user_id=10, role="hoa_admin"))
+        await service.get_provider(
+            1, SimpleNamespace(user_id=10, role="hoa_admin"), estate_id=5
+        )
 
 
 @pytest.mark.asyncio
@@ -206,18 +218,27 @@ async def test_provider_can_read_only_own_profile(monkeypatch: pytest.MonkeyPatc
 
     repo = SimpleNamespace(
         get_by_user_id=AsyncMock(return_value=_provider(user_id=11)),
-        get_by_id=AsyncMock(),
+        get_by_id_in_estate=AsyncMock(),
     )
+    authorization = SimpleNamespace(require_role=AsyncMock(return_value=None))
     monkeypatch.setattr(
         "app.providers.services.service_provider_service.ServiceProviderRepository",
         lambda _db: repo,
     )
+    monkeypatch.setattr(
+        "app.providers.services.service_provider_service.EstateAuthorizationService",
+        lambda _db: authorization,
+    )
     service = ServiceProviderService(object())
+    provider_actor = SimpleNamespace(user_id=11, role="service_provider")
 
-    result = await service.get_provider(1, SimpleNamespace(user_id=11, role="service_provider"))
+    result = await service.get_provider(1, provider_actor, estate_id=5)
     assert result.provider_id == 1
     repo.get_by_user_id.assert_awaited_once_with(11)
-    repo.get_by_id.assert_not_awaited()
+    repo.get_by_id_in_estate.assert_not_awaited()
+    authorization.require_role.assert_awaited_once_with(
+        actor=provider_actor, estate_id=5, allowed_roles=("service_provider",)
+    )
 
     with pytest.raises(ForbiddenException):
-        await service.get_provider(2, SimpleNamespace(user_id=11, role="service_provider"))
+        await service.get_provider(2, provider_actor, estate_id=5)

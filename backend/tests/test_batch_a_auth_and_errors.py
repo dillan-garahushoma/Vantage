@@ -166,10 +166,16 @@ def test_a4_login_nonexistent_user_runs_dummy_bcrypt() -> None:
     from app.identity.services.auth_service import DUMMY_PASSWORD_HASH
     import asyncio
 
+    from app.core.config import get_settings
+
     with patch("app.identity.services.auth_service.verify_password", return_value=False) as mock_verify:
         service = AuthService.__new__(AuthService)
+        service._settings = get_settings()
+        service._db = AsyncMock()
         service._repo = AsyncMock()
         service._repo.get_by_email.return_value = None
+        service._attempt_repo = AsyncMock()
+        service._attempt_repo.count_recent_failures.return_value = 0
         with pytest.raises(CredentialsException):
             asyncio.run(service.login(LoginRequest(email="nonexistent@example.com", password="Password123!")))
         assert mock_verify.called

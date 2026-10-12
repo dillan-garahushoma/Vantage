@@ -13,7 +13,14 @@ from app.community.schemas.complaint import (
     ComplaintStatsResponse,
     ComplaintStatusUpdate,
 )
+from app.community.schemas.complaint_ai import (
+    TriageDecisionRequest,
+    TriageSuggestionResponse,
+)
+from app.community.schemas.work_order import WorkOrderResponse
 from app.community.services.complaint_service import ComplaintService
+from app.community.services.complaint_triage_service import ComplaintTriageService
+from app.community.services.work_order_service import WorkOrderService
 from app.db.session import get_db
 from app.identity.api.dependencies import CurrentUser, require_roles
 from app.identity.models.user import User
@@ -75,6 +82,24 @@ async def get_complaint(
     )
 
 
+@router.get("/{complaint_id}/work-order", response_model=WorkOrderResponse)
+async def get_complaint_work_order(
+    complaint_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: CurrentUser,
+    estate_id: Annotated[int, Query(gt=0)],
+) -> WorkOrderResponse:
+    """The work order raised for this complaint.
+
+    Read by the complaint's author (so they can see progress without being able
+    to list the estate's work) or by an HOA admin of the estate. The DTO is the
+    existing work-order response, unchanged.
+    """
+    return await WorkOrderService(db).get_for_complaint(
+        complaint_id, current_user, estate_id=estate_id
+    )
+
+
 @router.get("/{complaint_id}/events", response_model=list[ComplaintEventResponse])
 async def list_complaint_events(
     complaint_id: int,
@@ -111,3 +136,54 @@ async def update_complaint_status(
     return await ComplaintService(db).update_status(
         complaint_id, payload, admin, estate_id=estate_id
     )
+
+
+# ---------------------------------------------------------------------------- #
+# Advisory AI triage suggestions (BATCH AI-3).
+#
+# Advisory only: these endpoints read and label a suggestion and never modify
+# the complaint. They are HOA-admin-only, and the service re-checks the estate
+# membership before anything is read, written or sent to a provider. When the AI
+# layer is off or fails, they answer 503 and the complaint workflow is unchanged.
+# ---------------------------------------------------------------------------- #
+
+
+@router.post("/{complaint_id}/ai-suggestion", response_model=TriageSuggestionResponse)
+async def request_ai_suggestion(
+    complaint_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    admin: AdminOnly,
+    estate_id: Annotated[int, Query(gt=0)],
+) -> TriageSuggestionResponse:
+    """Ask for the triage suggestion for one complaint.
+
+    Idempotent: the first call asks the AI layer and stores exactly one
+    suggestion; later calls return the stored row without another provider call.
+    """
+    return await ComplaintTriageService(db).generate(complaint_id, estate_id, admin)
+
+
+@router.get("/{complaint_id}/ai-suggestion", response_model=TriageSuggestionResponse)
+async def get_ai_suggestion(
+    complaint_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    admin: AdminOnly,
+    estate_id: Annotated[int, Query(gt=0)],
+) -> TriageSuggestionResponse:
+    """Return the stored suggestion, or 404 when none has been requested."""
+    return await ComplaintTriageService(db).get(complaint_id, estate_id, admin)
+
+
+@router.post(
+    "/{complaint_id}/ai-suggestion/decision",
+    response_model=TriageSuggestionResponse,
+)
+async def decide_ai_suggestion(
+    complaint_id: int,
+    payload: TriageDecisionRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    admin: AdminOnly,
+    estate_id: Annotated[int, Query(gt=0)],
+) -> TriageSuggestionResponse:
+    """Accept, override or dismiss the suggestion. Write-once."""
+    return await ComplaintTriageService(db).decide(complaint_id, estate_id, payload, admin)

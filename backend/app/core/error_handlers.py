@@ -10,6 +10,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.core.ai.errors import AIUnavailableError
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,6 +41,7 @@ def _code_for_status(status_code: int) -> str:
         403: "FORBIDDEN",
         404: "RESOURCE_NOT_FOUND",
         409: "CONFLICT",
+        413: "PAYLOAD_TOO_LARGE",
         422: "VALIDATION_ERROR",
         429: "RATE_LIMITED",
     }.get(status_code, "REQUEST_FAILED")
@@ -92,6 +95,28 @@ async def validation_exception_handler(
             details=jsonable_encoder(cleaned_errors),
         ),
         headers={"X-Request-ID": _request_id(request)},
+    )
+
+
+async def ai_unavailable_exception_handler(
+    request: Request, exc: AIUnavailableError
+) -> JSONResponse:
+    """Map an optional-feature AI failure to a clean 503.
+
+    AI is never load-bearing, so a disabled, refused, over-budget or failing AI
+    layer must not look like a server bug. The body carries the closed reason
+    code and nothing else - never a key, a prompt or a provider response.
+    """
+    req_id = _request_id(request)
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content=_error_body(
+            request=request,
+            code="AI_UNAVAILABLE",
+            message="AI assist is unavailable for this request.",
+            details={"reason": exc.reason},
+        ),
+        headers={"X-Request-ID": req_id},
     )
 
 

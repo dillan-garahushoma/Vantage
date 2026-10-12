@@ -19,6 +19,20 @@ class ForbiddenException(HTTPException):
         super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
 
 
+class BadRequestException(HTTPException):
+    """Raised when a request is well-formed but cannot be accepted as sent."""
+
+    def __init__(self, detail: str = "The request could not be accepted.") -> None:
+        super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+
+
+class PayloadTooLargeException(HTTPException):
+    """Raised when an upload exceeds the size the API will read."""
+
+    def __init__(self, detail: str = "The uploaded file is too large.") -> None:
+        super().__init__(status_code=status.HTTP_413_CONTENT_TOO_LARGE, detail=detail)
+
+
 class NotFoundException(HTTPException):
     """Raised when a requested resource does not exist."""
 
@@ -31,3 +45,10 @@ class ConflictException(HTTPException):
 
     def __init__(self, detail: str = "Conflict with existing resource.") -> None:
         super().__init__(status_code=status.HTTP_409_CONFLICT, detail=detail)
+
+
+class RateLimitException(HTTPException):
+    """Raised when a client exceeds an allowed request/attempt rate."""
+
+    def __init__(self, detail: str = "Too many requests. Please try again later.") -> None:
+        super().__init__(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=detail)

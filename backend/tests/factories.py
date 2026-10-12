@@ -75,28 +75,24 @@ async def build_two_estate_world(db: AsyncSession) -> EstateWorld:
         email="admin_a@valora.test",
         password_hash=pw_hash,
         role=UserRole.hoa_admin.value,
-        hoa_approved=True,
     )
     resident_a1 = await user_repo.create(
         full_name="Resident Alice",
         email="res_a1@valora.test",
         password_hash=pw_hash,
         role=UserRole.resident.value,
-        hoa_approved=True,
     )
     resident_a2 = await user_repo.create(
         full_name="Resident Aaron",
         email="res_a2@valora.test",
         password_hash=pw_hash,
         role=UserRole.resident.value,
-        hoa_approved=True,
     )
     provider_user_a = await user_repo.create(
         full_name="Plumber Pete",
         email="prov_a@valora.test",
         password_hash=pw_hash,
         role=UserRole.service_provider.value,
-        hoa_approved=True,
     )
 
     hoa_admin_b = await user_repo.create(
@@ -104,28 +100,24 @@ async def build_two_estate_world(db: AsyncSession) -> EstateWorld:
         email="admin_b@valora.test",
         password_hash=pw_hash,
         role=UserRole.hoa_admin.value,
-        hoa_approved=True,
     )
     resident_b1 = await user_repo.create(
         full_name="Resident Bob",
         email="res_b1@valora.test",
         password_hash=pw_hash,
         role=UserRole.resident.value,
-        hoa_approved=True,
     )
     resident_b2 = await user_repo.create(
         full_name="Resident Brenda",
         email="res_b2@valora.test",
         password_hash=pw_hash,
         role=UserRole.resident.value,
-        hoa_approved=True,
     )
     provider_user_b = await user_repo.create(
         full_name="Electrician Emma",
         email="prov_b@valora.test",
         password_hash=pw_hash,
         role=UserRole.service_provider.value,
-        hoa_approved=True,
     )
 
     cross_user = await user_repo.create(
@@ -133,8 +125,25 @@ async def build_two_estate_world(db: AsyncSession) -> EstateWorld:
         email="cross@valora.test",
         password_hash=pw_hash,
         role=UserRole.hoa_admin.value,  # Global role hoa_admin
-        hoa_approved=True,
     )
+
+    # `UserRepository.create` does not accept `hoa_approved` - it is not part of the
+    # repository's provisioning contract - so the flag is applied to the models
+    # after creation and committed once, which is all these fixtures ever needed.
+    # (`hoa_approved` gates no authorisation: see docs/PILOT_RUNBOOK.md.)
+    for user in (
+        hoa_admin_a,
+        resident_a1,
+        resident_a2,
+        provider_user_a,
+        hoa_admin_b,
+        resident_b1,
+        resident_b2,
+        provider_user_b,
+        cross_user,
+    ):
+        user.hoa_approved = True
+    await db.commit()
 
     # 3. Properties
     prop_a1 = await property_repo.create(
@@ -191,7 +200,6 @@ async def build_two_estate_world(db: AsyncSession) -> EstateWorld:
 
     # 4. Service Providers
     provider_a = await provider_repo.create(
-        user_id=provider_user_a.user_id,
         full_name="Pete Plumbing Services",
         trade="plumbing",
         phone="0821234567",
@@ -200,7 +208,6 @@ async def build_two_estate_world(db: AsyncSession) -> EstateWorld:
         emergency_available=True,
     )
     provider_b = await provider_repo.create(
-        user_id=provider_user_b.user_id,
         full_name="Emma Electrical",
         trade="electrical",
         phone="0837654321",
@@ -208,6 +215,13 @@ async def build_two_estate_world(db: AsyncSession) -> EstateWorld:
         verified=True,
         emergency_available=True,
     )
+
+    # `ServiceProviderRepository.create` does not take `user_id` either, so the link
+    # between a provider profile and its provider user account is set on the models
+    # afterwards, mirroring the flag handling above.
+    provider_a.user_id = provider_user_a.user_id
+    provider_b.user_id = provider_user_b.user_id
+    await db.commit()
 
     # 5. Estate Memberships
     # Estate A

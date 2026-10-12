@@ -1,0 +1,134 @@
+{
+  "estate": {
+    "name": "Amberfield Valley",
+    "suburb": "Westville",
+    "city": "Durban",
+    "province": "KwaZulu-Natal",
+    "description": "Fictional test complex used to rehearse pilot provisioning locally. Not a real estate: every account below uses a reserved @example.test address, and no data here belongs to a real person or property."
+  },
+  "units": [
+    {
+      "unit_no": "AMB-01",
+      "complex_name": "Amberfield Valley",
+      "street_address": "1 Amberfield Way",
+      "suburb": "Westville",
+      "size_m2": 85,
+      "bedrooms": 2,
+      "bathrooms": 1
+    },
+    {
+      "unit_no": "AMB-02",
+      "complex_name": "Amberfield Valley",
+      "street_address": "1 Amberfield Way",
+      "suburb": "Westville",
+      "size_m2": 120,
+      "bedrooms": 3,
+      "bathrooms": 2
+    },
+    {
+      "unit_no": "AMB-03",
+      "complex_name": "Amberfield Valley",
+      "street_address": "1 Amberfield Way",
+      "suburb": "Westville",
+      "size_m2": 85,
+      "bedrooms": 2,
+      "bathrooms": 1
+    },
+    {
+      "unit_no": "AMB-04",
+      "complex_name": "Amberfield Valley",
+      "street_address": "1 Amberfield Way",
+      "suburb": "Westville",
+      "size_m2": 120,
+      "bedrooms": 3,
+      "bathrooms": 2
+    },
+    {
+      "unit_no": "AMB-05",
+      "complex_name": "Amberfield Valley",
+      "street_address": "1 Amberfield Way",
+      "suburb": "Westville",
+      "size_m2": 95,
+      "bedrooms": 2,
+      "bathrooms": 2
+    },
+    {
+      "unit_no": "AMB-06",
+      "complex_name": "Amberfield Valley",
+      "street_address": "1 Amberfield Way",
+      "suburb": "Westville",
+      "size_m2": 140,
+      "bedrooms": 3,
+      "bathrooms": 2
+    },
+    {
+      "unit_no": "AMB-07",
+      "complex_name": "Amberfield Valley",
+      "street_address": "1 Amberfield Way",
+      "suburb": "Westville",
+      "size_m2": 95,
+      "bedrooms": 2,
+      "bathrooms": 2
+    },
+    {
+      "unit_no": "AMB-08",
+      "complex_name": "Amberfield Valley",
+      "street_address": "1 Amberfield Way",
+      "suburb": "Westville",
+      "size_m2": 140,
+      "bedrooms": 3,
+      "bathrooms": 2
+    },
+    {
+      "unit_no": "AMB-09",
+      "complex_name": "Amberfield Valley",
+      "street_address": "1 Amberfield Way",
+      "suburb": "Westville",
+      "size_m2": 85,
+      "bedrooms": 2,
+      "bathrooms": 1
+    },
+    {
+      "unit_no": "AMB-10",
+      "complex_name": "Amberfield Valley",
+      "street_address": "1 Amberfield Way",
+      "suburb": "Westville",
+      "size_m2": 120,
+      "bedrooms": 3,
+      "bathrooms": 2
+    },
+    {
+      "unit_no": "AMB-11",
+      "complex_name": "Amberfield Valley",
+      "street_address": "1 Amberfield Way",
+      "suburb": "Westville",
+      "size_m2": 95,
+      "bedrooms": 2,
+      "bathrooms": 2
+    },
+    {
+      "unit_no": "AMB-12",
+      "complex_name": "Amberfield Valley",
+      "street_address": "1 Amberfield Way",
+      "suburb": "Westville",
+      "size_m2": 140,
+      "bedrooms": 3,
+      "bathrooms": 2
+    }
+  ],
+  "hoa_admins": [
+    {
+      "email": "amberfield.hoa.admin@example.test",
+      "full_name": "Amberfield HOA Admin (test)"
+    }
+  ],
+  "service_providers": [
+    {
+      "email": "amberfield.provider.plumbing@example.test",
+      "full_name": "Amberfield Plumbing Test Provider",
+      "trade": "plumbing",
+      "phone": "0310000001",
+      "emergency_available": true
+    }
+  ]
+}

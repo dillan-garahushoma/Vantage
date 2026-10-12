@@ -1,50 +1,90 @@
-version: '3.8'
-
+# The local development and demonstration stack: Postgres, the API and the
+# built frontend. Everything it needs is in this file; nothing here is a
+# production deployment (no TLS, no backups, single process per service).
 services:
   db:
     image: postgres:15-alpine
-    container_name: valora_db
     restart: always
     environment:
       POSTGRES_USER: valora_user
       POSTGRES_PASSWORD: valora_password
-      POSTGRES_DB: valora_db
+      # Only used when the volume is first created. Set DB_NAME=valora_demo to
+      # bring the whole stack up against the demonstration database (the seeder
+      # refuses a database whose name does not contain "demo").
+      POSTGRES_DB: ${DB_NAME:-valora_db}
     ports:
-      - "5432:5432"
+      - "${DB_HOST_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   api:
     build: .
-    container_name: valora_api
     restart: always
     ports:
-      - "8000:8000"
+      - "${API_HOST_PORT:-8000}:8000"
+    # `docker compose ps` can only say "healthy" if something actually asks the
+    # API. The first import is slow on a Windows bind mount, so the start period
+    # is generous: nothing is wrong while the modules are still loading.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"]
+      interval: 10s
+      timeout: 6s
+      retries: 20
+      start_period: 120s
     environment:
       - ENVIRONMENT=development
-      - CORS_ORIGINS=["http://localhost:5173","http://127.0.0.1:5173"]
+      # 4173 is the frontend's published port below; 5173 stays listed because a
+      # host-run `npm run dev` is the other way to open the app.
+      - CORS_ORIGINS=${CORS_ORIGINS:-["http://localhost:5173","http://127.0.0.1:5173","http://localhost:4173","http://127.0.0.1:4173"]}
       # Note: We use 'db' here instead of 'localhost' because Docker handles the internal network routing!
-      - DATABASE_URL=postgresql+asyncpg://valora_user:valora_password@db:5432/valora_db
+      - DATABASE_URL=postgresql+asyncpg://valora_user:valora_password@db:5432/${DB_NAME:-valora_db}
       - SECRET_KEY=super-secret-development-key-change-in-prod
+      # Optional AI assist layer. Off by default; values come from the host env
+      # (or a local .env) and are never committed. See docs/ADR-004-AI-Assist-Layer.md.
+      - AI_ENABLED=${AI_ENABLED:-false}
+      - AI_INSIGHTS_ENABLED=${AI_INSIGHTS_ENABLED:-false}
+      - AI_TRIAGE_ENABLED=${AI_TRIAGE_ENABLED:-false}
+      - AI_PERSONAL_DATA_ALLOWED=${AI_PERSONAL_DATA_ALLOWED:-false}
+      - AI_PROVIDER=${AI_PROVIDER:-gemini}
+      - AI_MODEL=${AI_MODEL:-}
+      - AI_TIMEOUT_SECONDS=${AI_TIMEOUT_SECONDS:-15}
+      - AI_MAX_INPUT_CHARS=${AI_MAX_INPUT_CHARS:-6000}
+      - AI_MAX_OUTPUT_TOKENS=${AI_MAX_OUTPUT_TOKENS:-600}
+      - AI_DAILY_CALL_CAP_PER_ESTATE=${AI_DAILY_CALL_CAP_PER_ESTATE:-200}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - AI_COMPAT_BASE_URL=${AI_COMPAT_BASE_URL:-}
+      - AI_COMPAT_API_KEY=${AI_COMPAT_API_KEY:-}
     depends_on:
       - db
+    # The source is bind-mounted so a code change shows up on restart, and it is
+    # also what persists uploads: the photo bytes are written to ./uploads on the
+    # host and the container reads the same directory back. `docker compose down`
+    # leaves them alone; only a manual delete removes them.
     volumes:
       - .:/app
 
   frontend:
-    profiles:
-      - frontend
-    image: node:20-alpine
-    container_name: valora_frontend
+    # The real Vite app, built with the API URL baked in and served on 4173 —
+    # the same port a host-run `vite preview` uses, so the acceptance run and the
+    # container agree on what "the app" means.
+    # Built from the repository root: the production build type-checks the
+    # generated contract against docs/openapi.json (see frontend/Dockerfile).
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
     restart: always
-    working_dir: /app
     ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_BASE_URL=http://localhost:8000
-    volumes:
-      - ../frontend:/app
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+      - "${FRONTEND_HOST_PORT:-4173}:80"
+    healthcheck:
+      # nginx:alpine has busybox wget; the built index.html is the proof that the
+      # image really contains the app.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     depends_on:
       - api
 

@@ -3,7 +3,10 @@ from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import NotFoundException
+from app.common.enums import UserRole
+from app.core.exceptions import ForbiddenException, NotFoundException
+from app.identity.models.user import User
+from app.identity.services.estate_authorization_service import EstateAuthorizationService
 from app.property.models.sale import Sale
 from app.property.repositories.property_repository import PropertyRepository
 from app.property.repositories.sale_repository import SaleRepository
@@ -18,6 +21,7 @@ class SaleService:
     def __init__(self, db: AsyncSession) -> None:
         self._repo = SaleRepository(db)
         self._property_repo = PropertyRepository(db)
+        self._estate_authorization = EstateAuthorizationService(db)
 
     async def list_sales(
         self,
@@ -42,15 +46,32 @@ class SaleService:
     async def get_sale(self, sale_id: int) -> SaleResponse:
         return SaleResponse.model_validate(await self._get_or_404(sale_id))
 
-    async def create_sale(self, payload: SaleCreate) -> SaleResponse:
-        if await self._property_repo.get_by_id(payload.unit_id) is None:
+    async def create_sale(self, payload: SaleCreate, actor: User) -> SaleResponse:
+        property_ = await self._property_repo.get_by_id(payload.unit_id)
+        if property_ is None:
             raise NotFoundException(f"Property with id {payload.unit_id} was not found.")
+        if actor.role == UserRole.hoa_admin.value:
+            # An estate admin may only record a sale inside an estate they
+            # administer; a legacy NULL-estate unit is denied outright.
+            await self._require_estate_admin_membership(property_.estate_id, actor)
         sale = await self._repo.create(
             unit_id=payload.unit_id,
             price=payload.price,
             sale_date=payload.sale_date,
         )
         return SaleResponse.model_validate(sale)
+
+    async def _require_estate_admin_membership(
+        self, estate_id: int | None, actor: User
+    ) -> None:
+        """Require the global hoa_admin role AND an hoa_admin membership in the unit's estate."""
+        if estate_id is None:
+            raise ForbiddenException("This unit is not attached to an estate.")
+        access = await self._estate_authorization.resolve_access(actor, estate_id)
+        if not access.is_estate_admin:
+            raise ForbiddenException(
+                "An HOA administrator membership in this unit's estate is required."
+            )
 
     async def _get_or_404(self, sale_id: int) -> Sale:
         sale = await self._repo.get_by_id(sale_id)

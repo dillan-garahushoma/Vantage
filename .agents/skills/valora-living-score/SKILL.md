@@ -5,6 +5,14 @@ description: Encodes the deterministic Living Score algorithm, rolling 90-day ca
 
 # VALORA Living Score Engine
 
+> **Authority:** this five-component, estate-level `v1.0.0` formula is the accepted
+> Living Score definition (product-owner decision recorded in
+> `docs/ADR-005-Living-Score-Authority.md`). The legacy 40/30/30 per-property score
+> in `backend/app/analytics/` is **not** Living Score v1 — it stays isolated as
+> `LegacyPropertyScore*` and must not be extended, blended into a snapshot, or
+> presented to users as Living Score. As of that decision the engine described below
+> is **not yet implemented**: no snapshot model, table or history API exists.
+
 The **Living Score** is VALORA's core differentiator. It quantifies the operational health and livability of an estate into a transparent, bounded index between `0` and `100`.
 
 ## Mathematical Formula

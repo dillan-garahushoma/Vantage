@@ -18,7 +18,10 @@ from app.providers.schemas.service_provider import (
 from app.providers.services.review_service import ReviewService
 from app.providers.services.service_provider_service import ServiceProviderService
 
-AdminOnly = Annotated[User, require_roles(UserRole.hoa_admin.value)]
+# Provider create/update (including the ``verified`` flag) is a platform-operator
+# action, not something an estate admin may do. Reads stay open to estate admins
+# with a membership.
+PlatformAdminOnly = Annotated[User, require_roles(UserRole.platform_admin.value)]
 ResidentOnly = Annotated[User, require_roles(UserRole.resident.value)]
 
 
@@ -33,12 +36,21 @@ def create_router(enable_legacy_routes: bool | None = None) -> APIRouter:
         db: Annotated[AsyncSession, Depends(get_db)],
         current_user: CurrentUser,
         pagination: Annotated[PaginationParams, Depends()],
+        estate_id: Annotated[int, Query(gt=0, description="The estate whose directory this is.")],
         trade: Annotated[str | None, Query(max_length=50, description="e.g. plumber")] = None,
         verified: Annotated[bool | None, Query()] = None,
         emergency_available: Annotated[bool | None, Query()] = None,
     ) -> Page[ServiceProviderResponse]:
+        """The estate's provider directory: only providers who are members of it.
+
+        ``estate_id`` is required and is authorized against a persisted
+        ``hoa_admin`` membership inside the service, so a client-supplied estate is
+        never proof of access. Provider phone numbers and email addresses appear in
+        this response and are shown here (and on ``/providers/me``) only.
+        """
         return await ServiceProviderService(db).list_providers(
             actor=current_user,
+            estate_id=estate_id,
             page=pagination.page,
             size=pagination.size,
             trade=trade,
@@ -46,20 +58,32 @@ def create_router(enable_legacy_routes: bool | None = None) -> APIRouter:
             emergency_available=emergency_available,
         )
 
+    # Declared before "/{provider_id}" so "me" is never parsed as an id.
+    @router.get("/me", response_model=ServiceProviderResponse)
+    async def get_my_provider(
+        db: Annotated[AsyncSession, Depends(get_db)],
+        current_user: CurrentUser,
+    ) -> ServiceProviderResponse:
+        """The signed-in service provider's own profile, estate-independent."""
+        return await ServiceProviderService(db).get_my_provider(current_user)
+
     @router.get("/{provider_id}", response_model=ServiceProviderResponse)
     async def get_provider(
         provider_id: int,
         db: Annotated[AsyncSession, Depends(get_db)],
         current_user: CurrentUser,
+        estate_id: Annotated[int, Query(gt=0)],
     ) -> ServiceProviderResponse:
-        return await ServiceProviderService(db).get_provider(provider_id, current_user)
+        return await ServiceProviderService(db).get_provider(
+            provider_id, current_user, estate_id=estate_id
+        )
 
     if enable_legacy_routes:
         @router.post("", response_model=ServiceProviderResponse, status_code=201)
         async def create_provider(
             payload: ServiceProviderCreate,
             db: Annotated[AsyncSession, Depends(get_db)],
-            _admin: AdminOnly,
+            _admin: PlatformAdminOnly,
         ) -> ServiceProviderResponse:
             return await ServiceProviderService(db).create_provider(payload)
 
@@ -68,7 +92,7 @@ def create_router(enable_legacy_routes: bool | None = None) -> APIRouter:
             provider_id: int,
             payload: ServiceProviderUpdate,
             db: Annotated[AsyncSession, Depends(get_db)],
-            _admin: AdminOnly,
+            _admin: PlatformAdminOnly,
         ) -> ServiceProviderResponse:
             """Edit details or mark a provider as verified."""
             return await ServiceProviderService(db).update_provider(provider_id, payload)
@@ -90,7 +114,11 @@ def create_router(enable_legacy_routes: bool | None = None) -> APIRouter:
             db: Annotated[AsyncSession, Depends(get_db)],
             current_user: ResidentOnly,
         ) -> ReviewResponse:
-            """Residents rate a provider 1-5. One review per resident per provider."""
+            """Residents rate a provider 1-5. One review per resident per provider.
+
+            Only a provider who works in an estate the reviewer is a member of can
+            be reviewed; anything else is the same 404 as an unknown provider.
+            """
             return await ReviewService(db).create_review(provider_id, payload, current_user)
     else:
         @router.post("", include_in_schema=False)

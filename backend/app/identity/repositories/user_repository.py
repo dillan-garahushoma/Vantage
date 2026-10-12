@@ -39,3 +39,30 @@ class UserRepository:
         await self._db.commit()
         await self._db.refresh(user)
         return user
+
+    async def add(
+        self,
+        *,
+        full_name: str,
+        email: str,
+        password_hash: str,
+        role: str,
+        phoneno: str | None = None,
+        unit_no: str | None = None,
+    ) -> User:
+        """Add a user without committing.
+
+        For a multi-step signup the service owns the single commit; this flushes
+        so the generated id is available for the sibling rows.
+        """
+        user = User(
+            full_name=full_name,
+            email=email,
+            password_hash=password_hash,
+            role=role,
+            phoneno=phoneno,
+            unit_no=unit_no,
+        )
+        self._db.add(user)
+        await self._db.flush()
+        return user
