@@ -442,10 +442,10 @@ class IntelligenceService:
                 EstateSignalItem(
                     type="living_score",
                     id=latest_score.snapshot_id,
-                    title=f"Living Score Snapshot: {latest_score.living_score}/100",
+                    title=f"Living Score Snapshot: {latest_score.overall_score}/100",
                     status="published",
                     date=latest_score.as_of.isoformat() if latest_score.as_of else "",
-                    detail=f"Resolution: {latest_score.complaint_resolution_score}, Security: {latest_score.security_incident_score}, Maintenance: {latest_score.infrastructure_maintenance_score}",
+                    detail=f"Resolution: {latest_score.resolution_score}, Security: {latest_score.security_score}, Maintenance: {latest_score.infrastructure_score}",
                 )
             )
 
@@ -481,7 +481,7 @@ class IntelligenceService:
                     title=f"Security Incident: {inc.category} ({inc.severity})",
                     status=inc.status or "open",
                     date=inc.created_at.isoformat() if inc.created_at else "",
-                    detail=inc.notes or "",
+                    detail=inc.resolution_notes or "",
                 )
             )
 

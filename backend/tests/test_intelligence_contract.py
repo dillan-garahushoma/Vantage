@@ -102,3 +102,60 @@ def test_openapi_routes_registered() -> None:
 
     assert "/api/v1/analytics/intelligence/briefing" in paths
     assert "post" in paths["/api/v1/analytics/intelligence/briefing"]
+
+
+def test_estate_signal_items_mapping() -> None:
+    from app.analytics.models.living_score_snapshot import LivingScoreSnapshot
+    from app.community.models.security_incident import SecurityIncident
+    from app.community.models.maintenance_work_order import MaintenanceworkOrder
+    from app.community.models.complaint import Complaint
+    from app.analytics.schemas.intelligence import EstateSignalItem
+
+    # Mock snapshot
+    snap = LivingScoreSnapshot(
+        snapshot_id=1,
+        estate_id=1,
+        engine_version="1.0.0",
+        as_of=datetime.now(timezone.utc),
+        window_start=datetime.now(timezone.utc),
+        status="published",
+        overall_score=85.5,
+        measured_weight=1.0,
+        resolution_score=90.0,
+        security_score=80.0,
+        infrastructure_score=85.0,
+        inputs={},
+        explanation={},
+    )
+
+    item = EstateSignalItem(
+        type="living_score",
+        id=snap.snapshot_id,
+        title=f"Living Score Snapshot: {snap.overall_score}/100",
+        status="published",
+        date=snap.as_of.isoformat() if snap.as_of else "",
+        detail=f"Resolution: {snap.resolution_score}, Security: {snap.security_score}, Maintenance: {snap.infrastructure_score}",
+    )
+    assert item.title == "Living Score Snapshot: 85.5/100"
+    assert "Resolution: 90.0" in item.detail
+
+    # Mock incident
+    inc = SecurityIncident(
+        incident_id=10,
+        estate_id=1,
+        category="theft",
+        severity="medium",
+        status="open",
+        occurred_at=datetime.now(timezone.utc),
+        resolution_notes="Patrol dispatched",
+    )
+    inc_item = EstateSignalItem(
+        type="incident",
+        id=inc.incident_id,
+        title=f"Security Incident: {inc.category} ({inc.severity})",
+        status=inc.status or "open",
+        date=inc.created_at.isoformat() if inc.created_at else "",
+        detail=inc.resolution_notes or "",
+    )
+    assert inc_item.detail == "Patrol dispatched"
+
