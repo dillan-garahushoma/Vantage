@@ -9,6 +9,23 @@ from app.common.enums import UserRole
 from app.core.exceptions import ForbiddenException
 from app.identity.models.user import User
 from app.identity.repositories.estate_membership_repository import EstateMembershipRepository
+from app.property.repositories.estate_repository import EstateRepository
+
+
+@dataclass(frozen=True)
+class EstateAccessSummary:
+    """A read-only view of one estate a user can act inside."""
+
+    estate_id: int
+    estate_name: str
+    suburb: str
+    city: str
+    province: str
+    membership_roles: frozenset[str]
+    property_ids: frozenset[int]
+    is_estate_admin: bool
+    is_estate_provider: bool
+    is_demo: bool = False
 
 
 @dataclass(frozen=True)
@@ -34,6 +51,61 @@ class EstateAuthorizationService:
 
     def __init__(self, db: AsyncSession) -> None:
         self._memberships = EstateMembershipRepository(db)
+        self._estates = EstateRepository(db)
+
+    async def list_accessible_estates(self, actor: User | object) -> list[EstateAccessSummary]:
+        """List the estates the actor may select, newest-safe and server-resolved.
+
+        The client never supplies an ``estate_id``; this is the only source of
+        truth for which estates a user may act in. A user still awaiting HOA
+        provisioning gets an empty list.
+        """
+        user_id = actor.user_id if hasattr(actor, "user_id") else int(actor)
+        user_role = getattr(actor, "role", "")
+
+        memberships = await self._memberships.list_for_user(user_id=user_id)
+        if not memberships:
+            return []
+
+        estate_ids = sorted({m.estate_id for m in memberships if m.estate_id is not None})
+        estates = await self._estates.get_many_by_ids(estate_ids)
+
+        grouped: dict[int, dict[str, set]] = {}
+        for membership in memberships:
+            if membership.estate_id is None or membership.estate_id not in estates:
+                continue
+            bucket = grouped.setdefault(
+                membership.estate_id, {"roles": set(), "properties": set()}
+            )
+            if membership.membership_role is not None:
+                bucket["roles"].add(membership.membership_role)
+            if membership.property_id is not None:
+                bucket["properties"].add(membership.property_id)
+
+        summaries = [
+            EstateAccessSummary(
+                estate_id=estate_id,
+                estate_name=estates[estate_id].name,
+                suburb=estates[estate_id].suburb,
+                city=estates[estate_id].city,
+                province=estates[estate_id].province,
+                membership_roles=frozenset(bucket["roles"]),
+                property_ids=frozenset(bucket["properties"]),
+                is_estate_admin=bool(
+                    user_role == UserRole.hoa_admin.value
+                    and UserRole.hoa_admin.value in bucket["roles"]
+                ),
+                is_estate_provider=bool(
+                    user_role == UserRole.service_provider.value
+                    and UserRole.service_provider.value in bucket["roles"]
+                ),
+                # A seeded demonstration estate; never real customer data.
+                is_demo=bool(getattr(estates[estate_id], "is_demo", False)),
+            )
+            for estate_id, bucket in grouped.items()
+        ]
+        summaries.sort(key=lambda s: s.estate_name.lower())
+        return summaries
 
     async def has_membership_role_in_any_estate(
         self, *, user_id: int, membership_role: str

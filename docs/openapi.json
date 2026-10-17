@@ -180,11 +180,509 @@
         "title": "AuthResponse",
         "type": "object"
       },
+      "Body_estates_upload_estate_photo": {
+        "properties": {
+          "caption": {
+            "anyOf": [
+              {
+                "maxLength": 140,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caption"
+          },
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "JPEG, PNG or WebP, at most 5 MB",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_estates_upload_estate_photo",
+        "type": "object"
+      },
+      "BriefAction": {
+        "additionalProperties": false,
+        "description": "One thing the estate could do, tied to the component it belongs to.",
+        "properties": {
+          "action": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Action",
+            "type": "string"
+          },
+          "component": {
+            "enum": [
+              "resolution",
+              "frequency",
+              "security",
+              "satisfaction",
+              "infrastructure"
+            ],
+            "title": "Component",
+            "type": "string"
+          }
+        },
+        "required": [
+          "component",
+          "action"
+        ],
+        "title": "BriefAction",
+        "type": "object"
+      },
+      "BriefComponent": {
+        "additionalProperties": false,
+        "description": "One component: its weight, its score and the aggregates it consumed.",
+        "properties": {
+          "delta_30d": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta 30D"
+          },
+          "delta_30d_abs": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta 30D Abs"
+          },
+          "delta_90d": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta 90D"
+          },
+          "delta_90d_abs": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta 90D Abs"
+          },
+          "inputs": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Inputs",
+            "type": "object"
+          },
+          "key": {
+            "enum": [
+              "resolution",
+              "frequency",
+              "security",
+              "satisfaction",
+              "infrastructure"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "status": {
+            "enum": [
+              "measured",
+              "insufficient_data"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "weight_pct": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Weight Pct",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "weight_pct",
+          "status",
+          "score"
+        ],
+        "title": "BriefComponent",
+        "type": "object"
+      },
+      "BriefDriver": {
+        "additionalProperties": false,
+        "description": "What is holding the score back, and which way it is moving.",
+        "properties": {
+          "component": {
+            "enum": [
+              "resolution",
+              "frequency",
+              "security",
+              "satisfaction",
+              "infrastructure"
+            ],
+            "title": "Component",
+            "type": "string"
+          },
+          "direction": {
+            "enum": [
+              "improving",
+              "declining",
+              "stable"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "statement": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Statement",
+            "type": "string"
+          }
+        },
+        "required": [
+          "component",
+          "direction",
+          "statement"
+        ],
+        "title": "BriefDriver",
+        "type": "object"
+      },
+      "BriefFacts": {
+        "additionalProperties": false,
+        "description": "The complete, closed description of one estate's latest score.",
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "compared_days": {
+            "default": [
+              30,
+              90
+            ],
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Compared Days",
+            "type": "array"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/BriefComponent"
+            },
+            "title": "Components",
+            "type": "array"
+          },
+          "engine_version": {
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "measured_weight": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Measured Weight",
+            "type": "string"
+          },
+          "overall": {
+            "$ref": "#/components/schemas/BriefOverall"
+          },
+          "score_max": {
+            "default": 100,
+            "title": "Score Max",
+            "type": "integer"
+          },
+          "score_min": {
+            "default": 0,
+            "title": "Score Min",
+            "type": "integer"
+          },
+          "window_days": {
+            "default": 90,
+            "title": "Window Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "engine_version",
+          "as_of",
+          "overall",
+          "measured_weight",
+          "components"
+        ],
+        "title": "BriefFacts",
+        "type": "object"
+      },
+      "BriefOutput": {
+        "additionalProperties": false,
+        "description": "The brief itself. Provider output is validated against exactly this.",
+        "properties": {
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/BriefAction"
+            },
+            "maxItems": 3,
+            "title": "Actions",
+            "type": "array"
+          },
+          "drivers": {
+            "items": {
+              "$ref": "#/components/schemas/BriefDriver"
+            },
+            "maxItems": 3,
+            "title": "Drivers",
+            "type": "array"
+          },
+          "headline": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Headline",
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "headline",
+          "summary"
+        ],
+        "title": "BriefOutput",
+        "type": "object"
+      },
+      "BriefOverall": {
+        "additionalProperties": false,
+        "description": "The composite score, its status, and how it moved.",
+        "properties": {
+          "delta_30d": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta 30D"
+          },
+          "delta_30d_abs": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta 30D Abs"
+          },
+          "delta_90d": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta 90D"
+          },
+          "delta_90d_abs": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta 90D Abs"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "status": {
+            "enum": [
+              "scored",
+              "insufficient_data"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "score",
+          "status"
+        ],
+        "title": "BriefOverall",
+        "type": "object"
+      },
+      "BulkUnitItem": {
+        "additionalProperties": false,
+        "description": "One unit in a bulk creation request.\n\n``complex_name`` and ``suburb`` are deliberately absent: both are taken from\nthe estate server-side, so a caller cannot label units with a name of their\nchoosing. Anything extra is rejected outright.",
+        "properties": {
+          "bathrooms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bathrooms"
+          },
+          "bedrooms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bedrooms"
+          },
+          "size_m2": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,9}0*$)\\d{0,6}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size M2"
+          },
+          "street_address": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Street Address",
+            "type": "string"
+          },
+          "unit_no": {
+            "maxLength": 10,
+            "minLength": 1,
+            "title": "Unit No",
+            "type": "string"
+          }
+        },
+        "required": [
+          "unit_no",
+          "street_address"
+        ],
+        "title": "BulkUnitItem",
+        "type": "object"
+      },
+      "BulkUnitsRequest": {
+        "additionalProperties": false,
+        "description": "Create many units in one all-or-nothing request (1 to 500).",
+        "properties": {
+          "units": {
+            "items": {
+              "$ref": "#/components/schemas/BulkUnitItem"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Units",
+            "type": "array"
+          }
+        },
+        "required": [
+          "units"
+        ],
+        "title": "BulkUnitsRequest",
+        "type": "object"
+      },
       "ComplaintCreate": {
+        "description": "What a resident or HOA admin files. The category and priority are the\nfixed vocabulary, so the contract publishes the allowed values (BE-1).\n\nThe response DTOs below deliberately stay plain strings: rows filed before\nthe vocabulary existed may carry a free-text category, and they must still\nread back.",
         "properties": {
           "category": {
-            "maxLength": 50,
-            "minLength": 2,
+            "enum": [
+              "water",
+              "electrical",
+              "security",
+              "noise",
+              "infrastructure",
+              "gardens",
+              "waste",
+              "parking",
+              "administrative",
+              "other"
+            ],
             "title": "Category",
             "type": "string"
           },
@@ -201,7 +699,12 @@
           },
           "priority": {
             "default": "normal",
-            "pattern": "^(low|normal|high|urgent)$",
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "urgent"
+            ],
             "title": "Priority",
             "type": "string"
           },
@@ -639,6 +1142,333 @@
         "title": "ContactResponse",
         "type": "object"
       },
+      "EstateAccessListResponse": {
+        "description": "All estates the caller can select. Empty means provisioning is pending.",
+        "properties": {
+          "estates": {
+            "items": {
+              "$ref": "#/components/schemas/EstateAccessResponse"
+            },
+            "title": "Estates",
+            "type": "array"
+          }
+        },
+        "title": "EstateAccessListResponse",
+        "type": "object"
+      },
+      "EstateAccessResponse": {
+        "description": "One estate the authenticated user has a persisted membership in.",
+        "properties": {
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "estate_name": {
+            "title": "Estate Name",
+            "type": "string"
+          },
+          "is_demo": {
+            "default": false,
+            "title": "Is Demo",
+            "type": "boolean"
+          },
+          "is_estate_admin": {
+            "title": "Is Estate Admin",
+            "type": "boolean"
+          },
+          "is_estate_provider": {
+            "title": "Is Estate Provider",
+            "type": "boolean"
+          },
+          "membership_roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Membership Roles",
+            "type": "array"
+          },
+          "property_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Property Ids",
+            "type": "array"
+          },
+          "province": {
+            "title": "Province",
+            "type": "string"
+          },
+          "suburb": {
+            "title": "Suburb",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estate_id",
+          "estate_name",
+          "suburb",
+          "city",
+          "province",
+          "membership_roles",
+          "property_ids",
+          "is_estate_admin",
+          "is_estate_provider"
+        ],
+        "title": "EstateAccessResponse",
+        "type": "object"
+      },
+      "EstatePhotoResponse": {
+        "description": "One photo of the estate, as its administrator manages it.",
+        "properties": {
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caption"
+          },
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "height": {
+            "title": "Height",
+            "type": "integer"
+          },
+          "photo_id": {
+            "title": "Photo Id",
+            "type": "integer"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "public_id": {
+            "title": "Public Id",
+            "type": "string"
+          },
+          "width": {
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "photo_id",
+          "public_id",
+          "content_type",
+          "width",
+          "height",
+          "bytes",
+          "caption",
+          "position",
+          "created_at"
+        ],
+        "title": "EstatePhotoResponse",
+        "type": "object"
+      },
+      "EstatePhotoUpdate": {
+        "additionalProperties": false,
+        "description": "Reorder or re-caption one photo. The image itself is never replaced.",
+        "properties": {
+          "caption": {
+            "anyOf": [
+              {
+                "maxLength": 140,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caption"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "maximum": 1000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          }
+        },
+        "title": "EstatePhotoUpdate",
+        "type": "object"
+      },
+      "EstateProfileResponse": {
+        "description": "The profile an estate's members can read.",
+        "properties": {
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "is_demo": {
+            "title": "Is Demo",
+            "type": "boolean"
+          },
+          "is_public": {
+            "title": "Is Public",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "province": {
+            "title": "Province",
+            "type": "string"
+          },
+          "show_living_score": {
+            "title": "Show Living Score",
+            "type": "boolean"
+          },
+          "suburb": {
+            "title": "Suburb",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estate_id",
+          "name",
+          "suburb",
+          "city",
+          "province",
+          "description",
+          "is_public",
+          "show_living_score",
+          "is_demo"
+        ],
+        "title": "EstateProfileResponse",
+        "type": "object"
+      },
+      "EstateProfileUpdate": {
+        "additionalProperties": false,
+        "description": "What an estate administrator may change. The name is not editable.",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "is_public": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Public"
+          },
+          "show_living_score": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Living Score"
+          }
+        },
+        "title": "EstateProfileUpdate",
+        "type": "object"
+      },
+      "EstateSignup": {
+        "additionalProperties": false,
+        "description": "The estate an estate_admin registers in the same transaction as their account.",
+        "properties": {
+          "city": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "City",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "maxLength": 160,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          },
+          "province": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Province",
+            "type": "string"
+          },
+          "suburb": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Suburb",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "suburb",
+          "city",
+          "province"
+        ],
+        "title": "EstateSignup",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -650,6 +1480,510 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthBriefFeedbackRequest": {
+        "additionalProperties": false,
+        "description": "A member's verdict on one stored brief. No extra fields: nothing to smuggle.",
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "helpful": {
+            "title": "Helpful",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "helpful"
+        ],
+        "title": "HealthBriefFeedbackRequest",
+        "type": "object"
+      },
+      "HealthBriefFeedbackResponse": {
+        "description": "One stored verdict.",
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "helpful": {
+            "title": "Helpful",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "insight_id": {
+            "title": "Insight Id",
+            "type": "integer"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "id",
+          "insight_id",
+          "estate_id",
+          "user_id",
+          "helpful",
+          "comment",
+          "created_at"
+        ],
+        "title": "HealthBriefFeedbackResponse",
+        "type": "object"
+      },
+      "HealthBriefResponse": {
+        "description": "The estate's brief, with the numbers it was allowed to use.",
+        "properties": {
+          "ai_unavailable_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "disabled",
+                  "policy",
+                  "budget",
+                  "timeout",
+                  "network",
+                  "provider_error",
+                  "rate_limited",
+                  "invalid_output",
+                  "truncated",
+                  "ungrounded_output",
+                  "insufficient_data"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Unavailable Reason"
+          },
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "data_origin": {
+            "enum": [
+              "demo",
+              "live"
+            ],
+            "title": "Data Origin",
+            "type": "string"
+          },
+          "facts": {
+            "$ref": "#/components/schemas/BriefFacts"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At"
+          },
+          "insight_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insight Id"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "output": {
+            "$ref": "#/components/schemas/BriefOutput"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "snapshot_id": {
+            "title": "Snapshot Id",
+            "type": "integer"
+          },
+          "source": {
+            "enum": [
+              "ai",
+              "template"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "insight_id",
+          "ai_unavailable_reason",
+          "data_origin",
+          "snapshot_id",
+          "as_of",
+          "generated_at",
+          "facts",
+          "output",
+          "provider",
+          "model",
+          "prompt_version"
+        ],
+        "title": "HealthBriefResponse",
+        "type": "object"
+      },
+      "IncidentCreate": {
+        "additionalProperties": false,
+        "description": "What an HOA admin may send when recording an incident.\n\n``estate_id``, ``status`` and ``created_by`` are deliberately absent: the\nestate comes from an authorized membership, the status always starts at\n``open`` and the author is the logged-in admin. Unknown fields are refused\nrather than silently dropped.",
+        "properties": {
+          "category": {
+            "enum": [
+              "perimeter_breach",
+              "access_control_failure",
+              "theft",
+              "vandalism",
+              "trespass",
+              "suspicious_activity",
+              "other"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "property_id": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Property Id"
+          },
+          "severity": {
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "severity",
+          "occurred_at"
+        ],
+        "title": "IncidentCreate",
+        "type": "object"
+      },
+      "IncidentResponse": {
+        "description": "One incident. The three admin-only fields are null for other members.",
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "property_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Property Id"
+          },
+          "resolution_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Notes"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "id",
+          "estate_id",
+          "category",
+          "severity",
+          "status",
+          "occurred_at",
+          "resolved_at",
+          "property_id",
+          "resolution_notes",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "IncidentResponse",
+        "type": "object"
+      },
+      "IncidentUpdate": {
+        "additionalProperties": false,
+        "description": "The only patchable fields.\n\n``category``, ``occurred_at``, ``estate_id`` and ``property_id`` are\nimmutable, and ``status`` moves only along the allowed transitions (the\nservice owns those). Because unknown fields are refused, an attempt to patch\nan immutable field is a 422 rather than a silent no-op.",
+        "properties": {
+          "resolution_notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Notes"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "low",
+                  "medium",
+                  "high",
+                  "critical"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "open",
+                  "investigating",
+                  "resolved"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "title": "IncidentUpdate",
+        "type": "object"
+      },
+      "JoinCodeCreateRequest": {
+        "additionalProperties": false,
+        "description": "Rotate the estate's join code.\n\n``expires_in_days`` is optional: an omitted value issues a code that does not\nexpire until it is rotated. The estate is never part of the body - it is a\nquery parameter, and the membership check is what proves access.",
+        "properties": {
+          "expires_in_days": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires In Days"
+          }
+        },
+        "title": "JoinCodeCreateRequest",
+        "type": "object"
+      },
+      "JoinCodeResponse": {
+        "description": "The active code, returned only from an authenticated request body/response.\n\nThe code appears here and nowhere else: never in a path, a query string, a log\nline or an error message.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          }
+        },
+        "required": [
+          "code",
+          "estate_id",
+          "created_at"
+        ],
+        "title": "JoinCodeResponse",
         "type": "object"
       },
       "LegacyPropertyScoreResponse": {
@@ -698,6 +2032,273 @@
         "title": "LegacyPropertyScoreResponse",
         "type": "object"
       },
+      "LivingScoreComponentResponse": {
+        "description": "One component of a stored score, exactly as the engine described it.",
+        "properties": {
+          "benchmark": {
+            "default": "",
+            "title": "Benchmark",
+            "type": "string"
+          },
+          "contribution": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contribution"
+          },
+          "explanation": {
+            "default": "",
+            "title": "Explanation",
+            "type": "string"
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "title": "Inputs",
+            "type": "object"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "lost_points": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lost Points"
+          },
+          "recommendation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendation"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "weight": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Weight",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "weight",
+          "status",
+          "score"
+        ],
+        "title": "LivingScoreComponentResponse",
+        "type": "object"
+      },
+      "LivingScoreHistoryResponse": {
+        "description": "A page of an estate's score history, newest first.",
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "snapshots": {
+            "items": {
+              "$ref": "#/components/schemas/LivingScoreHistoryRow"
+            },
+            "title": "Snapshots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "count",
+          "page",
+          "page_size",
+          "snapshots"
+        ],
+        "title": "LivingScoreHistoryResponse",
+        "type": "object"
+      },
+      "LivingScoreHistoryRow": {
+        "description": "A summary of one stored snapshot, for the history list.\n\nDeliberately small: the history is a trajectory, so it carries the date, the\nstatus and the number. The full breakdown is one request per snapshot away.",
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "engine_version": {
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "measured_weight": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Measured Weight",
+            "type": "string"
+          },
+          "overall_score": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall Score"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "window_start": {
+            "format": "date-time",
+            "title": "Window Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "as_of",
+          "window_start",
+          "status",
+          "overall_score",
+          "measured_weight",
+          "engine_version"
+        ],
+        "title": "LivingScoreHistoryRow",
+        "type": "object"
+      },
+      "LivingScoreSnapshotResponse": {
+        "description": "One stored Living Score calculation, with its full breakdown.",
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "calculated_at": {
+            "format": "date-time",
+            "title": "Calculated At",
+            "type": "string"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/LivingScoreComponentResponse"
+            },
+            "title": "Components",
+            "type": "array"
+          },
+          "drivers": {
+            "items": {
+              "$ref": "#/components/schemas/LivingScoreComponentResponse"
+            },
+            "title": "Drivers",
+            "type": "array"
+          },
+          "engine_version": {
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_demo": {
+            "title": "Is Demo",
+            "type": "boolean"
+          },
+          "measured_weight": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Measured Weight",
+            "type": "string"
+          },
+          "overall_score": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall Score"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "window_start": {
+            "format": "date-time",
+            "title": "Window Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "estate_id",
+          "engine_version",
+          "as_of",
+          "window_start",
+          "calculated_at",
+          "status",
+          "overall_score",
+          "measured_weight",
+          "is_demo",
+          "components",
+          "drivers"
+        ],
+        "title": "LivingScoreSnapshotResponse",
+        "type": "object"
+      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -715,6 +2316,144 @@
           "password"
         ],
         "title": "LoginRequest",
+        "type": "object"
+      },
+      "MembershipJoinRequest": {
+        "additionalProperties": false,
+        "description": "A resident's join request: the shared code plus their unit number.\n\nThe code is normalised again inside the service (case, spaces and hyphens are\nall tolerated), so this DTO only trims it and enforces a length.",
+        "properties": {
+          "code": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "unit_no": {
+            "maxLength": 10,
+            "minLength": 1,
+            "title": "Unit No",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "unit_no"
+        ],
+        "title": "MembershipJoinRequest",
+        "type": "object"
+      },
+      "MembershipJoinResponse": {
+        "description": "The narrow confirmation a resident gets after joining.\n\nDeliberately tiny: the estate they can now act in, the unit the membership is\nattached to, and the role. Never the code, never another member, never any\nother estate's data.",
+        "properties": {
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "estate_name": {
+            "title": "Estate Name",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          },
+          "unit_no": {
+            "title": "Unit No",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estate_id",
+          "estate_name",
+          "unit_id",
+          "unit_no",
+          "role"
+        ],
+        "title": "MembershipJoinResponse",
+        "type": "object"
+      },
+      "MembershipProviderAddRequest": {
+        "additionalProperties": false,
+        "description": "An estate admin adding a registered service provider to their estate.\n\nThe email is the only input: the estate comes from ``?estate_id=`` and the\nprovider's own account and profile already exist (they registered\nthemselves). A ``user_id`` or ``provider_id`` here would let an admin bind\nthe wrong account.",
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "MembershipProviderAddRequest",
+        "type": "object"
+      },
+      "MembershipResponse": {
+        "description": "One row of the admin's member list.",
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "joined_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Joined At"
+          },
+          "membership_id": {
+            "title": "Membership Id",
+            "type": "integer"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "unit_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit No"
+          }
+        },
+        "required": [
+          "membership_id",
+          "role"
+        ],
+        "title": "MembershipResponse",
         "type": "object"
       },
       "Page_AnnouncementResponse_": {
@@ -789,6 +2528,78 @@
         "title": "Page[ComplaintResponse]",
         "type": "object"
       },
+      "Page_IncidentResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[IncidentResponse]",
+        "type": "object"
+      },
+      "Page_MembershipResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MembershipResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[MembershipResponse]",
+        "type": "object"
+      },
       "Page_PropertyResponse_": {
         "properties": {
           "items": {
@@ -823,6 +2634,78 @@
           "size"
         ],
         "title": "Page[PropertyResponse]",
+        "type": "object"
+      },
+      "Page_PublicEstateListItem_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublicEstateListItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[PublicEstateListItem]",
+        "type": "object"
+      },
+      "Page_ResidencyRequestResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ResidencyRequestResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[ResidencyRequestResponse]",
         "type": "object"
       },
       "Page_ServiceProviderResponse_": {
@@ -895,6 +2778,20 @@
           "size"
         ],
         "title": "Page[WorkOrderResponse]",
+        "type": "object"
+      },
+      "PendingResidencyCountResponse": {
+        "description": "The badge number for the admin navigation.",
+        "properties": {
+          "pending": {
+            "title": "Pending",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pending"
+        ],
+        "title": "PendingResidencyCountResponse",
         "type": "object"
       },
       "PropertyCreate": {
@@ -1073,14 +2970,258 @@
         "title": "PropertyResponse",
         "type": "object"
       },
+      "ProviderSignup": {
+        "additionalProperties": false,
+        "description": "The minimal provider profile created alongside a service_provider account.\n\nThe profile's email and full name are the account's, so they are not accepted\nhere; ``verified`` is always false and only a platform admin may change it.",
+        "properties": {
+          "phone": {
+            "maxLength": 20,
+            "minLength": 5,
+            "title": "Phone",
+            "type": "string"
+          },
+          "trade": {
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Trade",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trade",
+          "phone"
+        ],
+        "title": "ProviderSignup",
+        "type": "object"
+      },
+      "PublicEstateDetailResponse": {
+        "description": "The public detail page for one published estate.",
+        "properties": {
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "living_score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PublicLivingScoreSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/PublicPhotoResponse"
+            },
+            "title": "Photos",
+            "type": "array"
+          },
+          "province": {
+            "title": "Province",
+            "type": "string"
+          },
+          "suburb": {
+            "title": "Suburb",
+            "type": "string"
+          },
+          "unit_count": {
+            "title": "Unit Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "estate_id",
+          "name",
+          "suburb",
+          "city",
+          "province",
+          "description",
+          "unit_count"
+        ],
+        "title": "PublicEstateDetailResponse",
+        "type": "object"
+      },
+      "PublicEstateListItem": {
+        "description": "One row of the public grid.",
+        "properties": {
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "cover_photo_public_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Photo Public Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "province": {
+            "title": "Province",
+            "type": "string"
+          },
+          "suburb": {
+            "title": "Suburb",
+            "type": "string"
+          },
+          "unit_count": {
+            "title": "Unit Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "estate_id",
+          "name",
+          "suburb",
+          "city",
+          "province",
+          "description",
+          "unit_count",
+          "cover_photo_public_id"
+        ],
+        "title": "PublicEstateListItem",
+        "type": "object"
+      },
+      "PublicLivingScoreSummary": {
+        "description": "Four fields of the latest stored snapshot, and nothing else.\n\n``data_origin`` is ``\"demo\"`` for a seeded demonstration estate (the frontend\nhas to badge that honestly) and ``\"live\"`` otherwise. The per-component\nbreakdown, the drivers and the raw inputs stay internal: they are operational\ndetail about a private community.",
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "data_origin": {
+            "title": "Data Origin",
+            "type": "string"
+          },
+          "engine_version": {
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "overall_score": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall Score"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "overall_score",
+          "status",
+          "as_of",
+          "engine_version",
+          "data_origin"
+        ],
+        "title": "PublicLivingScoreSummary",
+        "type": "object"
+      },
+      "PublicPhotoResponse": {
+        "description": "One photo of a public estate: the unguessable handle and its caption.",
+        "properties": {
+          "caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caption"
+          },
+          "public_id": {
+            "title": "Public Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "public_id",
+          "caption"
+        ],
+        "title": "PublicPhotoResponse",
+        "type": "object"
+      },
       "RegisterRequest": {
         "additionalProperties": false,
-        "description": "Public registration contract.\n\nPrivileged roles are deliberately absent: HOA and provider access is\nprovisioned through an existing estate membership, never self-selected.",
+        "description": "Public registration contract.\n\nA person may register as a resident, as an estate admin (registering their\nestate in the same step) or as a service provider. A ``role`` field is still\nrejected: the role always follows from ``account_type``, never the request.",
         "properties": {
+          "account_type": {
+            "default": "resident",
+            "enum": [
+              "resident",
+              "estate_admin",
+              "service_provider"
+            ],
+            "title": "Account Type",
+            "type": "string"
+          },
           "email": {
             "format": "email",
             "title": "Email",
             "type": "string"
+          },
+          "estate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstateSignup"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "full_name": {
             "maxLength": 100,
@@ -1104,6 +3245,16 @@
             ],
             "title": "Phoneno"
           },
+          "provider": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProviderSignup"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "unit_no": {
             "anyOf": [
               {
@@ -1123,6 +3274,172 @@
         ],
         "title": "RegisterRequest",
         "type": "object"
+      },
+      "ResidencyRequestCreate": {
+        "additionalProperties": false,
+        "description": "A resident's request to be admitted to one unit of one estate.",
+        "properties": {
+          "estate_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "unit_no": {
+            "maxLength": 10,
+            "minLength": 1,
+            "title": "Unit No",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estate_id",
+          "unit_no"
+        ],
+        "title": "ResidencyRequestCreate",
+        "type": "object"
+      },
+      "ResidencyRequestReject": {
+        "additionalProperties": false,
+        "description": "The optional reason an administrator declining a request may record.",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "title": "ResidencyRequestReject",
+        "type": "object"
+      },
+      "ResidencyRequestResponse": {
+        "description": "One residency request, as the admin queue or the resident's own list shows it.",
+        "properties": {
+          "applicant_email": {
+            "title": "Applicant Email",
+            "type": "string"
+          },
+          "applicant_name": {
+            "title": "Applicant Name",
+            "type": "string"
+          },
+          "applicant_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicant Phone"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decision_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Note"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "estate_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estate Name"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "unit_no": {
+            "title": "Unit No",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "estate_id",
+          "unit_no",
+          "status",
+          "applicant_name",
+          "applicant_email",
+          "created_at"
+        ],
+        "title": "ResidencyRequestResponse",
+        "type": "object"
+      },
+      "ResidencyRequestStatus": {
+        "description": "The lifecycle of a resident's request to join an estate.\n\nA request is created ``pending`` by the resident and is only ever moved to\n``approved`` or ``rejected`` by an estate administrator of the *same* estate.\nThe three values are the database check constraint and the API vocabulary; a\nnew state is a migration, never a string typed at a call site.",
+        "enum": [
+          "pending",
+          "approved",
+          "rejected"
+        ],
+        "title": "ResidencyRequestStatus",
+        "type": "string"
       },
       "ServiceProviderResponse": {
         "properties": {
@@ -1190,6 +3507,289 @@
           "emergency_available"
         ],
         "title": "ServiceProviderResponse",
+        "type": "object"
+      },
+      "TriageDecisionRequest": {
+        "description": "An HOA admin's decision on one suggestion.\n\n``accepted`` copies the suggestion; ``overridden`` supplies at least one\ncorrected label; ``dismissed`` supplies none. Which combination is legal is\ndecided by the service, because only it knows the suggestion being decided.",
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "water",
+                  "electrical",
+                  "security",
+                  "noise",
+                  "infrastructure",
+                  "gardens",
+                  "waste",
+                  "parking",
+                  "administrative",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "decision": {
+            "enum": [
+              "accepted",
+              "overridden",
+              "dismissed"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "enum": [
+                  "low",
+                  "normal",
+                  "high",
+                  "urgent"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "trade": {
+            "anyOf": [
+              {
+                "enum": [
+                  "plumber",
+                  "electrician",
+                  "security",
+                  "landscaping",
+                  "general_maintenance",
+                  "pest_control",
+                  "roofing",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trade"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "title": "TriageDecisionRequest",
+        "type": "object"
+      },
+      "TriageSuggestionResponse": {
+        "description": "One stored suggestion and its (write-once) decision.",
+        "properties": {
+          "complaint_id": {
+            "title": "Complaint Id",
+            "type": "integer"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided By"
+          },
+          "decided_category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "water",
+                  "electrical",
+                  "security",
+                  "noise",
+                  "infrastructure",
+                  "gardens",
+                  "waste",
+                  "parking",
+                  "administrative",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided Category"
+          },
+          "decided_priority": {
+            "anyOf": [
+              {
+                "enum": [
+                  "low",
+                  "normal",
+                  "high",
+                  "urgent"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided Priority"
+          },
+          "decided_trade": {
+            "anyOf": [
+              {
+                "enum": [
+                  "plumber",
+                  "electrician",
+                  "security",
+                  "landscaping",
+                  "general_maintenance",
+                  "pest_control",
+                  "roofing",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided Trade"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "prompt_version": {
+            "title": "Prompt Version",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "suggested_category": {
+            "enum": [
+              "water",
+              "electrical",
+              "security",
+              "noise",
+              "infrastructure",
+              "gardens",
+              "waste",
+              "parking",
+              "administrative",
+              "other"
+            ],
+            "title": "Suggested Category",
+            "type": "string"
+          },
+          "suggested_priority": {
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "urgent"
+            ],
+            "title": "Suggested Priority",
+            "type": "string"
+          },
+          "suggested_trade": {
+            "anyOf": [
+              {
+                "enum": [
+                  "plumber",
+                  "electrician",
+                  "security",
+                  "landscaping",
+                  "general_maintenance",
+                  "pest_control",
+                  "roofing",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Trade"
+          }
+        },
+        "required": [
+          "id",
+          "complaint_id",
+          "estate_id",
+          "suggested_category",
+          "suggested_priority",
+          "suggested_trade",
+          "provider",
+          "model",
+          "prompt_version",
+          "decision",
+          "decided_by",
+          "decided_at",
+          "decided_category",
+          "decided_priority",
+          "decided_trade",
+          "created_at"
+        ],
+        "title": "TriageSuggestionResponse",
         "type": "object"
       },
       "UserResponse": {
@@ -1597,6 +4197,350 @@
         "summary": "Root"
       }
     },
+    "/api/v1/analytics/health-brief": {
+      "get": {
+        "description": "The latest brief for this estate. Never calls a provider, never writes.",
+        "operationId": "analytics_get_health_brief",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthBriefResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Health Brief",
+        "tags": [
+          "analytics",
+          "analytics"
+        ]
+      },
+      "post": {
+        "description": "Generate the brief for the latest score, or return the stored one.",
+        "operationId": "analytics_generate_health_brief",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthBriefResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Generate Health Brief",
+        "tags": [
+          "analytics",
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/health-brief/{insight_id}/feedback": {
+      "post": {
+        "description": "Rate one stored brief. The comment stays in this database.",
+        "operationId": "analytics_submit_health_brief_feedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "insight_id",
+            "required": true,
+            "schema": {
+              "title": "Insight Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HealthBriefFeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthBriefFeedbackResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Submit Health Brief Feedback",
+        "tags": [
+          "analytics",
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/living-score": {
+      "get": {
+        "description": "The estate's most recent stored score. Any estate member may read it.",
+        "operationId": "analytics_get_latest_living_score",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LivingScoreSnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Latest Living Score",
+        "tags": [
+          "analytics",
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/living-score/history": {
+      "get": {
+        "description": "Stored snapshots, newest first. Values are returned exactly as stored.",
+        "operationId": "analytics_get_living_score_history",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "1-based page number.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "1-based page number.",
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Snapshots per page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "description": "Snapshots per page.",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LivingScoreHistoryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Living Score History",
+        "tags": [
+          "analytics",
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/living-score/recalculate": {
+      "post": {
+        "description": "Calculate and append a new snapshot. Snapshots are never rewritten.",
+        "operationId": "analytics_recalculate_living_score",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LivingScoreSnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Recalculate Living Score",
+        "tags": [
+          "analytics",
+          "analytics"
+        ]
+      }
+    },
     "/api/v1/analytics/status": {
       "get": {
         "operationId": "analytics_analytics_status",
@@ -1930,9 +4874,36 @@
         ]
       }
     },
+    "/api/v1/auth/estates": {
+      "get": {
+        "description": "Return the estates this user has a persisted membership in.\n\nThe estate is the tenant boundary, so the frontend must let the user pick\nfrom this server-resolved list rather than typing an ``estate_id``. An empty\nlist means the user is registered but not yet provisioned by an HOA.",
+        "operationId": "identity_my_estates",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstateAccessListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "My Estates",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
-        "description": "Authenticate and return a JWT.",
+        "description": "Authenticate and return a JWT.\n\nEvery attempt is recorded for security monitoring and a per-account\nfailure window is enforced before credentials are verified.",
         "operationId": "identity_login",
         "requestBody": {
           "content": {
@@ -2343,6 +5314,188 @@
         ]
       }
     },
+    "/api/v1/complaints/{complaint_id}/ai-suggestion": {
+      "get": {
+        "description": "Return the stored suggestion, or 404 when none has been requested.",
+        "operationId": "complaints_get_ai_suggestion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "complaint_id",
+            "required": true,
+            "schema": {
+              "title": "Complaint Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriageSuggestionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Ai Suggestion",
+        "tags": [
+          "complaints"
+        ]
+      },
+      "post": {
+        "description": "Ask for the triage suggestion for one complaint.\n\nIdempotent: the first call asks the AI layer and stores exactly one\nsuggestion; later calls return the stored row without another provider call.",
+        "operationId": "complaints_request_ai_suggestion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "complaint_id",
+            "required": true,
+            "schema": {
+              "title": "Complaint Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriageSuggestionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Request Ai Suggestion",
+        "tags": [
+          "complaints"
+        ]
+      }
+    },
+    "/api/v1/complaints/{complaint_id}/ai-suggestion/decision": {
+      "post": {
+        "description": "Accept, override or dismiss the suggestion. Write-once.",
+        "operationId": "complaints_decide_ai_suggestion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "complaint_id",
+            "required": true,
+            "schema": {
+              "title": "Complaint Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TriageDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriageSuggestionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Decide Ai Suggestion",
+        "tags": [
+          "complaints"
+        ]
+      }
+    },
     "/api/v1/complaints/{complaint_id}/events": {
       "get": {
         "operationId": "complaints_list_complaint_events",
@@ -2471,6 +5624,64 @@
         ]
       }
     },
+    "/api/v1/complaints/{complaint_id}/work-order": {
+      "get": {
+        "description": "The work order raised for this complaint.\n\nRead by the complaint's author (so they can see progress without being able\nto list the estate's work) or by an HOA admin of the estate. The DTO is the\nexisting work-order response, unchanged.",
+        "operationId": "complaints_get_complaint_work_order",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "complaint_id",
+            "required": true,
+            "schema": {
+              "title": "Complaint Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Complaint Work Order",
+        "tags": [
+          "complaints"
+        ]
+      }
+    },
     "/api/v1/contact": {
       "post": {
         "operationId": "contact_submit_contact_message",
@@ -2509,6 +5720,1051 @@
         "summary": "Submit Contact Message",
         "tags": [
           "contact"
+        ]
+      }
+    },
+    "/api/v1/estates/photos": {
+      "get": {
+        "description": "The estate's photos in display order. Any member of the estate may read.",
+        "operationId": "estates_list_estate_photos",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EstatePhotoResponse"
+                  },
+                  "title": "Response Estates List Estate Photos",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Estate Photos",
+        "tags": [
+          "estates"
+        ]
+      },
+      "post": {
+        "description": "Upload one photo, re-encoded and stored server-side under a random id.\n\nThe bytes are read with a hard ceiling (never the whole file into memory\nfirst), then decoded, capped and re-encoded by the service. The uploaded\nfilename is ignored.",
+        "operationId": "estates_upload_estate_photo",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_estates_upload_estate_photo"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstatePhotoResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Upload Estate Photo",
+        "tags": [
+          "estates"
+        ]
+      }
+    },
+    "/api/v1/estates/photos/{photo_id}": {
+      "delete": {
+        "description": "Delete one photo's row and its files. HOA admins only.",
+        "operationId": "estates_delete_estate_photo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "photo_id",
+            "required": true,
+            "schema": {
+              "title": "Photo Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Delete Estate Photo",
+        "tags": [
+          "estates"
+        ]
+      },
+      "patch": {
+        "description": "Re-caption or reorder one photo. HOA admins only; the image is immutable.",
+        "operationId": "estates_update_estate_photo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "photo_id",
+            "required": true,
+            "schema": {
+              "title": "Photo Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstatePhotoUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstatePhotoResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Estate Photo",
+        "tags": [
+          "estates"
+        ]
+      }
+    },
+    "/api/v1/estates/profile": {
+      "get": {
+        "description": "The estate profile. Any member of the estate may read it.",
+        "operationId": "estates_get_estate_profile",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstateProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Estate Profile",
+        "tags": [
+          "estates"
+        ]
+      },
+      "patch": {
+        "description": "Change the description and/or the publish switches. HOA admins only.\n\nThe name is not part of this contract, and an unknown field is a 422 rather\nthan a silent no-op.",
+        "operationId": "estates_update_estate_profile",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstateProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstateProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Estate Profile",
+        "tags": [
+          "estates"
+        ]
+      }
+    },
+    "/api/v1/incidents": {
+      "get": {
+        "description": "Every estate member may see that incidents happened.",
+        "operationId": "incidents_list_incidents",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "open",
+                    "investigating",
+                    "resolved"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "severity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high",
+                    "critical"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "perimeter_breach",
+                    "access_control_failure",
+                    "theft",
+                    "vandalism",
+                    "trespass",
+                    "suspicious_activity",
+                    "other"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "occurred_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Occurred From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "occurred_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Occurred To"
+            }
+          },
+          {
+            "description": "1-based page number.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "1-based page number.",
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Items per page.",
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "description": "Items per page.",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_IncidentResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Incidents",
+        "tags": [
+          "incidents"
+        ]
+      },
+      "post": {
+        "description": "Record an incident. The estate is the query's, the author is the admin's.",
+        "operationId": "incidents_create_incident",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Incident",
+        "tags": [
+          "incidents"
+        ]
+      }
+    },
+    "/api/v1/incidents/{incident_id}": {
+      "get": {
+        "operationId": "incidents_get_incident",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "incident_id",
+            "required": true,
+            "schema": {
+              "title": "Incident Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Incident",
+        "tags": [
+          "incidents"
+        ]
+      },
+      "patch": {
+        "description": "Update severity, status or the resolution notes. `resolved` is terminal.",
+        "operationId": "incidents_update_incident",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "incident_id",
+            "required": true,
+            "schema": {
+              "title": "Incident Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Incident",
+        "tags": [
+          "incidents"
+        ]
+      }
+    },
+    "/api/v1/join-codes": {
+      "post": {
+        "description": "Revoke the current code and issue a new one.",
+        "operationId": "identity_rotate_join_code",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinCodeCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JoinCodeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Rotate Join Code",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/join-codes/current": {
+      "get": {
+        "description": "Return the estate's active join code, or 404 when there is none.",
+        "operationId": "identity_current_join_code",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JoinCodeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Current Join Code",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/memberships": {
+      "get": {
+        "description": "List this estate's members, newest first.",
+        "operationId": "identity_list_members",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_MembershipResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Members",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/memberships/join": {
+      "post": {
+        "description": "Join the estate your code belongs to, against your unit number.\n\nNo approval step: the code and the unit number are the whole proof. A\nmistyped or unusable code is a uniform 404, and five of them in fifteen\nminutes is a 429.",
+        "operationId": "identity_join_estate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembershipJoinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipJoinResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Join Estate",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/memberships/providers": {
+      "post": {
+        "description": "Add an already-registered service provider to this estate, by email.\n\nThe service owns the one commit (membership + ``joined`` event) and answers a\nsingle uniform 404 for every email that is not a registered provider, 409\nwhen they are already a member, and 429 after five failed lookups.",
+        "operationId": "identity_add_provider_member",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembershipProviderAddRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Add Provider Member",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/memberships/{membership_id}": {
+      "delete": {
+        "description": "Remove a resident or provider membership of this estate.",
+        "operationId": "identity_remove_member",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "membership_id",
+            "required": true,
+            "schema": {
+              "title": "Membership Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Remove Member",
+        "tags": [
+          "identity"
         ]
       }
     },
@@ -2713,6 +6969,69 @@
         ]
       }
     },
+    "/api/v1/properties/bulk": {
+      "post": {
+        "description": "Create up to 500 units in one estate, all or nothing.\n\nThe estate is required as a query parameter and the caller must be an\n``hoa_admin`` *member* of it. ``complex_name`` and ``suburb`` come from the\nestate, never from the body.",
+        "operationId": "property_create_units_bulk",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUnitsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PropertyResponse"
+                  },
+                  "title": "Response Property Create Units Bulk",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Units Bulk",
+        "tags": [
+          "property"
+        ]
+      }
+    },
     "/api/v1/properties/{unit_id}": {
       "get": {
         "description": "Fetch a single property by id.",
@@ -2832,8 +7151,21 @@
     },
     "/api/v1/providers": {
       "get": {
+        "description": "The estate's provider directory: only providers who are members of it.\n\n``estate_id`` is required and is authorized against a persisted\n``hoa_admin`` membership inside the service, so a client-supplied estate is\nnever proof of access. Provider phone numbers and email addresses appear in\nthis response and are shown here (and on ``/providers/me``) only.",
         "operationId": "providers_list_providers",
         "parameters": [
+          {
+            "description": "The estate whose directory this is.",
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "description": "The estate whose directory this is.",
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
           {
             "description": "e.g. plumber",
             "in": "query",
@@ -2946,6 +7278,33 @@
         ]
       }
     },
+    "/api/v1/providers/me": {
+      "get": {
+        "description": "The signed-in service provider's own profile, estate-independent.",
+        "operationId": "providers_get_my_provider",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceProviderResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get My Provider",
+        "tags": [
+          "providers"
+        ]
+      }
+    },
     "/api/v1/providers/{provider_id}": {
       "get": {
         "operationId": "providers_get_provider",
@@ -2956,6 +7315,16 @@
             "required": true,
             "schema": {
               "title": "Provider Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
               "type": "integer"
             }
           }
@@ -2990,6 +7359,538 @@
         "summary": "Get Provider",
         "tags": [
           "providers"
+        ]
+      }
+    },
+    "/api/v1/public/estates": {
+      "get": {
+        "description": "Published estates, with a cover photo and a unit count each.",
+        "operationId": "public_list_public_estates",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "name, suburb or city",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 80,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "name, suburb or city",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PublicEstateListItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Public Estates",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/api/v1/public/estates/{estate_id}": {
+      "get": {
+        "description": "One published estate: photos, description, and its score only if opted in.",
+        "operationId": "public_get_public_estate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEstateDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Public Estate",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/api/v1/public/photos/{public_id}": {
+      "get": {
+        "description": "One stored image by its public handle, at ``thumb`` or ``full`` size.",
+        "operationId": "public_get_public_photo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "public_id",
+            "required": true,
+            "schema": {
+              "maxLength": 32,
+              "minLength": 1,
+              "title": "Public Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": "full",
+              "enum": [
+                "thumb",
+                "full"
+              ],
+              "title": "Size",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Public Photo",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/api/v1/residency-requests": {
+      "get": {
+        "description": "One page of this estate's requests, searchable and filterable by status.",
+        "operationId": "identity_list_residency_requests",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ResidencyRequestStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ResidencyRequestResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Residency Requests",
+        "tags": [
+          "identity"
+        ]
+      },
+      "post": {
+        "description": "Submit a request to be admitted to one unit of one estate.\n\nNothing is granted here: the request is recorded ``pending`` and the estate's\nadministrators are notified. A repeat submission while one is pending is a 409,\nand repeated attempts against unknown units are rate-limited.",
+        "operationId": "identity_submit_residency_request",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResidencyRequestCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidencyRequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Submit Residency Request",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/residency-requests/mine": {
+      "get": {
+        "description": "The requests the caller submitted, newest first, across all estates.",
+        "operationId": "identity_my_residency_requests",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ResidencyRequestResponse"
+                  },
+                  "title": "Response Identity My Residency Requests",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "My Residency Requests",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/residency-requests/pending-count": {
+      "get": {
+        "description": "How many requests this estate has still to decide, for the nav badge.",
+        "operationId": "identity_pending_residency_count",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingResidencyCountResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Pending Residency Count",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/residency-requests/{request_id}/approve": {
+      "post": {
+        "description": "Approve a pending request and grant the resident membership of the unit.\n\nHOA administrators only. A request that another administrator already decided\nis a 409, not an overwrite.",
+        "operationId": "identity_approve_residency_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidencyRequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Approve Residency Request",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/residency-requests/{request_id}/reject": {
+      "post": {
+        "description": "Decline a pending request, recording an optional reason. HOA admins only.",
+        "operationId": "identity_reject_residency_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResidencyRequestReject"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidencyRequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Reject Residency Request",
+        "tags": [
+          "identity"
         ]
       }
     },
@@ -3182,6 +8083,94 @@
           }
         ],
         "summary": "Create Work Order",
+        "tags": [
+          "work orders"
+        ]
+      }
+    },
+    "/api/v1/work-orders/mine": {
+      "get": {
+        "description": "The signed-in provider's own assigned work in this estate, newest first.",
+        "operationId": "work_orders_list_my_work_orders",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkOrderStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_WorkOrderResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List My Work Orders",
         "tags": [
           "work orders"
         ]

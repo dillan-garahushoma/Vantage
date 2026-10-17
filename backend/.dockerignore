@@ -1,5 +1,14 @@
 .venv/
 venv/
 __pycache__/
+.pytest_cache/
 .git/
 .idea/
+
+# Never ship secrets or provider credentials inside the image
+.env
+.env.*
+!.env.example
+
+# Uploaded estate photos (metadata is in the database; the bytes are not)
+uploads/

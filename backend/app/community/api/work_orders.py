@@ -50,6 +50,26 @@ async def list_work_orders(
     )
 
 
+# Declared before "/{work_order_id}" so "mine" is never parsed as an id.
+@router.get("/mine", response_model=Page[WorkOrderResponse])
+async def list_my_work_orders(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    provider: ProviderOnly,
+    estate_id: Annotated[int, Query(gt=0)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=100)] = 20,
+    status: Annotated[WorkOrderStatus | None, Query()] = None,
+) -> Page[WorkOrderResponse]:
+    """The signed-in provider's own assigned work in this estate, newest first."""
+    return await WorkOrderService(db).list_my_work_orders(
+        provider,
+        estate_id=estate_id,
+        page=page,
+        size=size,
+        status=status.value if status else None,
+    )
+
+
 @router.get("/{work_order_id}", response_model=WorkOrderResponse)
 async def get_work_order(
     work_order_id: int,

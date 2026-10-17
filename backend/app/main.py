@@ -9,8 +9,10 @@ from fastapi.routing import APIRoute
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.router import api_router
+from app.core.ai.errors import AIUnavailableError
 from app.core.config import get_settings
 from app.core.error_handlers import (
+    ai_unavailable_exception_handler,
     http_exception_handler,
     starlette_exception_handler,
     unhandled_exception_handler,
@@ -93,6 +95,8 @@ app.add_middleware(RequestIdMiddleware)
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(StarletteHTTPException, starlette_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
+# Optional AI features degrade to 503 rather than looking like a server bug.
+app.add_exception_handler(AIUnavailableError, ai_unavailable_exception_handler)
 app.add_exception_handler(Exception, unhandled_exception_handler)
 
 # add CORS middelware

@@ -74,6 +74,21 @@ class PropertyRepository:
         result = await self._db.execute(stmt)
         return int(result.scalar_one())
 
+    async def counts_for_estates(self, *, estate_ids: list[int]) -> dict[int, int]:
+        """How many units each of several estates has, in one grouped query.
+
+        The public grid needs a unit count per estate; doing it per row would be
+        one query per estate on an unauthenticated endpoint.
+        """
+        if not estate_ids:
+            return {}
+        result = await self._db.execute(
+            select(Property.estate_id, func.count(Property.unit_id))
+            .where(Property.estate_id.in_(estate_ids))
+            .group_by(Property.estate_id)
+        )
+        return {row[0]: int(row[1]) for row in result.all()}
+
     async def get_by_id(self, unit_id: int) -> Property | None:
         result = await self._db.execute(select(Property).where(Property.unit_id == unit_id))
         return result.scalar_one_or_none()
@@ -106,9 +121,44 @@ class PropertyRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_by_unit_no_in_estate_ci(
+        self, *, estate_id: int, unit_no: str
+    ) -> Property | None:
+        """Find a unit by number inside one estate, ignoring case and padding.
+
+        The schema's uniqueness rule is case-sensitive, so two units could in
+        principle differ only by case. The lowest unit id wins so the lookup is
+        deterministic rather than raising; ADR-007 records that as an open
+        question.
+        """
+        result = await self._db.execute(
+            select(Property)
+            .where(
+                Property.estate_id == estate_id,
+                func.lower(Property.unit_no) == unit_no.strip().lower(),
+            )
+            .order_by(Property.unit_id)
+            .limit(1)
+        )
+        return result.scalars().first()
+
+    async def list_unit_nos_in_estate(self, *, estate_id: int) -> set[str]:
+        """Every unit number already used inside an estate."""
+        result = await self._db.execute(
+            select(Property.unit_no).where(Property.estate_id == estate_id)
+        )
+        return {row[0] for row in result.all()}
+
     async def create(self, **fields) -> Property:
         property_ = Property(**fields)
         self._db.add(property_)
         await self._db.commit()
         await self._db.refresh(property_)
+        return property_
+
+    async def add(self, **fields) -> Property:
+        """Add a unit without committing; the bulk service commits once."""
+        property_ = Property(**fields)
+        self._db.add(property_)
+        await self._db.flush()
         return property_

@@ -1,5 +1,7 @@
-# Use an official Python runtime as a parent image
-FROM python:3.10-slim
+# The interpreter the code actually runs on. It must be 3.11 or newer: the
+# vocabulary modules build Literal types from tuples (PEP 646), which 3.10
+# cannot parse. This matches the developer virtualenv.
+FROM python:3.14-slim
 
 # Set the working directory in the container
 WORKDIR /app
@@ -17,4 +19,4 @@ COPY . .
 EXPOSE 8000
 
 # Run Alembic migrations then start Uvicorn when the container launches
-CMD sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+CMD sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app"

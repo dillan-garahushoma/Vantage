@@ -44,6 +44,20 @@ async def get_current_user(
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
+
+
+async def get_current_user_optional(
+    token: Annotated[str | None, Depends(oauth2_scheme_optional)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> User | None:
+    if not token:
+        return None
+    try:
+        return await get_current_user(token, db)
+    except Exception:
+        return None
+
 
 def require_roles(*roles: str):
     """Factory that returns a dependency enforcing one of the given roles."""

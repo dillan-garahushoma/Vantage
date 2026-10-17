@@ -2,13 +2,19 @@ from enum import Enum
 
 
 class UserRole(str, Enum):
-    """VALORA user roles for RBAC."""
+    """VALORA user roles for RBAC.
+
+    ``platform_admin`` is VALORA's own operator role. It is never self-selected:
+    it is assigned only through an operator CLI (see
+    ``scripts/assign_platform_admin.py``) and it is what a provider write requires.
+    """
     casual_visitor = "casual_visitor"
     resident = "resident"
     investor = "investor"
     estate_agent = "estate_agent"
     hoa_admin = "hoa_admin"
     service_provider = "service_provider"
+    platform_admin = "platform_admin"
 
 
 class ComplaintStatus(str, Enum):
@@ -33,3 +39,17 @@ class ListingStatus(str, Enum):
     active = "active"
     sold = "sold"
     withdrawn = "withdrawn"
+
+
+class ResidencyRequestStatus(str, Enum):
+    """The lifecycle of a resident's request to join an estate.
+
+    A request is created ``pending`` by the resident and is only ever moved to
+    ``approved`` or ``rejected`` by an estate administrator of the *same* estate.
+    The three values are the database check constraint and the API vocabulary; a
+    new state is a migration, never a string typed at a call site.
+    """
+
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"

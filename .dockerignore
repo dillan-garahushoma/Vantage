@@ -1,0 +1,26 @@
+# The frontend image is built with the repository root as its context, because
+# `npm run build` type-checks the generated contract against docs/openapi.json,
+# which lives outside frontend/. Keep that context small and free of secrets.
+.git
+.github
+.idea
+.freebuff
+.agents
+.pytest_cache
+.venv
+
+**/__pycache__
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+
+backend/venv
+backend/uploads
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+scratch
+batches
+phase 1
+docs/**/*.pdf

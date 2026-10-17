@@ -10,6 +10,7 @@ from app.analytics.services.living_score_service import LegacyPropertyScoreServi
 from app.db.session import get_db
 from app.identity.api.dependencies import CurrentUser
 from app.property.schemas.property import (
+    BulkUnitsRequest,
     PropertyCreate,
     PropertyResponse,
 )
@@ -82,3 +83,21 @@ async def create_property(
 ) -> PropertyResponse:
     """Register a new unit/property (HOA admins only)."""
     return await PropertyService(db).create_property(payload, current_user)
+
+
+@router.post("/bulk", response_model=list[PropertyResponse], status_code=201)
+async def create_units_bulk(
+    payload: BulkUnitsRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: CurrentUser,
+    estate_id: Annotated[int, Query(gt=0)],
+) -> list[PropertyResponse]:
+    """Create up to 500 units in one estate, all or nothing.
+
+    The estate is required as a query parameter and the caller must be an
+    ``hoa_admin`` *member* of it. ``complex_name`` and ``suburb`` come from the
+    estate, never from the body.
+    """
+    return await PropertyService(db).create_units_bulk(
+        payload, estate_id=estate_id, actor=current_user
+    )

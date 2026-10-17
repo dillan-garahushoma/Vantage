@@ -1,0 +1,149 @@
+{
+  "report": {
+    "path": "/intelligence",
+    "headings": [
+      "H1: Three issues deserve attention this week.",
+      "H2: This week’s priority recommendations",
+      "H3: Pool Pump 02 bearing will fail before the December season",
+      "H3: Irrigation pressure loss is wasting 640 kl of water in Block C",
+      "H3: Cedar Lane lighting can move to solar LED on a four-year payback"
+    ],
+    "sections": [],
+    "articles": [],
+    "buttons": [
+      {
+        "label": "Review",
+        "cls": "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl font-medium transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-soft disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-line bg-surface text-ink hover:border-brand-soft hover:bg-canvas py-2 h-9 px-4 text-[0.8rem]",
+        "style": {
+          "background-color": "rgb(255, 255, 255)",
+          "color": "rgb(31, 23, 51)",
+          "border-radius": "12px",
+          "font-size": "12.8px",
+          "font-weight": "500",
+          "box-shadow": "none"
+        }
+      },
+      {
+        "label": "Create work order",
+        "cls": "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl font-medium transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-soft disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-ink text-white hover:bg-brand py-2 h-9 px-4 text-[0.8rem]",
+        "style": {
+          "background-color": "rgb(31, 23, 51)",
+          "color": "rgb(255, 255, 255)",
+          "border-radius": "12px",
+          "font-size": "12.8px",
+          "font-weight": "500",
+          "box-shadow": "none"
+        }
+      },
+      {
+        "label": "Review",
+        "cls": "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl font-medium transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-soft disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-line bg-surface text-ink hover:border-brand-soft hover:bg-canvas py-2 h-9 px-4 text-[0.8rem]",
+        "style": {
+          "background-color": "rgb(255, 255, 255)",
+          "color": "rgb(31, 23, 51)",
+          "border-radius": "12px",
+          "font-size": "12.8px",
+          "font-weight": "500",
+          "box-shadow": "none"
+        }
+      },
+      {
+        "label": "Create work order",
+        "cls": "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl font-medium transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-soft disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-ink text-white hover:bg-brand py-2 h-9 px-4 text-[0.8rem]",
+        "style": {
+          "background-color": "rgb(31, 23, 51)",
+          "color": "rgb(255, 255, 255)",
+          "border-radius": "12px",
+          "font-size": "12.8px",
+          "font-weight": "500",
+          "box-shadow": "none"
+        }
+      },
+      {
+        "label": "Review",
+        "cls": "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl font-medium transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-soft disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-line bg-surface text-ink hover:border-brand-soft hover:bg-canvas py-2 h-9 px-4 text-[0.8rem]",
+        "style": {
+          "background-color": "rgb(255, 255, 255)",
+          "color": "rgb(31, 23, 51)",
+          "border-radius": "12px",
+          "font-size": "12.8px",
+          "font-weight": "500",
+          "box-shadow": "none"
+        }
+      },
+      {
+        "label": "Create work order",
+        "cls": "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl font-medium transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-soft disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-ink text-white hover:bg-brand py-2 h-9 px-4 text-[0.8rem]",
+        "style": {
+          "background-color": "rgb(31, 23, 51)",
+          "color": "rgb(255, 255, 255)",
+          "border-radius": "12px",
+          "font-size": "12.8px",
+          "font-weight": "500",
+          "box-shadow": "none"
+        }
+      },
+      {
+        "label": "Why did our estate health score change?",
+        "cls": "rounded-full border border-line bg-surface px-3.5 py-2 text-left text-[0.78rem] font-medium text-ink/70 transition-all duration-200 hover:border-brand-soft hover:text-brand-ink",
+        "style": {
+          "background-color": "rgb(255, 255, 255)",
+          "color": "oklab(0.230076 0.0225504 -0.0482285 / 0.7)",
+          "border-radius": "3.35544e+07px",
+          "font-size": "12.48px",
+          "font-weight": "500",
+          "box-shadow": "none"
+        }
+      },
+      {
+        "label": "What is likely to need attention next month?",
+        "cls": "rounded-full border border-line bg-surface px-3.5 py-2 text-left text-[0.78rem] font-medium text-ink/70 transition-all duration-200 hover:border-brand-soft hover:text-brand-ink",
+        "style": {
+          "background-color": "rgb(255, 255, 255)",
+          "color": "oklab(0.230076 0.0225504 -0.0482285 / 0.7)",
+          "border-radius": "3.35544e+07px",
+          "font-size": "12.48px",
+          "font-weight": "500",
+          "box-shadow": "none"
+        }
+      },
+      {
+        "label": "Summarise infrastructure risks for the board.",
+        "cls": "rounded-full border border-line bg-surface px-3.5 py-2 text-left text-[0.78rem] font-medium text-ink/70 transition-all duration-200 hover:border-brand-soft hover:text-brand-ink",
+        "style": {
+          "background-color": "rgb(255, 255, 255)",
+          "color": "oklab(0.230076 0.0225504 -0.0482285 / 0.7)",
+          "border-radius": "3.35544e+07px",
+          "font-size": "12.48px",
+          "font-weight": "500",
+          "box-shadow": "none"
+        }
+      },
+      {
+        "label": "",
+        "cls": "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-soft disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-ink text-white hover:bg-brand h-11 w-11 shrink-0",
+        "style": {
+          "background-color": "rgb(31, 23, 51)",
+          "color": "rgb(255, 255, 255)",
+          "border-radius": "12px",
+          "font-size": "14px",
+          "font-weight": "500",
+          "box-shadow": "none"
+        }
+      }
+    ],
+    "rootStyle": {
+      "--color-canvas": "#f7f5ff",
+      "--color-primary": "",
+      "--color-ink": "#1f1733",
+      "--radius-card": ""
+    },
+    "bodyStyle": {
+      "background-color": "rgb(247, 245, 255)",
+      "font-family": "Inter, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "color": "rgb(31, 23, 51)"
+    },
+    "fullText": "VALORA IntelligenceThree issues deserve attention this week.Acting on two of them could prevent an estimated R86,000 in reactive maintenance.Briefing window · Rolling 7 days1 284 signals reviewed across 9 sourcesEvery finding traceable to sourceLive operational counts for this estateComplaints awaiting resolution2Complaint recordsWork orders in flight2Work order recordsIncidents not yet resolved0Incident recordsThis week’s priority recommendationsOrdered by expected impact. Each one shows its evidence, confidence and suggested action. 3 recommendationsThese findings are the seeded estate’s sample signals, not live output. Set VITE_N8N_INTELLIGENCE_URL to run them against the intelligence service; the measured counts above are read from this estate’s records either way.PREVENTIVE MAINTENANCE01High91% confidence·AI-01Pool Pump 02 bearing will fail before the December seasonThree overload trips in eleven days on the same pump, with winding temperature climbing after each restart. The bearing is the likely cause and a replacement takes one workshop day; a failure in December would take the pool offline at peak occupancy with an emergency call-out premium.EvidenceThree overload trips on Pool Pump 02SCADA relay log · Clubhouse pump plantWinding temperature rising after restartTelemetry · Pool Pump 02Vibration above the pump model’s service bandMonthly asset inspection · 2 October+1 more in the reviewR42,000R42,000 avoided in pump replacement and emergency call-outReviewCreate work orderEMERGING SERVICE RISK02High84% confidence·AI-02Irrigation pressure loss is wasting 640 kl of water in Block CBlock C’s pressure-reducing valve is holding 1.9 bar against a 3.2 bar set point, so the irrigation cycle runs almost twice as long to reach the same moisture. The valve is the cheapest repair in this briefing and the leak it is masking is costing the most water.EvidenceDownstream pressure 1.9 bar against a 3.2 bar set pointTelemetry · Block C PRVIrrigation runtime up 71% with no change in set scheduleIrrigation controller · Block CConsumption up 640 kl on the same period last yearBulk water meter · Block CR28,000R28,000 a year in water and pumping, before any repairReviewCreate work orderBUDGET & PROVIDER OPTIMISATION03High88% confidence·AI-03Cedar Lane lighting can move to solar LED on a four-year paybackCedar Lane’s 42 pole lights run on mains power at full brightness all night. A solar LED conversion cuts the estate’s lighting account, removes these poles from the municipal outage load and needs no trenching, so it can be done between occupancy cycles.EvidenceLighting account up 18% year on yearFinancial ledger · utilities42 pole lights running on mains supplyAsset register · lightingTwo municipal outages hit the circuit this quarterIncident log · utility outagesR16,000R16,000 a year saved, with a four-year paybackReviewCreate work orderRecommendations are clearly separated from measured resultsEstate health scores, financial figures and incident counts come from measured signals. Everything on this screen is a recommendation until you act on it.Ask VALORAStructured answers, every claim traceableAsk about estate condition, spend, assets or service providers. Answers come back as a summary, the evidence behind it and a recommended next step.Why did our estate health score change?What is likely to need attention next month?Summarise infrastructure risks for the board.Answers come from the estate’s stored operational records. VALORA Intelligence reads operational signals only — never private resident data.Scope: Silverleaf Reserve · recommendations are advisory and never written back to the estate’s records without a work order."
+  },
+  "errors": []
+}

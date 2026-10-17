@@ -4,6 +4,7 @@ from decimal import Decimal
 from pydantic import BaseModel, Field
 
 from app.common.enums import ComplaintStatus
+from app.community.domain.triage_vocabulary import Category, Priority
 
 
 class ComplaintStatsResponse(BaseModel):
@@ -15,10 +16,18 @@ class ComplaintStatsResponse(BaseModel):
 
 
 class ComplaintCreate(BaseModel):
+    """What a resident or HOA admin files. The category and priority are the
+    fixed vocabulary, so the contract publishes the allowed values (BE-1).
+
+    The response DTOs below deliberately stay plain strings: rows filed before
+    the vocabulary existed may carry a free-text category, and they must still
+    read back.
+    """
+
     unit_id: int = Field(..., ge=1)
-    category: str = Field(..., min_length=2, max_length=50)
+    category: Category
     description: str = Field(..., min_length=5, max_length=5000)
-    priority: str = Field(default="normal", pattern="^(low|normal|high|urgent)$")
+    priority: Priority = "normal"
     is_anonymous: bool = False
 
 

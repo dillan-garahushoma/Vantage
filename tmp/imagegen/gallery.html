@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Valora estate demo images — review</title>
+    <style>
+      :root { color-scheme: light; }
+      body { margin: 0; padding: 24px; background: #f6f4ef; color: #14181c;
+             font: 14px/1.5 ui-sans-serif, system-ui, "Segoe UI", sans-serif; }
+      h1 { font-size: 22px; margin: 0 0 4px; }
+      p.lede { margin: 0 0 22px; color: #4a5157; max-width: 70ch; }
+      h2 { font-size: 15px; margin: 30px 0 10px; padding-bottom: 6px;
+           border-bottom: 1px solid rgba(20,24,28,.14); letter-spacing: .04em;
+           text-transform: uppercase; font-size: 12px; color: #63686e; }
+      .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+      figure { margin: 0; background: #fff; border: 1px solid rgba(20,24,28,.14); }
+      img { display: block; width: 100%; height: auto; background: rgba(20,24,28,.05); }
+      figcaption { padding: 8px 10px; font-size: 12px; }
+      .role { color: #175647; font-weight: 600; }
+      .meta { color: #63686e; font-variant-numeric: tabular-nums; }
+      .note { margin-top: 28px; padding: 12px 14px; background: #fceee9;
+              border-left: 3px solid #e4572e; color: #9e3413; font-size: 12.5px; }
+      .gen { margin-top: 28px; padding: 12px 14px; background: #e7efec;
+             border-left: 3px solid #1f6f5c; color: #175647; font-size: 12.5px; }
+    </style>
+  </head>
+  <body>
+    <h1>Valora — estate demo image review</h1>
+    <p class="lede">
+      All twenty assets, grouped by complex, in the order they appear in the estate directory.
+      Each set should read as one complex, and the maintenance condition should get visibly worse
+      from Silverleaf Reserve down to Quarry View Flats.
+    </p>
+    <div id="sets"></div>
+    <div class="note" id="note"></div>
+    <div class="gen" id="gen"></div>
+
+    <script>
+      // Ordered exactly as the brief lists them.
+      const MANIFEST = [
+        ['silverleaf-reserve', 'Silverleaf Reserve', 'Premium gated estate, immaculate maintenance'],
+        ['willowbrook-mews', 'Willowbrook Mews', 'Well-managed, practical, middle-market'],
+        ['lakeside-gardens', 'Lakeside Gardens', 'Established, inconsistent upkeep'],
+        ['eastbank-court', 'Eastbank Court', 'Ageing, significant deferred maintenance'],
+        ['quarry-view-flats', 'Quarry View Flats', 'High-density, accumulated neglect'],
+      ]
+      const ROLES = [
+        ['01-hero', 'Hero / exterior'],
+        ['02-entrance', 'Entrance / security'],
+        ['03-amenities', 'Amenities / communal'],
+        ['04-infrastructure', 'Maintenance / infrastructure'],
+      ]
+      // The five files produced by the earlier Gemini session; the rest are from
+      // this session's free key-less endpoint.
+      const ORIGINAL = new Set([
+        'silverleaf-reserve-01-hero', 'silverleaf-reserve-02-entrance',
+        'silverleaf-reserve-03-amenities', 'silverleaf-reserve-04-infrastructure',
+        'willowbrook-mews-01-hero',
+      ])
+
+      const sets = document.getElementById('sets')
+      let missing = []
+      let mixed = []
+
+      for (const [slug, name, positioning] of MANIFEST) {
+        const heading = document.createElement('h2')
+        heading.textContent = `${name} — ${positioning}`
+        sets.append(heading)
+
+        const grid = document.createElement('div')
+        grid.className = 'grid'
+        sets.append(grid)
+
+        for (const [suffix, role] of ROLES) {
+          const stem = `${slug}-${suffix}`
+          const file = `${stem}.jpg`
+          const figure = document.createElement('figure')
+          const img = document.createElement('img')
+          img.src = `../estate-demo-images/${file}`
+          img.alt = `${name} — ${role}`
+          const caption = document.createElement('figcaption')
+          caption.innerHTML =
+            `<span class="role">${role}</span><br><span class="meta">${file}</span>`
+          figure.append(img, caption)
+          grid.append(figure)
+
+          img.addEventListener('error', () => {
+            missing.push(file)
+            figure.style.opacity = '.35'
+            caption.innerHTML +=
+              '<br><span class="meta" style="color:#9e3413">NOT GENERATED YET</span>'
+          })
+        }
+        if ([...ROLES].some(([s]) => ORIGINAL.has(`${slug}-${s}`))) mixed.push(name)
+      }
+
+      const note = document.getElementById('note')
+      const gen = document.getElementById('gen')
+      const finish = () => {
+        note.textContent = missing.length
+          ? `${missing.length} of 20 not present: ${missing.join(', ')}`
+          : 'All 20 assets are present.'
+        gen.textContent =
+          `Generator mix: ${mixed.join(' and ')} contain images from the earlier Gemini session ` +
+          `(1376x768); every other asset was produced in this session by a free key-less endpoint ` +
+          `(1024x576). If those two look different in style or sharpness, that is why — a uniform ` +
+          `collection would mean regenerating the five.`
+      }
+      window.addEventListener('load', () => setTimeout(finish, 1200))
+    </script>
+  </body>
+</html>

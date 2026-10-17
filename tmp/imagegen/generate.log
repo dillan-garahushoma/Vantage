@@ -1,0 +1,71 @@
+15 in spec, 14 to generate at 1024x576 via flux
+[1/14] willowbrook-mews-03-amenities.jpg (seed 682315932)
+    attempt 1 failed: HTTPError: HTTP Error 402: Payment Required
+    ok 1024x576 in 7.9s
+[2/14] willowbrook-mews-04-infrastructure.jpg (seed 182985489)
+    attempt 1 failed: HTTPError: HTTP Error 402: Payment Required
+    attempt 2 failed: HTTPError: HTTP Error 402: Payment Required
+    ok 1024x576 in 9.0s
+[3/14] lakeside-gardens-01-hero.jpg (seed 341189324)
+    attempt 1 failed: HTTPError: HTTP Error 402: Payment Required
+    attempt 2 failed: HTTPError: HTTP Error 402: Payment Required
+    ok 1024x576 in 8.6s
+[4/14] lakeside-gardens-02-entrance.jpg (seed 883907920)
+    attempt 1 failed: HTTPError: HTTP Error 402: Payment Required
+    attempt 2 failed: HTTPError: HTTP Error 402: Payment Required
+    ok 1024x576 in 7.0s
+[5/14] lakeside-gardens-03-amenities.jpg (seed 1895530245)
+    attempt 1 failed: HTTPError: HTTP Error 402: Payment Required
+    attempt 2 failed: HTTPError: HTTP Error 402: Payment Required
+    ok 1024x576 in 8.6s
+[6/14] lakeside-gardens-04-infrastructure.jpg (seed 1137303646)
+    attempt 1 failed: HTTPError: HTTP Error 402: Payment Required
+    attempt 2 failed: HTTPError: HTTP Error 402: Payment Required
+    ok 1024x576 in 8.2s
+[7/14] eastbank-court-01-hero.jpg (seed 1731040768)
+    attempt 1 failed: HTTPError: HTTP Error 402: Payment Required
+    attempt 2 failed: HTTPError: HTTP Error 402: Payment Required
+    ok 1024x576 in 7.1s
+[8/14] eastbank-court-02-entrance.jpg (seed 842296562)
+    attempt 1 failed: HTTPError: HTTP Error 402: Payment Required
+    attempt 2 failed: URLError: <urlopen error [Errno 11001] getaddrinfo failed>
+    attempt 3 failed: RemoteDisconnected: Remote end closed connection without response
+    attempt 4 failed: URLError: <urlopen error [Errno 11001] getaddrinfo failed>
+[9/14] eastbank-court-03-amenities.jpg (seed 1217490296)
+    attempt 1 failed: URLError: <urlopen error [Errno 11001] getaddrinfo failed>
+    attempt 2 failed: URLError: <urlopen error [Errno 11001] getaddrinfo failed>
+    attempt 3 failed: URLError: <urlopen error [Errno 11001] getaddrinfo failed>
+    attempt 4 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+[10/14] eastbank-court-04-infrastructure.jpg (seed 1832969629)
+    attempt 1 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+    attempt 2 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+    attempt 3 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+    attempt 4 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+[11/14] quarry-view-flats-01-hero.jpg (seed 1637344784)
+    attempt 1 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+    attempt 2 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+    attempt 3 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+    attempt 4 failed: URLError: <urlopen error [Errno 11001] getaddrinfo failed>
+[12/14] quarry-view-flats-02-entrance.jpg (seed 1678686545)
+    attempt 1 failed: URLError: <urlopen error [Errno 11001] getaddrinfo failed>
+    attempt 2 failed: URLError: <urlopen error [Errno 11001] getaddrinfo failed>
+    attempt 3 failed: URLError: <urlopen error [Errno 11001] getaddrinfo failed>
+    attempt 4 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+[13/14] quarry-view-flats-03-amenities.jpg (seed 1045773119)
+    attempt 1 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+    attempt 2 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+    attempt 3 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+    attempt 4 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+[14/14] quarry-view-flats-04-infrastructure.jpg (seed 902366206)
+    attempt 1 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+    attempt 2 failed: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+    attempt 3 failed: URLError: <urlopen error [Errno 11001] getaddrinfo failed>
+    attempt 4 failed: URLError: <urlopen error [Errno 11001] getaddrinfo failed>
+FAILED eastbank-court-02-entrance.jpg: URLError: <urlopen error [Errno 11001] getaddrinfo failed>
+FAILED eastbank-court-03-amenities.jpg: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+FAILED eastbank-court-04-infrastructure.jpg: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+FAILED quarry-view-flats-01-hero.jpg: URLError: <urlopen error [Errno 11001] getaddrinfo failed>
+FAILED quarry-view-flats-02-entrance.jpg: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+FAILED quarry-view-flats-03-amenities.jpg: URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
+FAILED quarry-view-flats-04-infrastructure.jpg: URLError: <urlopen error [Errno 11001] getaddrinfo failed>
+done — generated/skipped 7 of 14, 7 failed
