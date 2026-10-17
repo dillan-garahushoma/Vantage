@@ -41,8 +41,7 @@ Integration tests run only when `TEST_DATABASE_URL` is set, and only against a d
 
 ## Working rules
 - Write the failing test first, then the fix.
-- Never run `git reset --hard`, `git checkout --`, `git clean`, or any destructive cleanup. **Never commit or push.** The human commits between sessions. The working tree is dirty by design; do not touch unrelated changes.
-- Never edit an applied migration. Add a new, additive, non-destructive one with a working downgrade. Check existing data before adding a constraint; fail with a clear message instead of deleting rows.
+
 - **Honesty rule:** never claim something ran unless you ran it and saw the output. Label the rest "written, not run".
 - At the end of the session, or at about 70% of your budget, write `docs/progress/<phase>-<batch>.md`: done, tests added and passing, written-but-not-run, remaining, deviations, open questions, and the exact commands you ran with results. Then stop.
 - If you stall or loop, stop and say so. Do not retry the same approach repeatedly.

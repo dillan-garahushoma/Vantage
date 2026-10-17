@@ -18,11 +18,10 @@ import { useEstateScope } from '../context/EstateContext'
 import { api } from '../lib/api'
 import { zar } from '../lib/format'
 import {
-  intelligenceServiceConfigured,
   priorityRecommendations,
   weeklyBriefing,
 } from '../lib/intelligence'
-import type { PriorityRecommendation } from '../lib/intelligence'
+import type { EstateIntelligenceResponse, PriorityRecommendation } from '../lib/intelligence'
 import type { Complaint, Incident, Page, WorkOrder } from '../lib/types'
 import { useAsync } from '../lib/useAsync'
 
@@ -108,6 +107,17 @@ function IntelligenceBody() {
         : api.get<Page<Incident>>('/api/v1/incidents', { estate_id: estateId, size: 100 }),
     [estateId],
   )
+  const intelligenceQuery = useAsync(
+    () =>
+      estateId === null
+        ? Promise.resolve(null)
+        : api.get<EstateIntelligenceResponse>('/api/v1/analytics/intelligence', { estate_id: estateId }),
+    [estateId],
+  )
+
+  const activeBriefing = intelligenceQuery.data?.briefing ?? weeklyBriefing
+  const activeRecommendations =
+    intelligenceQuery.data?.recommendations ?? priorityRecommendations
 
   const signals = signalNodes(
     complaints.data?.items ?? null,
@@ -137,22 +147,27 @@ function IntelligenceBody() {
           <Badge variant="default" className="gap-2 bg-surface/80 px-3.5 py-1.5 tracking-[0.16em] backdrop-blur">
             <Sparkles className="h-3.5 w-3.5" />
             VALORA Intelligence
+            {intelligenceQuery.data?.source === 'n8n' ? (
+              <span className="ml-1 rounded-full bg-mint-wash px-2 py-0.5 text-[0.68rem] font-bold text-mint-ink">
+                Live n8n
+              </span>
+            ) : null}
           </Badge>
 
           <h1 className="mt-6 max-w-3xl font-heading text-[1.9rem] leading-[1.12] font-extrabold tracking-[-0.025em] text-ink sm:text-[2.5rem]">
-            {weeklyBriefing.headline}
+            {activeBriefing.headline}
           </h1>
           <p className="mt-4 max-w-2xl text-[1rem] leading-relaxed text-ink/62">
-            {weeklyBriefing.body}
+            {activeBriefing.body}
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-2.5">
             <span className="text-[0.78rem] font-medium text-ink/45">
-              Briefing window · {weeklyBriefing.windowLabel}
+              Briefing window · {activeBriefing.windowLabel}
             </span>
             <span className="text-[0.78rem] font-medium text-ink/45">
-              {weeklyBriefing.signalsReviewed.toLocaleString('en-ZA')} signals reviewed across{' '}
-              {weeklyBriefing.sources} sources
+              {activeBriefing.signalsReviewed.toLocaleString('en-ZA')} signals reviewed across{' '}
+              {activeBriefing.sources} sources
             </span>
             <span className="inline-flex items-center gap-1.5 text-[0.78rem] font-semibold text-mint-ink">
               <ShieldCheck className="h-3.5 w-3.5" />
@@ -179,30 +194,40 @@ function IntelligenceBody() {
               </p>
             </div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-wash px-3 py-1.5 text-[0.72rem] font-semibold text-brand-ink">
-              <Layers className="h-3.5 w-3.5" /> {priorityRecommendations.length} recommendations
+              <Layers className="h-3.5 w-3.5" /> {activeRecommendations.length} recommendations
             </span>
           </div>
 
-          {!intelligenceServiceConfigured ? (
-            <p className="rounded-xl border border-line bg-canvas px-4 py-3 text-[0.78rem] leading-relaxed text-ink/55">
-              These findings are the seeded estate’s sample signals, not live output. Set{' '}
-              <code className="num text-[0.75rem] text-brand-ink">VITE_N8N_INTELLIGENCE_URL</code> to
-              run them against the intelligence service; the measured counts above are read from this
-              estate’s records either way.
-            </p>
-          ) : null}
-
           <div className="grid gap-5 2xl:grid-cols-2">
-            {priorityRecommendations.map((recommendation, index) => (
-              <RecommendationCard
-                key={recommendation.id}
-                recommendation={recommendation}
-                index={index}
-                onReview={setReviewing}
-                onAction={openWorkOrder}
-                canAction={isAdmin}
-              />
-            ))}
+            {activeRecommendations.length === 0 ? (
+              <div className="col-span-full rounded-2xl border border-dashed border-line bg-canvas/60 p-8 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-wash text-brand-ink">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <h3 className="mt-4 font-heading text-base font-bold text-ink">
+                  No Priority Recommendations Yet
+                </h3>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink/60">
+                  Operational signals are actively monitored. Priority recommendations and projected cost
+                  avoidance are synthesized automatically every Monday at 06:00 via n8n automation, or upon on-demand briefing execution.
+                </p>
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1 text-xs font-medium text-ink/60">
+                  <ShieldCheck className="h-3.5 w-3.5 text-mint-ink" />
+                  Live telemetry active for this estate
+                </div>
+              </div>
+            ) : (
+              activeRecommendations.map((recommendation, index) => (
+                <RecommendationCard
+                  key={recommendation.id}
+                  recommendation={recommendation}
+                  index={index}
+                  onReview={setReviewing}
+                  onAction={openWorkOrder}
+                  canAction={isAdmin}
+                />
+              ))
+            )}
           </div>
 
           <Surface className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
