@@ -89,6 +89,20 @@ export interface ValoraAnswerResult extends ValoraAnswer {
   source: 'n8n' | 'estate-domain'
 }
 
+export interface EstateIntelligenceResponse {
+  estateId: number
+  estateName: string
+  asOf: string
+  briefing: WeeklyBriefing
+  recommendations: PriorityRecommendation[]
+  operationalSignals: {
+    openComplaints: number
+    workOrdersInFlight: number
+    unresolvedIncidents: number
+  }
+  source: 'n8n' | 'live_llm' | 'sample_baseline'
+}
+
 /* ---------------------------------------------- the demonstration briefing */
 
 /**

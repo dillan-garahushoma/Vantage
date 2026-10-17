@@ -295,15 +295,21 @@ class IntelligenceService:
             briefing, recommendations = _BRIEFING_CACHE[estate_id]
             source_tag = "n8n"
         else:
+            total_signals = counts.open_complaints + counts.work_orders_in_flight + counts.unresolved_incidents
             briefing = WeeklyBriefing(
-                headline="Three issues deserve attention this week.",
-                body="Acting on two of them could prevent an estimated R86,000 in reactive maintenance.",
-                window_label="Rolling 7 days",
-                signals_reviewed=1284,
-                sources=9,
-                avoidable_zar=86000.0,
+                headline=f"Operational intelligence is active for {estate_name}.",
+                body=(
+                    f"Monitoring real operational signals across {counts.open_complaints} open complaints, "
+                    f"{counts.work_orders_in_flight} work orders in flight, and "
+                    f"{counts.unresolved_incidents} unresolved security incidents. "
+                    "Automated AI synthesis runs weekly on Mondays at 06:00, or upon on-demand trigger."
+                ),
+                window_label="Awaiting Weekly Synthesis",
+                signals_reviewed=total_signals,
+                sources=3,
+                avoidable_zar=0.0,
             )
-            recommendations = _default_recommendations()
+            recommendations = []
             source_tag = "sample_baseline"
 
         return EstateIntelligenceResponse(
