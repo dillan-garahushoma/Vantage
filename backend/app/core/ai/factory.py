@@ -33,11 +33,18 @@ def get_llm_client(
         api_key = settings.GEMINI_API_KEY
         if api_key is None or not settings.AI_MODEL:
             raise AIUnavailableError("policy")
+        # "default" means "do not send a level": the provider's own default stands.
+        thinking_level = (
+            None
+            if settings.AI_THINKING_LEVEL == "default"
+            else settings.AI_THINKING_LEVEL
+        )
         inner = GeminiLLMClient(
             api_key=api_key.get_secret_value(),
             model=settings.AI_MODEL,
             max_output_tokens=settings.AI_MAX_OUTPUT_TOKENS,
             timeout_seconds=settings.AI_TIMEOUT_SECONDS,
+            thinking_level=thinking_level,
             transport=transport,
         )
 

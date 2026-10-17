@@ -25,6 +25,10 @@ BriefSource = Literal["ai", "template"]
 #: Why no AI brief is present. Closed on purpose: a client may switch on it.
 #: ``insufficient_data`` is not an AI failure - it means the score itself is not
 #: yet measurable, so there was nothing worth sending to a provider.
+#: ``truncated`` means the provider did answer but ran out of output tokens,
+#: which is an operator setting (AI_MAX_OUTPUT_TOKENS / AI_THINKING_LEVEL),
+#: not a bad answer and not a bad key. ``rate_limited`` means the provider's quota
+#: or rate limit refused the call: the key works, the allowance does not.
 BriefUnavailableReason = Literal[
     "disabled",
     "policy",
@@ -32,7 +36,9 @@ BriefUnavailableReason = Literal[
     "timeout",
     "network",
     "provider_error",
+    "rate_limited",
     "invalid_output",
+    "truncated",
     "ungrounded_output",
     "insufficient_data",
 ]

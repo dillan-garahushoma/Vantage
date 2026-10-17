@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, DragEvent, FormEvent } from 'react'
 import { RequireEstate } from '../components/RequireEstate'
 import {
@@ -19,7 +19,9 @@ import { useEstateScope } from '../context/EstateContext'
 import { ApiError, api } from '../lib/api'
 import type { EstatePhoto, EstateProfile, JoinCode } from '../lib/contract'
 import {
+  ACCEPTED_IMAGE_LABEL,
   ACCEPTED_IMAGE_TYPES,
+  MAX_ESTATE_PHOTOS,
   MAX_UPLOAD_BYTES,
   UPLOAD_HINT,
   createUnitsBulk,
@@ -338,78 +340,223 @@ function UnitsBulkAdd({ estateId, onCreated }: { estateId: number; onCreated: ()
 
 /* ------------------------------------------------------------------ photos */
 
-function PhotoUploader({ estateId, onChanged }: { estateId: number; onChanged: () => void }) {
+/**
+ * One photograph on its way to the estate, or one that could not go.
+ *
+ * The queue is the whole point of this component: an administrator has a folder
+ * of photographs, not one, so the picker takes many and each row carries its own
+ * status instead of one shared progress bar that a failure has to interrupt.
+ */
+interface QueuedPhoto {
+  id: string
+  file: File
+  /** An object URL for the row's thumbnail; revoked when the row goes away. */
+  previewUrl: string
+  caption: string
+  /** There is no 'done': a photograph that is stored leaves the queue. */
+  status: 'ready' | 'uploading' | 'failed'
+  progress: number
+  /** The server's own words, shown on the row rather than as one banner. */
+  error: string | null
+  requestId?: string
+  /** Why this file can never be sent — decided once, when it is picked. */
+  problem: string | null
+}
+
+let nextQueuedId = 0
+
+/**
+ * Everything the picker refuses before a byte is spent. The API still decides;
+ * this only keeps an obviously unacceptable file from costing a resident
+ * bandwidth — and it says *which* file and *why*, per row.
+ */
+function problemWith(file: File): string | null {
+  if (!ACCEPTED_IMAGE_TYPES.includes(file.type as (typeof ACCEPTED_IMAGE_TYPES)[number])) {
+    return `Not ${ACCEPTED_IMAGE_LABEL}. This file is ${file.type || 'of an unknown type'}.`
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return `Larger than ${MAX_UPLOAD_BYTES / (1024 * 1024)} MB.`
+  }
+  return null
+}
+
+/** The same photograph chosen twice, whatever the picker called it. */
+const isSameFile = (a: File, b: File) =>
+  a.name === b.name && a.size === b.size && a.lastModified === b.lastModified
+
+export function PhotoUploader({
+  estateId,
+  existingCount,
+  onChanged,
+}: {
+  estateId: number
+  existingCount: number
+  onChanged: () => void
+}) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [dragging, setDragging] = useState(false)
-  const [caption, setCaption] = useState('')
-  const [progress, setProgress] = useState<number | null>(null)
-  const [error, setError] = useState<ApiError | null>(null)
-  const [hint, setHint] = useState<string | null>(null)
+  const [queue, setQueue] = useState<QueuedPhoto[]>([])
+  const [notice, setNotice] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
 
-  const send = useCallback(
-    async (file: File) => {
-      setError(null)
-      setHint(null)
-
-      // Client-side hints only. The API decodes and decides; these just avoid
-      // spending a resident's bandwidth on something that cannot be accepted.
-      if (!ACCEPTED_IMAGE_TYPES.includes(file.type as (typeof ACCEPTED_IMAGE_TYPES)[number])) {
-        setHint(`${UPLOAD_HINT}. This file is ${file.type || 'an unknown type'}.`)
-        return
-      }
-      if (file.size > MAX_UPLOAD_BYTES) {
-        setHint(`${UPLOAD_HINT}. This file is larger than 5 MB.`)
-        return
-      }
-
-      setProgress(0)
-      try {
-        await uploadEstatePhoto(estateId, file, {
-          caption: caption.trim() || undefined,
-          onProgress: setProgress,
-        })
-        setCaption('')
-        onChanged()
-      } catch (cause) {
-        setError(toApiError(cause, 'That photo was rejected.'))
-      } finally {
-        setProgress(null)
-        if (inputRef.current) inputRef.current.value = ''
-      }
+  // The previews are this component's own memory. A row that leaves with one
+  // still attached is a photograph the browser holds until the tab closes.
+  const queueRef = useRef<QueuedPhoto[]>([])
+  queueRef.current = queue
+  useEffect(
+    () => () => {
+      for (const item of queueRef.current) URL.revokeObjectURL(item.previewUrl)
     },
-    [caption, estateId, onChanged],
+    [],
   )
+
+  const pending = queue.filter((item) => item.problem === null && item.status !== 'uploading')
+
+  function addFiles(picked: File[]) {
+    setNotice(null)
+    // `existingCount` is what the estate already has stored; the queue is what
+    // has not been sent yet. Both count against the estate's 12, so a batch is
+    // never queued only for the server to refuse its last photograph.
+    const slotsLeft = Math.max(0, MAX_ESTATE_PHOTOS - existingCount - queue.length)
+    const additions: QueuedPhoto[] = []
+    let duplicates = 0
+    let noRoom = 0
+
+    for (const file of picked) {
+      if ([...queue, ...additions].some((item) => isSameFile(item.file, file))) {
+        duplicates += 1
+        continue
+      }
+      if (additions.length >= slotsLeft) {
+        noRoom += 1
+        continue
+      }
+      nextQueuedId += 1
+      additions.push({
+        id: `photo-${nextQueuedId}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        caption: '',
+        status: 'ready',
+        progress: 0,
+        error: null,
+        problem: problemWith(file),
+      })
+    }
+
+    if (additions.length > 0) setQueue((current) => [...current, ...additions])
+
+    const notes: string[] = []
+    if (noRoom > 0) {
+      notes.push(
+        slotsLeft === 0
+          ? `Nothing added: an estate holds ${MAX_ESTATE_PHOTOS} photographs, and this one is at its limit. Delete one first.`
+          : `Only ${slotsLeft} of those ${picked.length} added — an estate holds ${MAX_ESTATE_PHOTOS} photographs.`,
+      )
+    }
+    if (duplicates > 0) {
+      notes.push(`${duplicates} ${duplicates === 1 ? 'file was' : 'files were'} already in the list.`)
+    }
+    if (notes.length > 0) setNotice(notes.join(' '))
+  }
+
+  function remove(id: string) {
+    setQueue((current) => {
+      const item = current.find((row) => row.id === id)
+      if (item) URL.revokeObjectURL(item.previewUrl)
+      return current.filter((row) => row.id !== id)
+    })
+  }
+
+  function clearQueue() {
+    setNotice(null)
+    setQueue((current) => {
+      for (const item of current) URL.revokeObjectURL(item.previewUrl)
+      return []
+    })
+  }
+
+  /**
+   * Sequential, one request per photograph — which is what the API takes. It also
+   * keeps the estate's photo count honest between requests: the server checks the
+   * ceiling per upload, so firing twelve at once would make its answer depend on
+   * the order they happened to land in.
+   */
+  async function upload() {
+    const batch = queue.filter((item) => item.problem === null && item.status !== 'uploading')
+    if (batch.length === 0) return
+    setUploading(true)
+    setNotice(null)
+    let uploaded = 0
+    let failed = 0
+
+    for (const item of batch) {
+      setQueue((current) =>
+        current.map((row) =>
+          row.id === item.id ? { ...row, status: 'uploading', progress: 0, error: null } : row,
+        ),
+      )
+      try {
+        await uploadEstatePhoto(estateId, item.file, {
+          caption: item.caption.trim() || undefined,
+          onProgress: (percent) =>
+            setQueue((current) =>
+              current.map((row) => (row.id === item.id ? { ...row, progress: percent } : row)),
+            ),
+        })
+        uploaded += 1
+        // Stored. It belongs to the list below now, not to the queue.
+        setQueue((current) => {
+          URL.revokeObjectURL(item.previewUrl)
+          return current.filter((row) => row.id !== item.id)
+        })
+      } catch (cause) {
+        failed += 1
+        const failure = toApiError(cause, 'That photo was rejected.')
+        setQueue((current) =>
+          current.map((row) =>
+            row.id === item.id
+              ? { ...row, status: 'failed', error: failure.message, requestId: failure.requestId }
+              : row,
+          ),
+        )
+      }
+    }
+
+    setUploading(false)
+    if (uploaded > 0) onChanged()
+    const notes: string[] = []
+    if (uploaded > 0) notes.push(`${uploaded} ${uploaded === 1 ? 'photograph' : 'photographs'} uploaded.`)
+    if (failed > 0) {
+      notes.push(
+        `${failed} could not be sent — the reason is on ${failed === 1 ? 'that row' : 'those rows'}. The rest are unaffected.`,
+      )
+    }
+    if (notes.length > 0) setNotice(notes.join(' '))
+  }
 
   function onDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault()
     setDragging(false)
-    const file = event.dataTransfer.files?.[0]
-    if (file) void send(file)
+    const files = Array.from(event.dataTransfer?.files ?? [])
+    if (files.length > 0) addFiles(files)
   }
 
   function onPick(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    if (file) void send(file)
+    const files = Array.from(event.target.files ?? [])
+    // Clearing the value is what lets the same photograph be chosen again after
+    // it was removed from the queue.
+    event.target.value = ''
+    if (files.length > 0) addFiles(files)
   }
 
   return (
     <div className="space-y-3">
-      {error ? <ErrorState title="The server rejected that photo" message={error.message} requestId={error.requestId} /> : null}
-      {hint ? (
+      {notice ? (
         <p className="hairline rounded-xs bg-ochre-wash px-3 py-2 text-[12.5px] text-ochre-ink">
-          {hint}
+          {notice}
         </p>
       ) : null}
-
-      <Field label="Caption (optional)" hint="How you would caption it. Max 140 characters.">
-        <Input
-          name="caption"
-          value={caption}
-          maxLength={140}
-          onChange={(event) => setCaption(event.target.value)}
-          placeholder="The pool at dusk"
-        />
-      </Field>
 
       <div
         onDragOver={(event) => {
@@ -424,38 +571,125 @@ function PhotoUploader({ estateId, onChanged }: { estateId: number; onChanged: (
             : 'hairline rounded-xs bg-paper px-4 py-6 text-center'
         }
       >
-        <p className="text-[13.5px] font-medium">Drop a photograph here</p>
+        <p className="text-[13.5px] font-medium">Drop photographs here, or choose several at once</p>
         <p className="mt-1 text-[12.5px] text-ink-muted">{UPLOAD_HINT}</p>
         <div className="mt-3">
           <Button type="button" variant="secondary" onClick={() => inputRef.current?.click()}>
-            Choose a file
+            Choose photographs
           </Button>
         </div>
         <input
           ref={inputRef}
           type="file"
           name="file"
+          // Many at a time, and the same control can be used again to add more
+          // without losing what is already queued.
+          multiple
           accept={ACCEPTED_IMAGE_TYPES.join(',')}
           className="sr-only"
-          aria-label="Choose a photograph to upload"
+          aria-label="Choose photographs to upload"
           onChange={onPick}
         />
       </div>
 
-      {progress !== null ? (
-        <div>
-          <div className="flex items-baseline justify-between text-[12px] text-ink-muted">
-            <span>Uploading</span>
-            <span className="num">{progress}%</span>
-          </div>
-          <div
-            className="mt-1 h-1.5 w-full bg-ink/10"
-            role="progressbar"
-            aria-valuenow={progress}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <div className="h-full bg-accent" style={{ width: `${progress}%` }} />
+      {queue.length > 0 ? (
+        <div className="space-y-2">
+          <p className="num text-[12px] text-ink-muted">
+            {queue.length} {queue.length === 1 ? 'photograph' : 'photographs'} queued
+            {' · '}
+            {MAX_ESTATE_PHOTOS - existingCount} of {MAX_ESTATE_PHOTOS} places left in the estate
+          </p>
+          <ul className="space-y-2">
+            {queue.map((item) => (
+              <li key={item.id} className="hairline rounded-xs bg-surface p-2.5">
+                <div className="flex items-start gap-3">
+                  <img
+                    src={item.previewUrl}
+                    alt=""
+                    width={56}
+                    height={42}
+                    className="h-[42px] w-14 shrink-0 border border-ink/15 object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[12.5px] font-medium">{item.file.name}</p>
+                    <p className="num text-[11.5px] text-ink-muted">
+                      {Math.max(1, Math.round(item.file.size / 1024))} KB
+                      {item.problem ? '' : ' · ready'}
+                    </p>
+                    {item.problem ? (
+                      <p className="mt-1 text-[12px] text-signal-ink">
+                        Cannot be sent: {item.problem}
+                      </p>
+                    ) : (
+                      <label className="mt-1.5 block">
+                        <span className="sr-only">Caption for {item.file.name}</span>
+                        <Input
+                          value={item.caption}
+                          maxLength={140}
+                          disabled={item.status === 'uploading'}
+                          placeholder="Caption (optional)"
+                          onChange={(event) =>
+                            setQueue((current) =>
+                              current.map((row) =>
+                                row.id === item.id ? { ...row, caption: event.target.value } : row,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                    )}
+                    {item.error ? (
+                      <p className="mt-1 text-[12px] text-signal-ink">
+                        {item.error}
+                        {item.requestId ? <span className="num"> · ref {item.requestId}</span> : null}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    {item.status === 'uploading' ? (
+                      <span className="num text-[11.5px] text-ink-muted">{item.progress}%</span>
+                    ) : null}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={uploading}
+                      aria-label={`Remove ${item.file.name} from the queue`}
+                      onClick={() => remove(item.id)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+                {item.status === 'uploading' ? (
+                  <div
+                    className="mt-2 h-1.5 w-full bg-ink/10"
+                    role="progressbar"
+                    aria-label={`Uploading ${item.file.name}`}
+                    aria-valuenow={item.progress}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  >
+                    <div className="h-full bg-accent" style={{ width: `${item.progress}%` }} />
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="primary"
+              disabled={uploading || pending.length === 0}
+              onClick={upload}
+            >
+              {uploading
+                ? 'Uploading…'
+                : `Upload ${pending.length} ${pending.length === 1 ? 'photograph' : 'photographs'}`}
+            </Button>
+            <Button type="button" variant="ghost" disabled={uploading} onClick={() => clearQueue()}>
+              Clear
+            </Button>
           </div>
         </div>
       ) : null}
@@ -793,7 +1027,11 @@ function AdminSetupBody() {
         {!photos.error ? (
           <div className="space-y-5">
             <PhotoList estateId={scope} photos={photos.data ?? []} onChanged={photos.reload} />
-            <PhotoUploader estateId={scope} onChanged={reloadAll} />
+            <PhotoUploader
+              estateId={scope}
+              existingCount={photos.data?.length ?? 0}
+              onChanged={reloadAll}
+            />
           </div>
         ) : null}
       </Card>

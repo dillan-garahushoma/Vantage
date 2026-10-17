@@ -127,7 +127,11 @@ export function Join() {
           </form>
 
           <p className="mt-5 text-[13px] text-ink-muted">
-            No code yet? Ask your estate administrator, or{' '}
+            No code yet?{' '}
+            <Link to="/request-access" className="font-medium text-accent-ink hover:underline">
+              Request access for approval
+            </Link>{' '}
+            and your estate office will review it — or{' '}
             <Link to="/estates" className="font-medium text-accent-ink hover:underline">
               find your complex
             </Link>

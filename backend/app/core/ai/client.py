@@ -164,9 +164,10 @@ def parse_json_output(raw_text: str, schema: Mapping[str, Any]) -> Any:
 # Minimal JSON Schema subset validator.
 #
 # We deliberately avoid a new dependency (e.g. jsonschema). This supports the
-# subset we ask providers for: type, properties, required, items, enum and
-# additionalProperties=false. It raises on the first violation and never quotes
-# the offending value, because that value may be personal data.
+# subset we ask providers for: type, properties, required, items, enum,
+# maxItems/minItems and additionalProperties=false. It raises on the first
+# violation and never quotes the offending value, because that value may be
+# personal data.
 # --------------------------------------------------------------------------- #
 
 _TYPE_CHECKS: dict[str, Any] = {
@@ -208,6 +209,17 @@ def validate_json_schema(
     enum = schema.get("enum")
     if isinstance(enum, list) and payload not in enum:
         raise AIUnavailableError("invalid_output")
+
+    # Array bounds. The providers we ask for structured output support minItems
+    # and maxItems, and the DTOs enforce the same limits afterwards, so checking
+    # them here keeps the two validators from disagreeing about what is valid.
+    if isinstance(payload, list):
+        max_items = schema.get("maxItems")
+        if isinstance(max_items, int) and len(payload) > max_items:
+            raise AIUnavailableError("invalid_output")
+        min_items = schema.get("minItems")
+        if isinstance(min_items, int) and len(payload) < min_items:
+            raise AIUnavailableError("invalid_output")
 
     if isinstance(payload, dict) and (expected == "object" or "properties" in schema):
         properties = schema.get("properties") or {}

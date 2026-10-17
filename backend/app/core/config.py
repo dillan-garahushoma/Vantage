@@ -30,6 +30,22 @@ class Settings(BaseSettings):
     # public id - never an uploaded filename.
     UPLOAD_DIR: str = "uploads"
 
+    # --- Outbound email -------------------------------------------------
+    # Off by default: with EMAIL_ENABLED=false the app logs that a message would
+    # have been sent and opens no socket, so the product works with no mail relay.
+    # Turn it on by setting EMAIL_ENABLED=true and SMTP_HOST to a real relay.
+    EMAIL_ENABLED: bool = False
+    EMAIL_FROM: str = "no-reply@valora.local"
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str | None = None
+    SMTP_PASSWORD: SecretStr | None = None
+    SMTP_USE_STARTTLS: bool = True
+    # The public origin of the frontend, used to build links in notification
+    # emails (for example the admin approval queue). Never derived from a request
+    # header, which a client could forge.
+    APP_BASE_URL: str = "http://localhost:5173"
+
     # Optional AI assist layer. Everything is off by default and the product must
     # work with AI off. See docs/ADR-004-AI-Assist-Layer.md.
     AI_ENABLED: bool = False
@@ -38,15 +54,30 @@ class Settings(BaseSettings):
     AI_PERSONAL_DATA_ALLOWED: bool = False
     AI_PROVIDER: Literal["gemini", "openai_compatible", "fake"] = "gemini"
     AI_MODEL: str | None = None
-    AI_TIMEOUT_SECONDS: float = 15.0
+    # A real Gemini brief has taken 55 seconds; allow headroom for slower calls.
+    AI_TIMEOUT_SECONDS: float = 75.0
     AI_MAX_INPUT_CHARS: int = 6000
-    AI_MAX_OUTPUT_TOKENS: int = 600
+    # Thinking tokens count against this cap on the models we use, so it has to
+    # cover the reasoning *and* the answer. The old default of 600 was spent on
+    # thoughts: the interaction came back ``incomplete`` with no text and looked
+    # like a rejected key. 2048 is the measured floor for a brief with thinking
+    # disabled-by-level; leave more room if you raise AI_THINKING_LEVEL.
+    AI_MAX_OUTPUT_TOKENS: int = 2048
+    # How hard the model is allowed to reason before answering. Every feature
+    # here asks it to *write* from supplied FACTS, not to analyse, so the default
+    # is deliberately low: it is cheaper, faster and leaves the output budget for
+    # the answer. "default" omits the field entirely and lets the provider decide.
+    # Accepted levels vary by model; an unsupported level is a provider 400.
+    AI_THINKING_LEVEL: Literal["minimal", "low", "medium", "high", "default"] = "low"
     # Per-estate daily AI budget, enforced by GuardedLLMClient against the
     # append-only ai_call_events ledger (see docs/ADR-004-AI-Assist-Layer.md).
     AI_DAILY_CALL_CAP_PER_ESTATE: int = 200
     GEMINI_API_KEY: SecretStr | None = None
     AI_COMPAT_BASE_URL: str | None = None
     AI_COMPAT_API_KEY: SecretStr | None = None
+    # External n8n intelligence webhook orchestrator
+    N8N_INTELLIGENCE_URL: str | None = None
+    N8N_SERVICE_KEY: SecretStr | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -107,6 +138,14 @@ class Settings(BaseSettings):
                         "AI_COMPAT_API_KEY is required when AI_PROVIDER=openai_compatible."
                     )
 
+        return self
+
+    @model_validator(mode="after")
+    def validate_email_configuration(self) -> "Settings":
+        # Enabling email without somewhere to send it is a misconfiguration that
+        # would silently drop every notification, so it is refused at startup.
+        if self.EMAIL_ENABLED and not self.SMTP_HOST:
+            raise ValueError("SMTP_HOST is required when EMAIL_ENABLED=true.")
         return self
 
 

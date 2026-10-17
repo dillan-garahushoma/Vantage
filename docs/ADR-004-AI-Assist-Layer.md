@@ -55,14 +55,31 @@ re-checks the gates on its own:
 | Per-feature flag | `AI_INSIGHTS_ENABLED` / `AI_TRIAGE_ENABLED` must be true; unknown feature names are refused with `policy` |
 | Personal data | `data_class=personal` requires `AI_PERSONAL_DATA_ALLOWED=true`, else `policy` |
 | Input size | `len(system) + len(user) > AI_MAX_INPUT_CHARS` → `policy`, checked **before** any HTTP |
-| Output size | `AI_MAX_OUTPUT_TOKENS` is passed to the provider on every request |
-| Time | One attempt, hard `asyncio.wait_for(AI_TIMEOUT_SECONDS)`. No retry loops |
-| Output trust | Provider output is JSON-decoded and schema-validated; failure → `invalid_output` |
+| Output size | `AI_MAX_OUTPUT_TOKENS` is passed to the provider on every request, and `AI_THINKING_LEVEL` sets the model's reasoning effort |
+| Time | One attempt, hard `asyncio.wait_for(AI_TIMEOUT_SECONDS)` (75 seconds by default). No retry loops |
+| Output trust | Provider output is JSON-decoded and schema-validated; failure → `invalid_output`, or `truncated` when the provider stopped at the token limit |
 | Estate scope | `GuardedLLMClient` requires an `estate_id` on every call; it cannot be omitted |
 | Budget | `AI_DAILY_CALL_CAP_PER_ESTATE` counted over the last 24h from the ledger; over cap → `budget` |
 
 Reason codes are closed: `disabled, policy, budget, timeout, network, provider_error,
-invalid_output`.
+rate_limited, invalid_output, truncated`.
+
+The reason codes are diagnostic, not decorative, and three distinctions earn their place:
+
+* `truncated` is **not** `invalid_output`. A provider whose output budget ran out returns a
+  well-formed envelope with no usable answer (Gemini: HTTP 200, `status: incomplete`,
+  `usage.total_thought_tokens` swallowing the cap; OpenAI-compatible: `finish_reason: length`).
+  The cap is too small — an operator setting — while `invalid_output` means the answer was
+  malformed. Reporting both as `invalid_output` once made a 600-token cap look like a rejected
+  API key.
+* `rate_limited` is **not** `provider_error`. HTTP 429 is a spent quota or a rate limit: the key
+  authenticated, the allowance ran out, and the fix is to wait or enable billing.
+* **Thinking tokens count against `AI_MAX_OUTPUT_TOKENS`** on both model families we use. A cap
+  that does not cover the reasoning plus the answer produces an empty answer, so the default
+  leaves headroom (2048) and `AI_THINKING_LEVEL` defaults to `low`: these features ask the model
+  to *write* from supplied FACTS, not to analyse. `AI_THINKING_LEVEL=default` omits the field and
+  leaves reasoning effort to the provider; an unsupported level is a provider 400, so the
+  accepted values are per-model.
 
 `GatedLLMClient` is the only gate for the checks that need no persistence. `GuardedLLMClient`
 (`app/core/ai/guard.py`) wraps it and is the **only** way a feature may call AI: it adds the
@@ -191,20 +208,32 @@ generally available and "recommended for all new projects" as of June 2026:
 - auth header `x-goog-api-key` (no `Authorization: Bearer`)
 - body: `model`, `input`, `system_instruction`,
   `response_format: {type: "text", mime_type: "application/json", schema: <JSON Schema>}`,
-  `generation_config.max_output_tokens`
+  `generation_config.max_output_tokens`, and `generation_config.thinking_level` when configured
 - response: `steps[].content[].text` holds the JSON string (top-level `output_text` is
-  preferred when present)
+  preferred when present); `status: incomplete` means the output budget was exhausted
+- `thinking_level` accepts `minimal | low | medium | high`, but **which values a model supports
+  varies** (`gemini-3.8-flash` documents `low/medium/high`), so the level is configuration and
+  `default` sends nothing. Thinking tokens are billed against `max_output_tokens`, which is a
+  hard cutoff that truncates the answer rather than failing the request.
+- `response_format.schema` documents `minItems`/`maxItems` but **not** `maxLength`, so list
+  bounds are requested from the provider and string limits are enforced locally.
 
 Sources read 2026-10-10:
 [Structured outputs](https://ai.google.dev/gemini-api/docs/structured-output),
 [Interactions API reference](https://ai.google.dev/api/interactions-api),
 [Text generation](https://ai.google.dev/gemini-api/docs/text-generation),
-[Interactions API GA announcement](https://blog.google/innovation-and-ai/technology/developers-tools/interactions-api-general-availability/).
+[Interactions API GA announcement](https://blog.google/innovation-and-ai/technology/developers-tools/interactions-api-general-availability/),
+and re-checked 2026-10-15 for `thinking_level` and array bounds:
+[Gemini thinking](https://ai.google.dev/gemini-api/docs/thinking),
+[Structured outputs](https://ai.google.dev/gemini-api/docs/structured-output).
 
 The OpenAI-compatible adapter targets `POST <base_url>/v1/chat/completions` with
 `Authorization: Bearer <key>`, `response_format: {"type": "json_object"}`, `max_tokens`,
 and reads `choices[0].message.content`. That API has no schema field, so the schema is
-enforced locally after the response arrives.
+enforced locally after the response arrives. It maps HTTP 429 to `rate_limited` and
+`choices[0].finish_reason: length` to `truncated`, and it sends no reasoning-effort field:
+that parameter is gateway-specific (NVIDIA NIM, OpenRouter and others each spell it
+differently), so guessing it would turn a working provider into a 400.
 
 No new dependency was added; both adapters use `httpx`, which is already present.
 

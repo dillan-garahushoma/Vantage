@@ -51,8 +51,12 @@ describe('homeRouteFor', () => {
     expect(homeRouteFor(user('investor'), [estate({ membership_roles: ['investor'] })])).toBe('/app')
   })
 
-  it('sends a resident with no estate to redeem a join code', () => {
-    expect(homeRouteFor(user('resident'), [])).toBe('/join')
+  it('sends a resident with no estate to request access for approval', () => {
+    expect(homeRouteFor(user('resident'), [])).toBe('/request-access')
+  })
+
+  it('sends a non-resident with no estate to the join-code screen', () => {
+    expect(homeRouteFor(user('investor'), [])).toBe('/join')
   })
 
   it('sends a provider with no estate to the waiting screen', () => {
@@ -77,6 +81,7 @@ describe('homeRouteFor', () => {
     const cases: Array<[CurrentUser | null, EstateAccess[]]> = [
       [null, []],
       [user('resident'), []],
+      [user('investor'), []],
       [user('service_provider'), []],
       [user('hoa_admin'), [estate({ is_estate_admin: true })]],
       [user('resident'), [estate()]],

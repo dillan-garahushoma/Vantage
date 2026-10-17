@@ -1,3 +1,15 @@
+/*
+  The original primitive set, on the squared "calm intelligence" geometry.
+
+  It is still the set the operational screens (record drawers, admin forms, the
+  public pages) are written against, and its tokens were repointed at the modern
+  Base44 palette, so those screens picked up the new look without being rewritten.
+
+  `src/components/ui/` — the directory beside this file — holds the newer set
+  (button, card, badge, input, table, tabs, dialog, sheet, drawer, toast …). Import
+  from an explicit module path (`../components/ui/button`) to reach those; a bare
+  `../components/ui` resolves to *this* file.
+*/
 import type {
   ButtonHTMLAttributes,
   ComponentPropsWithRef,
@@ -250,6 +262,32 @@ export function LoadingState({ label = 'Loading' }: { label?: string }) {
     <div className="flex items-center gap-3 py-10 text-ink-muted">
       <span className="inline-block h-3 w-3 animate-pulse bg-accent" aria-hidden="true" />
       <span className="text-[13px]">{label}…</span>
+    </div>
+  )
+}
+
+/**
+ * A reserved, muted shape standing in for content that has not arrived.
+ *
+ * Deliberately silent: it is `aria-hidden`, and the region that owns it carries
+ * `aria-busy` plus a visually hidden polite status. A skeleton mirrors the
+ * geometry of what replaces it, so the page does not jump when data lands, and
+ * the pulse is removed globally under `prefers-reduced-motion` (see index.css).
+ */
+export function Skeleton({ className }: { className?: string }) {
+  return <div aria-hidden="true" className={cx('animate-pulse bg-ink/10', className)} />
+}
+
+/** A paragraph-shaped skeleton: full lines, with a shorter last line. */
+export function SkeletonText({ lines = 3, className }: { lines?: number; className?: string }) {
+  return (
+    <div aria-hidden="true" className={cx('space-y-2', className)}>
+      {Array.from({ length: lines }, (_, index) => (
+        <div
+          key={index}
+          className={cx('h-3 animate-pulse bg-ink/10', index === lines - 1 ? 'w-2/3' : 'w-full')}
+        />
+      ))}
     </div>
   )
 }

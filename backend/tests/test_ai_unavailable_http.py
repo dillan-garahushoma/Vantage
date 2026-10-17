@@ -46,7 +46,18 @@ async def test_ai_unavailable_maps_to_a_503_envelope() -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "reason", ["disabled", "policy", "budget", "timeout", "network", "provider_error", "invalid_output"]
+    "reason",
+    [
+        "disabled",
+        "policy",
+        "budget",
+        "timeout",
+        "network",
+        "provider_error",
+        "rate_limited",
+        "invalid_output",
+        "truncated",
+    ],
 )
 async def test_every_reason_maps_to_503_with_a_safe_body(reason: str) -> None:
     async def _raise() -> None:

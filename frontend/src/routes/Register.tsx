@@ -204,23 +204,32 @@ export function Register() {
               {ACCOUNT_TYPES.map((item) => {
                 const id = `account_type_${item.value}`
                 return (
-                  <div
+                  // The whole card is the label, so the choice is one click
+                  // target: the radio, the title, the description and the card's
+                  // own empty space all select it. Previously only the 16px
+                  // radio and the title responded, which looked broken.
+                  //
+                  // `aria-labelledby` keeps the accessible name to the account
+                  // type alone (a label wrapping its own input would otherwise
+                  // take the whole card's text as the name), and the blurb stays
+                  // the *description*: a screen reader hears “Estate
+                  // administrator”, then what that means.
+                  <label
                     key={item.value}
                     className={
-                      form.accountType === item.value
-                        ? 'hairline rounded-xs border-accent bg-surface p-3.5'
-                        : 'hairline rounded-xs bg-surface p-3.5 hover:border-ink/40'
+                      (form.accountType === item.value
+                        ? 'hairline rounded-xs block cursor-pointer border-accent bg-surface p-3.5'
+                        : 'hairline rounded-xs block cursor-pointer bg-surface p-3.5 hover:border-ink/40') +
+                      ' has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-dotted has-[:focus-visible]:outline-accent has-[:focus-visible]:outline-offset-2'
                     }
                   >
-                    {/* The blurb is the control's *description*, not part of its
-                        name: a screen reader should hear “Estate administrator”
-                        and then the explanation, not one long label. */}
-                    <div className="flex items-center gap-2.5">
+                    <span className="flex items-center gap-2.5">
                       <input
                         id={id}
                         type="radio"
                         name="account_type"
                         value={item.value}
+                        aria-labelledby={`${id}_title`}
                         aria-describedby={`${id}_blurb`}
                         checked={form.accountType === item.value}
                         onChange={() => {
@@ -228,16 +237,19 @@ export function Register() {
                           setErrors({})
                           setError(null)
                         }}
-                        className="h-4 w-4 accent-[#1F6F5C]"
+                        className="h-4 w-4 shrink-0 accent-[#1F6F5C]"
                       />
-                      <label htmlFor={id} className="cursor-pointer text-[14px] font-medium">
+                      <span id={`${id}_title`} className="text-[14px] font-medium">
                         {item.label}
-                      </label>
-                    </div>
-                    <p id={`${id}_blurb`} className="mt-1.5 pl-6.5 text-[12.5px] text-ink-muted">
+                      </span>
+                    </span>
+                    <span
+                      id={`${id}_blurb`}
+                      className="mt-1.5 block pl-6.5 text-[12.5px] text-ink-muted"
+                    >
                       {item.blurb}
-                    </p>
-                  </div>
+                    </span>
+                  </label>
                 )
               })}
             </div>

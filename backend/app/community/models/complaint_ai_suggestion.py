@@ -1,4 +1,5 @@
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Column,
     ForeignKey,
@@ -98,6 +99,10 @@ class ComplaintAISuggestion(Base):
     provider = Column(String(32), nullable=False)
     model = Column(String(120), nullable=False)
     prompt_version = Column(String(32), nullable=False)
+    # Existing suggestions from the former demonstration setup are preserved for
+    # audit, but never shown as a live AI result and may be replaced only by an
+    # administrator's explicit request.
+    is_seeded = Column(Boolean, nullable=False, server_default="false")
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
 
     # Write-once decision. Never set by the AI layer.

@@ -109,6 +109,29 @@ class EstateMembershipRepository:
         await self._db.flush()
         return membership
 
+    async def list_contacts_for_role(
+        self, *, estate_id: int, membership_role: str
+    ) -> list[tuple[str | None, str]]:
+        """The (name, email) of every member holding one role in one estate.
+
+        This is how the estate's own HOA administrators are found for a
+        notification: the recipients are the administrators' own account
+        addresses, resolved from persisted membership rather than a configured
+        address that could belong to the wrong estate. Only rows whose user still
+        has an email are returned.
+        """
+        result = await self._db.execute(
+            select(User.full_name, User.email)
+            .join(EstateMembership, EstateMembership.user_id == User.user_id)
+            .where(
+                EstateMembership.estate_id == estate_id,
+                EstateMembership.membership_role == membership_role,
+                User.email.is_not(None),
+            )
+            .order_by(User.user_id)
+        )
+        return [(row[0], row[1]) for row in result.all()]
+
     async def get_by_id_in_estate(
         self, *, membership_id: int, estate_id: int
     ) -> EstateMembership | None:

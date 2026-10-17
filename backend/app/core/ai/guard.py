@@ -37,8 +37,18 @@ BUDGET_WINDOW: Final = timedelta(hours=24)
 COUNTED_STATUSES: Final[tuple[str, ...]] = ("ok", "provider_failed")
 
 # Reasons that mean "we did reach for the provider, it just did not work".
+# ``truncated`` and ``rate_limited`` belong here: the provider was called and did
+# answer - with an empty envelope, or with a refusal - so the attempt is
+# auditable and it is not free.
 PROVIDER_FAILURE_REASONS: Final[frozenset[str]] = frozenset(
-    {"timeout", "network", "provider_error", "invalid_output"}
+    {
+        "timeout",
+        "network",
+        "provider_error",
+        "rate_limited",
+        "invalid_output",
+        "truncated",
+    }
 )
 
 STATUS_OK: Final = "ok"

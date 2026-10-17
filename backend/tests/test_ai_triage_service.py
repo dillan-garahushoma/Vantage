@@ -141,6 +141,22 @@ class FakeSuggestionRepo:
         self.suggestion = row
         return row
 
+    async def replace_seeded(self, **fields: Any):
+        row = self.suggestion
+        if row is None or not getattr(row, "is_seeded", False):
+            return None
+        for key, value in fields.items():
+            if key != "suggestion_id" and key != "estate_id":
+                setattr(row, key, value)
+        row.is_seeded = False
+        row.decision = None
+        row.decided_by = None
+        row.decided_at = None
+        row.decided_category = None
+        row.decided_priority = None
+        row.decided_trade = None
+        return row
+
     async def record_decision(
         self,
         *,
@@ -323,6 +339,7 @@ def make_suggestion(**overrides: Any):
         "provider": "stub",
         "model": "stub-model",
         "prompt_version": PROMPT_VERSION,
+        "is_seeded": False,
         "decision": None,
         "decided_by": None,
         "decided_at": None,
@@ -411,6 +428,22 @@ async def test_second_generate_returns_the_same_row_with_no_llm_call() -> None:
     assert response.suggestion_id == existing.suggestion_id
     assert response.suggested_category == "water"
     assert service._repo.added == []
+
+
+@pytest.mark.asyncio
+async def test_a_seeded_suggestion_is_replaced_only_after_an_explicit_request() -> None:
+    seeded = make_suggestion(is_seeded=True)
+    service, provider, _ = make_service(
+        complaint=make_complaint(),
+        author=make_author(),
+        unit=make_unit(),
+        suggestion=seeded,
+    )
+
+    response = await service.generate(42, 1, ADMIN)
+
+    assert provider.calls == 1
+    assert response.suggested_priority == "urgent"
 
 
 # ---------------------------------------------------------------- authorization
@@ -870,6 +903,21 @@ async def test_get_returns_the_stored_suggestion_without_calling_the_provider() 
 
 
 @pytest.mark.asyncio
+async def test_get_hides_a_legacy_seeded_suggestion() -> None:
+    service, provider, _ = make_service(
+        complaint=make_complaint(),
+        author=make_author(),
+        unit=make_unit(),
+        suggestion=make_suggestion(is_seeded=True),
+    )
+
+    with pytest.raises(NotFoundException):
+        await service.get(42, 1, ADMIN)
+
+    assert provider.calls == 0
+
+
+@pytest.mark.asyncio
 async def test_get_requires_an_estate_admin() -> None:
     service, _, _ = make_service(
         complaint=make_complaint(),
@@ -1060,6 +1108,21 @@ async def test_deciding_without_a_suggestion_is_404() -> None:
 
     with pytest.raises(NotFoundException):
         await service.decide(42, 1, TriageDecisionRequest(decision="dismissed"), ADMIN)
+
+
+@pytest.mark.asyncio
+async def test_deciding_a_legacy_seeded_suggestion_is_404() -> None:
+    service, _, _ = make_service(
+        complaint=make_complaint(),
+        author=make_author(),
+        unit=make_unit(),
+        suggestion=make_suggestion(is_seeded=True),
+    )
+
+    with pytest.raises(NotFoundException):
+        await service.decide(42, 1, TriageDecisionRequest(decision="dismissed"), ADMIN)
+
+    assert service._repo.decisions == []
 
 
 @pytest.mark.asyncio

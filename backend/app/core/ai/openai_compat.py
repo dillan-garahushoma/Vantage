@@ -14,6 +14,12 @@ Provider quirk: OpenAI's JSON mode requires the word "json" to appear somewhere
 in the messages. This adapter appends a minimal instruction when it is missing,
 so a caller's prompt is never the reason a call fails.
 
+Reason mapping: ``429`` is ``rate_limited`` (a spent quota, retry later) and
+``finish_reason: length`` is ``truncated`` (the output budget ran out), so both
+stay distinguishable from a generic provider failure. Reasoning models behind an
+OpenAI-compatible gateway usually count their reasoning against ``max_tokens``
+too, which is why the default cap is generous.
+
 This API has no schema parameter, so ``schema`` is enforced locally after the
 response returns: provider output is always treated as untrusted.
 """
@@ -104,6 +110,8 @@ class OpenAICompatLLMClient:
         except httpx.HTTPError as exc:
             raise AIUnavailableError(http_error_reason(exc)) from None
 
+        if response.status_code == 429:
+            raise AIUnavailableError("rate_limited")
         if response.status_code >= 400:
             raise AIUnavailableError("provider_error")
 
@@ -112,7 +120,16 @@ class OpenAICompatLLMClient:
         except ValueError:
             raise AIUnavailableError("invalid_output") from None
 
-        parsed = parse_json_output(_extract_text(payload), schema)
+        try:
+            parsed = parse_json_output(_extract_text(payload), schema)
+        except AIUnavailableError as exc:
+            # A usable answer always wins; but when there is not one and the
+            # provider stopped at the token limit, say so instead of reporting a
+            # malformed answer - a spent budget and a broken contract need
+            # different fixes.
+            if exc.reason == "invalid_output" and _stopped_at_the_token_limit(payload):
+                raise AIUnavailableError("truncated") from None
+            raise
         latency_ms = int((time.perf_counter() - started) * 1000)
         return LLMResult(
             parsed=parsed,
@@ -121,6 +138,17 @@ class OpenAICompatLLMClient:
             latency_ms=latency_ms,
             input_chars=len(system) + len(user),
         )
+
+
+def _stopped_at_the_token_limit(data: Any) -> bool:
+    """True when the first choice stopped because it ran out of output tokens."""
+    if not isinstance(data, Mapping):
+        return False
+    choices = data.get("choices")
+    if not isinstance(choices, list) or not choices:
+        return False
+    first = choices[0]
+    return isinstance(first, Mapping) and first.get("finish_reason") == "length"
 
 
 def _extract_text(data: Any) -> str:

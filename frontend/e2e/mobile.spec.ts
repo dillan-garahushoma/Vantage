@@ -285,6 +285,32 @@ function fixture(path: string, method: string): unknown | undefined {
       pages: 1,
     }
   }
+  if (path === '/api/v1/residency-requests/mine') return []
+  if (path === '/api/v1/residency-requests/pending-count') return { pending: 2 }
+  if (path === '/api/v1/residency-requests') {
+    return {
+      items: [
+        {
+          request_id: 31,
+          estate_id: 1,
+          estate_name: 'Ridge Close Estate',
+          unit_no: 'A-101',
+          status: 'pending',
+          applicant_name: 'Thandi Nkosi',
+          applicant_email: 'thandi@example.co.za',
+          applicant_phone: '082 000 0000',
+          note: 'Lease starts 1 Nov',
+          created_at: '2026-10-13T09:30:00Z',
+          decided_at: null,
+          decision_note: null,
+        },
+      ],
+      total: 1,
+      page: 1,
+      size: 20,
+      pages: 1,
+    }
+  }
   if (path === '/api/v1/public/estates') {
     return {
       items: [
@@ -305,16 +331,26 @@ function fixture(path: string, method: string): unknown | undefined {
       pages: 1,
     }
   }
-  if (/^\/api\/v1\/public\/estates\/\d+$/.test(path)) {
+  const publicDetail = /^\/api\/v1\/public\/estates\/(\d+)$/.exec(path)
+  if (publicDetail) {
+    const estateId = Number(publicDetail[1])
+    // Estate 2 publishes a full gallery, so the sweep measures the multi-photo
+    // mosaic too — not only the single-photo case, which is the easy one — and
+    // estate 3 publishes more than the mosaic can hold, so the overflow tile and
+    // its count are measured at 390px as well.
+    const count = estateId === 3 ? 12 : estateId === 2 ? 5 : 1
     return {
-      estate_id: 1,
+      estate_id: estateId,
       name: 'Ridge Close Estate',
       suburb: 'Centurion',
       city: 'Tshwane',
       province: 'Gauteng',
       description: 'A 24-unit complex with a single monitored gate.',
       unit_count: 24,
-      photos: [{ public_id: 'pub1', caption: 'The pool at dusk' }],
+      photos: Array.from({ length: count }, (_, index) => ({
+        public_id: `pub${index + 1}`,
+        caption: index === 0 ? 'The pool at dusk' : null,
+      })),
       living_score: {
         overall_score: '72.5',
         status: 'scored',
@@ -475,6 +511,8 @@ const ROUTES = [
   '/',
   '/estates',
   '/estates/1',
+  '/estates/2',
+  '/estates/3',
   '/login',
   '/register',
   '/app',
@@ -483,7 +521,9 @@ const ROUTES = [
   '/app/announcements',
   '/app/properties',
   '/app/providers',
+  '/request-access',
   '/admin/setup',
+  '/admin/residency',
   '/admin/members',
   '/provider/work',
 ]

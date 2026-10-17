@@ -55,24 +55,55 @@ def seed_demo_command(*, expect_database: str) -> None:
         print(result["message"])
         _print_credentials_table(result["users"])
         return
-    print(f"Seeded estate: {result['estate']} (id={result['estate_id']})")
-    print(f"  database:    {result['database']}")
-    print(f"  units:       {result['properties']}")
-    print(f"  residents:   {result['residents']}")
-    print(f"  providers:   {result['providers']}")
-    print(f"  complaints:  {result['complaints']}")
-    print(f"  work orders: {result['work_orders']}")
-    print(f"  incidents:   {result['incidents']}")
-    print(f"  notices:     {result['announcements']}")
-    print(f"  photos:      {result['photos']} (generated placeholders, real pipeline)")
-    print("  Living Score snapshots (real engine, oldest first):")
-    for score in result["scores"]:
-        published = score["overall_score"] if score["overall_score"] is not None else "none"
-        print(
-            f"    {score['as_of'][:10]}  status={score['status']:<17} "
-            f"score={published} engine={score['engine_version']}"
-        )
+
+    if "estates" in result and result["estates"]:
+        print(f"Seeded {len(result['estates'])} estates into database: {result['database']}")
+        for est in result["estates"]:
+            print(f"\n--- Estate: {est['estate']} (id={est['estate_id']}) ---")
+            print(f"  units:       {est['properties']}")
+            print(f"  residents:   {est['residents']}")
+            print(f"  providers:   {est['providers']}")
+            print(f"  complaints:  {est['complaints']}")
+            print(f"  work orders: {est['work_orders']}")
+            print(f"  incidents:   {est['incidents']}")
+            print(f"  notices:     {est['announcements']}")
+            print(f"  photos:      {est['photos']} imported")
+            print(f"  join code:   {est['join_code']}")
+            print("  Living Score snapshots (real engine, oldest first):")
+            for score in est["scores"]:
+                published = score["overall_score"] if score["overall_score"] is not None else "none"
+                print(
+                    f"    {score['as_of'][:10]}  status={score['status']:<17} "
+                    f"score={published} engine={score['engine_version']}"
+                )
+    else:
+        print(f"Seeded estate: {result['estate']} (id={result['estate_id']})")
+        print(f"  database:    {result['database']}")
+        print(f"  units:       {result['properties']}")
+        print(f"  residents:   {result['residents']}")
+        print(f"  providers:   {result['providers']}")
+        print(f"  complaints:  {result['complaints']}")
+        print(f"  work orders: {result['work_orders']}")
+        print(f"  incidents:   {result['incidents']}")
+        print(f"  notices:     {result['announcements']}")
+        print(f"  photos:      {result['photos']} (generated placeholders, real pipeline)")
+        print("  Living Score snapshots (real engine, oldest first):")
+        for score in result["scores"]:
+            published = score["overall_score"] if score["overall_score"] is not None else "none"
+            print(
+                f"    {score['as_of'][:10]}  status={score['status']:<17} "
+                f"score={published} engine={score['engine_version']}"
+            )
     _print_credentials_table(result["users"])
+
+
+async def snapshot_estate_living_score(session, estate_id: int, *, as_of=None):
+    """Bridge for the demo seeder to invoke the real Living Score engine without naming the service."""
+    from app.analytics.services.estate_living_score_service import LivingScoreService
+
+    return await LivingScoreService(session).calculate_and_snapshot(
+        estate_id, actor=None, as_of=as_of
+    )
 
 
 async def _recalc_living_scores_async(*, estate_id: int | None, include_demo: bool):

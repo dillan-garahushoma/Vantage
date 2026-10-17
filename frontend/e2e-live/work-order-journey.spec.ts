@@ -176,9 +176,9 @@ test('an issue is assigned, worked, rated and recalculated end to end', async ({
 
   const panel = livingScorePanel(page)
   await expect(panel.getByRole('heading', { name: 'Estate quality of life' })).toBeVisible()
-  // A seeded demonstration estate with a stored snapshot: the demo badge and a
-  // number the engine produced, never an estimate made here.
-  await expect(panel.getByText('Demo data')).toBeVisible({ timeout: 45_000 })
+  // The stored score is calculated by the engine; no seeded-data label is
+  // presented as part of the live operational UI.
+  await expect(panel.getByText('Demo data')).toHaveCount(0)
   await expect(panel.getByText(/\/ 100/).first()).toBeVisible({ timeout: 45_000 })
   await shot('05-dashboard-shows-the-score')
 

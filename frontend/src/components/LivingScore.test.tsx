@@ -111,9 +111,9 @@ describe('LivingScorePanel — the stored snapshot', () => {
     expect(screen.queryByText('Maintenance completion')).toBeNull()
   })
 
-  it('labels a demonstration estate and stays silent for a real one', () => {
+  it('never labels operational score data as demonstration data', () => {
     const { unmount } = renderPanel({ snapshot: snapshot({ is_demo: true }) })
-    expect(screen.getByText('Demo data')).toBeVisible()
+    expect(screen.queryByText('Demo data')).toBeNull()
     unmount()
 
     renderPanel({ snapshot: snapshot({ is_demo: false }) })

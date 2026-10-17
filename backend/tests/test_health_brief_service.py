@@ -648,6 +648,24 @@ async def test_the_feature_flag_alone_is_enough_to_fall_back() -> None:
 
 
 @pytest.mark.asyncio
+async def test_a_truncated_provider_answer_falls_back_with_its_own_reason() -> None:
+    """An output budget spent on thinking is not a malformed answer.
+
+    Reporting it as ``invalid_output`` is what made a too-small
+    ``AI_MAX_OUTPUT_TOKENS`` look like a broken API key.
+    """
+    client = RecordingClient(reason="truncated")
+    service, _, _ = make_service(snapshot=make_snapshot(), client=client)
+
+    response = await service.generate(ESTATE, ADMIN)
+
+    assert client.calls == 1
+    assert response.source == "template"
+    assert response.ai_unavailable_reason == "truncated"
+    assert service._insights.added == []
+
+
+@pytest.mark.asyncio
 async def test_a_provider_error_falls_back_to_the_template() -> None:
     client = RecordingClient(reason="provider_error")
     service, _, _ = make_service(snapshot=make_snapshot(), client=client)

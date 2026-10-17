@@ -62,10 +62,18 @@ describe('PublicEstates', () => {
     expect(screen.getByText(/Centurion, Tshwane, Gauteng/)).toBeVisible()
     expect(screen.getByText(/a 24-unit complex/i)).toBeVisible()
     expect(screen.getByText('24 units')).toBeVisible()
-    expect(screen.getByRole('link', { name: /view this complex/i })).toHaveAttribute(
-      'href',
-      '/estates/1',
-    )
+
+    // The name is the card's only link and its `::after` overlay covers the card,
+    // so there is one link with a real destination name and the whole card is the
+    // target. The card itself has to be `relative` for that overlay to stay put.
+    const titleLink = screen.getByRole('link', { name: 'Ridge Close' })
+    expect(titleLink).toHaveAttribute('href', '/estates/1')
+    expect(titleLink.className).toMatch(/after:inset-0/)
+    const card = titleLink.closest('li')
+    expect(card?.className).toMatch(/relative/)
+    expect(card?.className).toMatch(/overflow-hidden/)
+    // The affordance is still on screen; it is simply no longer the link.
+    expect(screen.getByText(/view this complex/i)).toBeVisible()
     // The cover photo is fetched by its unguessable public id, at thumbnail size.
     expect(screen.getByAltText('Photo of Ridge Close')).toHaveAttribute(
       'src',
@@ -126,5 +134,43 @@ describe('PublicEstates', () => {
     renderDirectory()
 
     expect(await screen.findByText('No photograph yet')).toBeVisible()
+  })
+
+  it('reserves the grid while loading, instead of collapsing and reflowing', async () => {
+    let land!: (page: ReturnType<typeof pageOf>) => void
+    mocks.list.mockReturnValue(
+      new Promise<ReturnType<typeof pageOf>>((resolve) => {
+        land = resolve
+      }),
+    )
+    const { container } = renderDirectory()
+
+    // The words reach a screen reader once, politely, from a region the signal is
+    // attached to; the shapes themselves are decorative and stay out of the tree.
+    const status = await screen.findByRole('status')
+    expect(status).toHaveTextContent(/loading published complexes/i)
+    expect(status.closest('[aria-busy="true"]')).not.toBeNull()
+    // Six reserved cards, each with a media box: the geometry the grid will have.
+    expect(container.querySelectorAll('.animate-pulse').length).toBeGreaterThanOrEqual(6)
+
+    land(pageOf([item()]))
+    expect(await screen.findByText('Ridge Close')).toBeVisible()
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+
+  it('says which slice of the directory is on screen, and can clear a search', async () => {
+    mocks.list.mockResolvedValue(pageOf([item()], 24))
+    const user = userEvent.setup()
+    renderDirectory()
+
+    expect(await screen.findByText(/showing 1–12 of 24 published complexes/i)).toBeVisible()
+    // Pagination is legible rather than a guess.
+    expect(screen.getByText(/page 1 of 2/)).toBeVisible()
+
+    await user.type(screen.getByLabelText(/search by name, suburb or city/i), 'Centurion')
+    await user.click(screen.getByRole('button', { name: /search/i }))
+    await user.click(await screen.findByRole('button', { name: 'Clear' }))
+
+    expect(mocks.list).toHaveBeenLastCalledWith({ page: 1, page_size: 12, q: '' })
   })
 })

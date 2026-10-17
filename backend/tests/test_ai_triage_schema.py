@@ -160,6 +160,7 @@ def test_suggestion_table_shape() -> None:
         "provider",
         "model",
         "prompt_version",
+        "is_seeded",
         "created_at",
         "decision",
         "decided_by",
@@ -170,6 +171,7 @@ def test_suggestion_table_shape() -> None:
     }
     for name in ("complaint_id", "estate_id", "suggested_category", "suggested_priority"):
         assert columns[name].nullable is False, name
+    assert columns["is_seeded"].nullable is False
     for name in (
         "suggested_trade",
         "decision",

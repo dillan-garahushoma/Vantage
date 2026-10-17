@@ -39,3 +39,17 @@ class ListingStatus(str, Enum):
     active = "active"
     sold = "sold"
     withdrawn = "withdrawn"
+
+
+class ResidencyRequestStatus(str, Enum):
+    """The lifecycle of a resident's request to join an estate.
+
+    A request is created ``pending`` by the resident and is only ever moved to
+    ``approved`` or ``rejected`` by an estate administrator of the *same* estate.
+    The three values are the database check constraint and the API vocabulary; a
+    new state is a migration, never a string typed at a call site.
+    """
+
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"

@@ -1588,7 +1588,9 @@
                   "timeout",
                   "network",
                   "provider_error",
+                  "rate_limited",
                   "invalid_output",
+                  "truncated",
                   "ungrounded_output",
                   "insufficient_data"
                 ],
@@ -2670,6 +2672,42 @@
         "title": "Page[PublicEstateListItem]",
         "type": "object"
       },
+      "Page_ResidencyRequestResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ResidencyRequestResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[ResidencyRequestResponse]",
+        "type": "object"
+      },
       "Page_ServiceProviderResponse_": {
         "properties": {
           "items": {
@@ -2740,6 +2778,20 @@
           "size"
         ],
         "title": "Page[WorkOrderResponse]",
+        "type": "object"
+      },
+      "PendingResidencyCountResponse": {
+        "description": "The badge number for the admin navigation.",
+        "properties": {
+          "pending": {
+            "title": "Pending",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pending"
+        ],
+        "title": "PendingResidencyCountResponse",
         "type": "object"
       },
       "PropertyCreate": {
@@ -3222,6 +3274,172 @@
         ],
         "title": "RegisterRequest",
         "type": "object"
+      },
+      "ResidencyRequestCreate": {
+        "additionalProperties": false,
+        "description": "A resident's request to be admitted to one unit of one estate.",
+        "properties": {
+          "estate_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "unit_no": {
+            "maxLength": 10,
+            "minLength": 1,
+            "title": "Unit No",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estate_id",
+          "unit_no"
+        ],
+        "title": "ResidencyRequestCreate",
+        "type": "object"
+      },
+      "ResidencyRequestReject": {
+        "additionalProperties": false,
+        "description": "The optional reason an administrator declining a request may record.",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "title": "ResidencyRequestReject",
+        "type": "object"
+      },
+      "ResidencyRequestResponse": {
+        "description": "One residency request, as the admin queue or the resident's own list shows it.",
+        "properties": {
+          "applicant_email": {
+            "title": "Applicant Email",
+            "type": "string"
+          },
+          "applicant_name": {
+            "title": "Applicant Name",
+            "type": "string"
+          },
+          "applicant_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicant Phone"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decision_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Note"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "estate_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estate Name"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "unit_no": {
+            "title": "Unit No",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "estate_id",
+          "unit_no",
+          "status",
+          "applicant_name",
+          "applicant_email",
+          "created_at"
+        ],
+        "title": "ResidencyRequestResponse",
+        "type": "object"
+      },
+      "ResidencyRequestStatus": {
+        "description": "The lifecycle of a resident's request to join an estate.\n\nA request is created ``pending`` by the resident and is only ever moved to\n``approved`` or ``rejected`` by an estate administrator of the *same* estate.\nThe three values are the database check constraint and the API vocabulary; a\nnew state is a migration, never a string typed at a call site.",
+        "enum": [
+          "pending",
+          "approved",
+          "rejected"
+        ],
+        "title": "ResidencyRequestStatus",
+        "type": "string"
       },
       "ServiceProviderResponse": {
         "properties": {
@@ -7317,6 +7535,362 @@
         "summary": "Get Public Photo",
         "tags": [
           "public"
+        ]
+      }
+    },
+    "/api/v1/residency-requests": {
+      "get": {
+        "description": "One page of this estate's requests, searchable and filterable by status.",
+        "operationId": "identity_list_residency_requests",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ResidencyRequestStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ResidencyRequestResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Residency Requests",
+        "tags": [
+          "identity"
+        ]
+      },
+      "post": {
+        "description": "Submit a request to be admitted to one unit of one estate.\n\nNothing is granted here: the request is recorded ``pending`` and the estate's\nadministrators are notified. A repeat submission while one is pending is a 409,\nand repeated attempts against unknown units are rate-limited.",
+        "operationId": "identity_submit_residency_request",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResidencyRequestCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidencyRequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Submit Residency Request",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/residency-requests/mine": {
+      "get": {
+        "description": "The requests the caller submitted, newest first, across all estates.",
+        "operationId": "identity_my_residency_requests",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ResidencyRequestResponse"
+                  },
+                  "title": "Response Identity My Residency Requests",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "My Residency Requests",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/residency-requests/pending-count": {
+      "get": {
+        "description": "How many requests this estate has still to decide, for the nav badge.",
+        "operationId": "identity_pending_residency_count",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingResidencyCountResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Pending Residency Count",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/residency-requests/{request_id}/approve": {
+      "post": {
+        "description": "Approve a pending request and grant the resident membership of the unit.\n\nHOA administrators only. A request that another administrator already decided\nis a 409, not an overwrite.",
+        "operationId": "identity_approve_residency_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidencyRequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Approve Residency Request",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/residency-requests/{request_id}/reject": {
+      "post": {
+        "description": "Decline a pending request, recording an optional reason. HOA admins only.",
+        "operationId": "identity_reject_residency_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResidencyRequestReject"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidencyRequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Reject Residency Request",
+        "tags": [
+          "identity"
         ]
       }
     },

@@ -3,65 +3,114 @@ import type { FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Keyline } from '../components/Brand'
 import { PublicShell } from '../components/PublicShell'
-import { IconArrowRight, IconSearch } from '../components/Icons'
-import { Button, Card, Chip, EmptyState, ErrorState, Input, LoadingState } from '../components/ui'
+import { Photo, PhotoFallback } from '../components/Photo'
+import { IconArrowRight, IconPin, IconSearch } from '../components/Icons'
+import { Button, Card, EmptyState, ErrorState, Input, Skeleton, SkeletonText } from '../components/ui'
 import type { PublicEstateListItem } from '../lib/contract'
 import { PUBLIC_PAGE_SIZE, listPublicEstates, photoAlt, publicPhotoUrl } from '../lib/publicDirectory'
 import { useAsync } from '../lib/useAsync'
 
 /**
- * A thumbnail whose reserved box matches what is rendered, so a slow image does
- * not shift the grid. The stored shapes vary, hence `object-cover` and an
- * explicit 3:2 box rather than the file's own dimensions.
+ * One published complex, as a card.
+ *
+ * The photograph *is* the card: a reserved 3:2 box, cropped rather than
+ * letterboxed, which measures 371 × 247 against the 371 × 160 strip this screen
+ * used to draw — 1.55× the height, and 56% of the card instead of 42%.
+ * A visitor comparing complexes compares photographs first, then where, then how
+ * big — so those are the three things in reading order, and everything else the
+ * API does not publish (no price, no rating, no badge) is simply absent rather
+ * than invented.
+ *
+ * The estate name is the card's only link, stretched over the card with an
+ * `::after` overlay. That gives one link with a real destination name instead of
+ * a card-shaped click target with no accessible name, while making the whole
+ * card clickable. `relative` + `overflow-hidden` on the card keep the overlay
+ * inside its own bounds.
  */
-export function EstateThumb({ item, className }: { item: PublicEstateListItem; className?: string }) {
-  if (!item.cover_photo_public_id) {
-    return (
-      <div
-        className={`flex h-40 w-full items-center justify-center border-b border-ink/15 bg-ink/5 text-[12px] text-ink-muted ${className ?? ''}`}
-      >
-        No photograph yet
-      </div>
-    )
-  }
+function EstateCard({ item }: { item: PublicEstateListItem }) {
   return (
-    <img
-      src={publicPhotoUrl(item.cover_photo_public_id, 'thumb')}
-      alt={photoAlt(item.name, null)}
-      width={480}
-      height={320}
-      loading="lazy"
-      className={`h-40 w-full border-b border-ink/15 bg-ink/5 object-cover ${className ?? ''}`}
-    />
+    <Card
+      as="li"
+      className="group relative flex h-full flex-col overflow-hidden transition-colors hover:border-ink/40"
+    >
+      <div className="relative aspect-[3/2] w-full overflow-hidden border-b border-ink/15 bg-ink/5">
+        {item.cover_photo_public_id ? (
+          <Photo
+            src={publicPhotoUrl(item.cover_photo_public_id, 'thumb')}
+            alt={photoAlt(item.name, null)}
+            width={480}
+            height={320}
+            fallbackLabel="No photograph yet"
+            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+          />
+        ) : (
+          <PhotoFallback label="No photograph yet" className="h-full w-full" />
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col p-4">
+        <h2 className="text-[16px] leading-snug font-semibold">
+          <Link
+            to={`/estates/${item.estate_id}`}
+            className="after:absolute after:inset-0 after:content-[''] hover:underline"
+          >
+            {item.name}
+          </Link>
+        </h2>
+
+        <p className="mt-1.5 flex items-start gap-1.5 text-[12.5px] text-ink-muted">
+          <IconPin size={14} className="mt-[2px] shrink-0" />
+          <span>
+            {item.suburb}, {item.city}, {item.province}
+          </span>
+        </p>
+
+        {item.description ? (
+          <p className="mt-3 line-clamp-3 text-[13px] leading-relaxed text-ink-soft">
+            {item.description}
+          </p>
+        ) : null}
+
+        <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+          <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-accent-ink">
+            View this complex
+            <IconArrowRight size={15} />
+          </span>
+          <span className="num shrink-0 text-[12.5px] text-ink-muted">{item.unit_count} units</span>
+        </div>
+      </div>
+    </Card>
   )
 }
 
-function EstateCardRow({ item }: { item: PublicEstateListItem }) {
+/**
+ * The grid, at its final geometry, before the data arrives.
+ *
+ * A skeleton is only worth having if it is the same shape as the thing it stands
+ * in for — otherwise the page reflows when the data lands, which is the defect it
+ * was meant to remove. It is `aria-hidden`, the region is `aria-busy`, and a
+ * polite status carries the words, so a screen reader hears "loading" once
+ * instead of hearing six decorative boxes.
+ */
+function DirectorySkeleton() {
   return (
-    <li>
-      <Card className="flex h-full flex-col overflow-hidden">
-        <EstateThumb item={item} />
-        <div className="flex flex-1 flex-col p-4">
-          <h2 className="text-[16px] font-semibold">{item.name}</h2>
-          <p className="num mt-1 text-[12.5px] text-ink-muted">
-            {item.suburb}, {item.city}, {item.province}
-          </p>
-          {item.description ? (
-            <p className="mt-2.5 line-clamp-3 text-[13px] text-ink-soft">{item.description}</p>
-          ) : null}
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Chip glyph="◫">{item.unit_count} units</Chip>
+    <div aria-busy="true">
+      <p role="status" className="sr-only">
+        Loading published complexes…
+      </p>
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }, (_, index) => (
+          <div key={index} className="hairline flex flex-col overflow-hidden rounded-xs bg-surface">
+            <Skeleton className="aspect-[3/2] w-full" />
+            <div className="p-4">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="mt-3 h-3 w-1/2" />
+              <SkeletonText lines={3} className="mt-4" />
+            </div>
           </div>
-          <Link
-            to={`/estates/${item.estate_id}`}
-            className="mt-auto inline-flex items-center gap-1.5 pt-4 text-[13px] font-medium text-accent-ink hover:underline"
-          >
-            View this complex
-            <IconArrowRight size={15} />
-          </Link>
-        </div>
-      </Card>
-    </li>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -85,9 +134,18 @@ export function PublicEstates() {
     setSearchParams(next ? { q: next } : {}, { replace: true })
   }
 
+  function clear() {
+    setQuery('')
+    setSubmitted('')
+    setPage(1)
+    setSearchParams({}, { replace: true })
+  }
+
   const items = directory.data?.items ?? []
   const total = directory.data?.total ?? 0
   const pages = Math.max(1, Math.ceil(total / PUBLIC_PAGE_SIZE))
+  const first = (page - 1) * PUBLIC_PAGE_SIZE + 1
+  const last = Math.min(page * PUBLIC_PAGE_SIZE, total)
 
   return (
     <PublicShell>
@@ -105,23 +163,30 @@ export function PublicEstates() {
             about its residents, units or complaints is ever published.
           </p>
 
-          <form className="mt-6 flex max-w-xl items-end gap-2" onSubmit={submit} role="search">
-            <label className="flex-1">
-              <span className="mb-1.5 block text-[11px] font-medium tracking-wider text-ink-muted uppercase">
-                Search by name, suburb or city
-              </span>
+          <form className="mt-6" onSubmit={submit} role="search">
+            <label
+              htmlFor="estate-search"
+              className="block text-[11px] font-medium tracking-wider text-ink-muted uppercase"
+            >
+              Search by name, suburb or city
+            </label>
+            {/* One capsule: the field and the action share an edge, so the pair
+                reads as a single control rather than two things to line up. */}
+            <div className="mt-2 flex max-w-xl">
               <Input
+                id="estate-search"
                 name="q"
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Centurion"
+                className="rounded-r-none border-r-0"
               />
-            </label>
-            <Button type="submit" variant="primary">
-              <IconSearch size={16} />
-              Search
-            </Button>
+              <Button type="submit" variant="primary" className="shrink-0 rounded-l-none">
+                <IconSearch size={16} />
+                Search
+              </Button>
+            </div>
           </form>
           <Keyline className="mt-8" />
         </div>
@@ -129,7 +194,7 @@ export function PublicEstates() {
 
       <section className="mx-auto max-w-[1200px] px-5 py-8">
         {directory.loading ? (
-          <LoadingState label="Loading published complexes" />
+          <DirectorySkeleton />
         ) : directory.error ? (
           <ErrorState
             title={
@@ -155,14 +220,7 @@ export function PublicEstates() {
             }
             action={
               submitted ? (
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setQuery('')
-                    setSubmitted('')
-                    setSearchParams({}, { replace: true })
-                  }}
-                >
+                <Button variant="secondary" onClick={clear}>
                   Clear the search
                 </Button>
               ) : undefined
@@ -170,18 +228,30 @@ export function PublicEstates() {
           />
         ) : (
           <>
-            <p className="num mb-4 text-[12.5px] text-ink-muted">
-              {total} published {total === 1 ? 'complex' : 'complexes'}
-              {submitted ? ` matching “${submitted}”` : ''}
-            </p>
+            <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+              <p className="num text-[12.5px] text-ink-muted">
+                showing {first}–{last} of {total} published {total === 1 ? 'complex' : 'complexes'}
+                {submitted ? ` matching “${submitted}”` : ''}
+              </p>
+              {submitted ? (
+                <button
+                  type="button"
+                  onClick={clear}
+                  className="text-[12.5px] font-medium text-accent-ink hover:underline"
+                >
+                  Clear
+                </button>
+              ) : null}
+            </div>
+
             <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((item) => (
-                <EstateCardRow key={item.estate_id} item={item} />
+                <EstateCard key={item.estate_id} item={item} />
               ))}
             </ul>
 
             {pages > 1 ? (
-              <div className="mt-8 flex items-center justify-between gap-3">
+              <div className="mt-8 flex items-center justify-between gap-3 border-t border-ink/15 pt-4">
                 <p className="num text-[12px] text-ink-muted">
                   page {page} of {pages}
                 </p>

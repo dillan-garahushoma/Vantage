@@ -87,7 +87,7 @@ function AddProviderCard({ estateId, onAdded }: { estateId: number; onAdded: () 
             title={title}
             message={
               error.status === 404
-                ? `${error.message} A provider must first create their own VALORA account, and that account must carry a trade profile. Residents cannot be added here — they join with a code.`
+                ? `${error.message} A provider must first create their own VALORA account, and that account must carry a trade profile. Residents are not added here — they request access for approval, or join with a code.`
                 : error.message
             }
             requestId={error.requestId}
@@ -249,9 +249,9 @@ function MembersBody() {
         </p>
         <h1 className="mt-2 text-[26px] leading-tight font-semibold">Members</h1>
         <p className="mt-1 max-w-2xl text-[13.5px] text-ink-muted">
-          Who may act inside this estate, and how they got in. There is no approval queue: a resident
-          who redeems a live join code against their unit is a member immediately, and a provider you
-          add by email is a member immediately. Removing someone here is the revocation.
+          Who may act inside this estate, and how they got in. A resident gets here either by being
+          approved on the Approvals screen or by redeeming a live join code against their unit; a
+          provider you add by email is added immediately. Removing someone here is the revocation.
         </p>
       </header>
 
@@ -397,8 +397,9 @@ function MembersBody() {
             <h2 className="text-[14.5px] font-semibold">How people get in</h2>
             <ul className="mt-2 space-y-1.5 text-[13px] text-ink-soft">
               <li>
-                <span className="font-medium">Residents</span> redeem a join code against their unit
-                number. Instant, no approval step — the code and the unit are the proof.
+                <span className="font-medium">Residents</span> either request access and are approved
+                on the Approvals screen, or redeem a join code against their unit number, which is
+                instant. Both produce the same membership.
               </li>
               <li>
                 <span className="font-medium">Service providers</span> register themselves, then you

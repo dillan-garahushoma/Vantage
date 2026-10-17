@@ -62,7 +62,18 @@ export function deleteEstatePhoto(estateId: number, photoId: number): Promise<vo
 /** What the picker hints at before a byte is spent. The server still decides. */
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024
-export const UPLOAD_HINT = 'JPEG, PNG or WebP · up to 5 MB · up to 12 photos per estate'
+/**
+ * Mirrors `MAX_PHOTOS_PER_ESTATE` in the photo service. The server enforces it
+ * and answers 409 when it is reached; the picker counts against it so a batch
+ * is never queued only for the last one to be refused.
+ */
+export const MAX_ESTATE_PHOTOS = 12
+export const UPLOAD_HINT = `JPEG, PNG or WebP · up to ${MAX_UPLOAD_BYTES / (1024 * 1024)} MB each · up to ${MAX_ESTATE_PHOTOS} photos per estate`
+
+/** "JPEG, PNG or WEBP" — the accepted types as a person reads them. */
+export const ACCEPTED_IMAGE_LABEL = ACCEPTED_IMAGE_TYPES.map((type) =>
+  type.replace('image/', '').toUpperCase(),
+).join(', ')
 
 export function uploadEstatePhoto(
   estateId: number,
@@ -223,9 +234,18 @@ export function listEstateWorkOrders(
   })
 }
 
+/**
+ * Assign a provider to a complaint. A work order is always the assignment of a
+ * provider to a complaint — there is no free-standing job record to create.
+ */
 export function createWorkOrder(
   estateId: number,
-  body: { complaint_id: number; provider_id: number; job_cost?: string | null },
+  body: {
+    complaint_id: number
+    provider_id: number
+    job_cost?: string | number | null
+    estimated_completion_date?: string | null
+  },
 ): Promise<WorkOrder> {
   return api.post<WorkOrder>('/api/v1/work-orders', body, { estate_id: estateId })
 }

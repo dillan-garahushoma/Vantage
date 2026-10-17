@@ -1,24 +1,14 @@
 import { useState } from 'react'
 import { ComplaintDrawer } from '../components/ComplaintDrawer'
-import { IconPlus, IconSearch } from '../components/Icons'
+import { IconPlus } from '../components/Icons'
 import { RequireEstate } from '../components/RequireEstate'
-import {
-  Button,
-  Card,
-  Chip,
-  Drawer,
-  EmptyState,
-  ErrorState,
-  Field,
-  Input,
-  LoadingState,
-  Select,
-  TableShell,
-  Td,
-  Textarea,
-  Th,
-  cx,
-} from '../components/ui'
+import { Button, Chip, Drawer, ErrorState, Field, LoadingState, Select, Textarea } from '../components/ui'
+import { Button as BrandButton } from '../components/ui/button'
+import { DataTable } from '../components/valora/DataTable'
+import type { DataTableColumn } from '../components/valora/DataTable'
+import { SectionHeading } from '../components/valora/SectionHeading'
+import { StatusChip } from '../components/valora/StatusChip'
+import { Surface } from '../components/valora/Surface'
 import { complaintCategories, complaintPriorities } from '../api/generated/enums'
 import { useAuth } from '../context/AuthContext'
 import { useEstateScope } from '../context/EstateContext'
@@ -28,6 +18,14 @@ import { displayLabel, relativeDays } from '../lib/format'
 import type { Complaint, Page, Property } from '../lib/types'
 import { useAsync } from '../lib/useAsync'
 
+/**
+ * The resident's and administrator's complaint form.
+ *
+ * Its vocabularies come from the generated contract — `complaintCategories` and
+ * `complaintPriorities` are the values the API accepts, so the form cannot drift
+ * into offering a category the server rejects. It posts with `estate_id` as a
+ * scope selector; the server resolves the caller's membership from the JWT.
+ */
 export function LogComplaintDrawer({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
   const { estateId, estate } = useEstateScope()
   const { user } = useAuth()
@@ -152,7 +150,11 @@ export function LogComplaintDrawer({ onClose, onDone }: { onClose: () => void; o
         <Field
           label="What is wrong?"
           hint="Be specific: location, when it started, and what you have already tried."
-          error={description.length > 0 && description.trim().length < 5 ? 'Describe the issue in at least 5 characters.' : null}
+          error={
+            description.length > 0 && description.trim().length < 5
+              ? 'Describe the issue in at least 5 characters.'
+              : null
+          }
         >
           <Textarea
             value={description}
@@ -167,7 +169,7 @@ export function LogComplaintDrawer({ onClose, onDone }: { onClose: () => void; o
             type="checkbox"
             checked={anonymous}
             onChange={(event) => setAnonymous(event.target.checked)}
-            className="mt-1 h-4 w-4 accent-[#1F6F5C]"
+            className="mt-1 h-4 w-4 accent-[#7C3AED]"
           />
           <span className="text-[13px] text-ink-soft">
             Report anonymously
@@ -183,7 +185,7 @@ export function LogComplaintDrawer({ onClose, onDone }: { onClose: () => void; o
 }
 
 function ComplaintsBody() {
-  const { estateId } = useEstateScope()
+  const { estateId, estate } = useEstateScope()
   const { user } = useAuth()
   const isAdmin = user?.role === 'hoa_admin'
 
@@ -210,174 +212,187 @@ function ComplaintsBody() {
   const pages = complaints.data?.pages ?? 0
   const canLog = user?.role === 'resident' || isAdmin
 
+  // The filters above drive the *query*, so they scope the whole estate rather
+  // than the page that happens to be loaded; the table's own search is an extra
+  // pass over what is already here.
+  const columns: DataTableColumn<Complaint & Record<string, unknown>>[] = [
+    {
+      key: 'id',
+      header: 'Ref',
+      width: '84px',
+      sortable: true,
+      render: (row) => <span className="num font-medium">#{row.id}</span>,
+    },
+    {
+      key: 'description',
+      header: 'Issue',
+      render: (row) => (
+        <span className="block min-w-0">
+          <span className="line-clamp-1 max-w-[36rem]">{row.description}</span>
+          <span className="num mt-0.5 block text-[11.5px] text-ink-muted">
+            unit {row.unit_id}
+            {row.is_anonymous ? ' · anonymous' : ''}
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: 'category',
+      header: 'Category',
+      width: '150px',
+      sortable: true,
+      render: (row) => <span className="text-ink-soft">{displayLabel(row.category)}</span>,
+    },
+    {
+      key: 'priority',
+      header: 'Priority',
+      width: '130px',
+      sortable: true,
+      render: (row) => {
+        // The priority chip keeps its glyph, so priority never depends on colour.
+        const priority = priorityMeta[row.priority] ?? priorityMeta.normal
+        return (
+          <Chip tone={priority.tone} glyph={priority.glyph}>
+            {displayLabel(row.priority)}
+          </Chip>
+        )
+      },
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      width: '150px',
+      sortable: true,
+      render: (row) => {
+        const meta = complaintStatus[row.status ?? 'submitted']
+        return <StatusChip status={meta?.label ?? row.status ?? 'submitted'} size="sm" />
+      },
+    },
+    {
+      key: 'created_at',
+      header: 'Logged',
+      width: '120px',
+      align: 'right',
+      sortable: true,
+      render: (row) => (
+        <span className="num text-ink-muted">{relativeDays(row.created_at)}</span>
+      ),
+    },
+  ]
+
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="num text-[11px] tracking-[0.18em] text-accent-ink uppercase">
-            Operational signals
-          </p>
-          <h1 className="mt-2 text-[26px] leading-tight font-semibold">
-            {isAdmin ? 'Complaints' : 'Your complaints'}
-          </h1>
-          <p className="mt-1 text-[13.5px] text-ink-muted">
-            {isAdmin
-              ? 'Every complaint logged in this estate, with its lifecycle evidence.'
-              : 'Issues you have logged. Your HOA sees them; other residents do not.'}
-          </p>
-        </div>
-        {canLog ? (
-          <Button variant="primary" onClick={() => setLogging(true)}>
-            <IconPlus size={16} />
-            Log a complaint
-          </Button>
-        ) : null}
-      </header>
+      <SectionHeading
+        eyebrow="Operations"
+        title={isAdmin ? 'Maintenance & complaints' : 'Your complaints'}
+        description={
+          isAdmin
+            ? 'Every complaint logged in this estate, with its lifecycle evidence. Open one to review it, assign a provider or read the AI triage suggestion.'
+            : 'Issues you have logged. Your HOA sees them; other residents do not.'
+        }
+        action={
+          canLog ? (
+            <BrandButton variant="ink" onClick={() => setLogging(true)} className="rounded-full px-5">
+              <IconPlus size={16} />
+              Log a complaint
+            </BrandButton>
+          ) : null
+        }
+      />
 
-      <Card className="flex flex-wrap items-end gap-4 p-4">
-        <label className="min-w-[11rem] flex-1">
-          <span className="mb-1.5 block text-[11px] font-medium tracking-wider text-ink-muted uppercase">
-            Status
-          </span>
-          <Select
-            value={status}
-            onChange={(event) => {
-              setStatus(event.target.value)
-              setPage(1)
-            }}
-          >
-            <option value="">All statuses</option>
-            {Object.entries(complaintStatus)
-              .filter(([key]) => key !== 'closed')
-              .map(([key, meta]) => (
-                <option key={key} value={key}>
-                  {meta.label}
+      <Surface>
+        <div className="flex flex-wrap items-end gap-4 border-b border-line pb-4">
+          <label className="min-w-[11rem] flex-1">
+            <span className="mb-1.5 block text-[0.68rem] font-semibold tracking-[0.1em] text-ink/45 uppercase">
+              Status
+            </span>
+            <Select
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value)
+                setPage(1)
+              }}
+            >
+              <option value="">All statuses</option>
+              {Object.entries(complaintStatus)
+                .filter(([key]) => key !== 'closed')
+                .map(([key, meta]) => (
+                  <option key={key} value={key}>
+                    {meta.label}
+                  </option>
+                ))}
+            </Select>
+          </label>
+
+          <label className="min-w-[11rem] flex-1">
+            <span className="mb-1.5 block text-[0.68rem] font-semibold tracking-[0.1em] text-ink/45 uppercase">
+              Category
+            </span>
+            <Select
+              value={category}
+              onChange={(event) => {
+                setCategory(event.target.value)
+                setPage(1)
+              }}
+            >
+              <option value="">All categories</option>
+              {complaintCategories.map((item) => (
+                <option key={item} value={item}>
+                  {displayLabel(item)}
                 </option>
               ))}
-          </Select>
-        </label>
+            </Select>
+          </label>
 
-        <label className="min-w-[11rem] flex-1">
-          <span className="mb-1.5 block text-[11px] font-medium tracking-wider text-ink-muted uppercase">
-            Category
-          </span>
-          <Select
-            value={category}
-            onChange={(event) => {
-              setCategory(event.target.value)
-              setPage(1)
-            }}
-          >
-            <option value="">All categories</option>
-            {complaintCategories.map((item) => (
-              <option key={item} value={item}>
-                {displayLabel(item)}
-              </option>
-            ))}
-          </Select>
-        </label>
-
-        <div className="flex items-center gap-2">
-          <Input
-            className="hidden sm:block"
-            placeholder="Search the table below"
-            onKeyDown={(event) => {
-              if (event.key !== 'Enter') return
-              const term = (event.target as HTMLInputElement).value.trim().toLowerCase()
-              if (!term) return
-              const match = items.find(
-                (item) =>
-                  item.description.toLowerCase().includes(term) ||
-                  String(item.id) === term ||
-                  item.category.includes(term),
-              )
-              if (match) setOpenId(match.id)
-            }}
-          />
-          <span className="text-ink-muted" aria-hidden="true">
-            <IconSearch size={17} />
-          </span>
+          <p className="text-[0.75rem] text-ink/40">
+            These filters are applied by the server across{' '}
+            {estate?.estate_name ?? 'the estate'}, not just this page.
+          </p>
         </div>
-      </Card>
 
-      {complaints.loading ? (
-        <LoadingState label="Loading complaints" />
-      ) : complaints.error ? (
-        <ErrorState
-          message={complaints.error.message}
-          requestId={complaints.error.requestId}
-          action={
-            <Button variant="secondary" onClick={complaints.reload}>
-              Try again
-            </Button>
-          }
-        />
-      ) : items.length === 0 ? (
-        <EmptyState
-          title={isAdmin ? 'No complaints match these filters' : 'You have not logged any complaints'}
-          body={
-            isAdmin
-              ? 'Clear the filters, or wait for residents to log an issue. Every complaint becomes a health signal.'
-              : 'When something in your estate needs fixing, log it here. You will be able to follow it to resolution.'
-          }
-          action={canLog ? <Button variant="primary" onClick={() => setLogging(true)}>Log a complaint</Button> : undefined}
-        />
-      ) : (
-        <>
-          <TableShell>
-            <thead>
-              <tr>
-                <Th className="w-20">Ref</Th>
-                <Th>Issue</Th>
-                <Th className="w-28">Category</Th>
-                <Th className="w-28">Priority</Th>
-                <Th className="w-36">Status</Th>
-                <Th className="w-24 text-right">Logged</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => {
-                const statusMeta = complaintStatus[item.status ?? 'submitted']
-                const priority = priorityMeta[item.priority] ?? priorityMeta.normal
-                return (
-                  <tr
-                    key={item.id}
-                    onClick={() => setOpenId(item.id)}
-                    className={cx(
-                      'cursor-pointer transition-colors hover:bg-accent-wash/40',
-                      openId === item.id && 'bg-accent-wash/60',
-                    )}
-                  >
-                    <Td className="num font-medium">#{item.id}</Td>
-                    <Td>
-                      <span className="line-clamp-1 max-w-[38rem]">{item.description}</span>
-                      <span className="num mt-0.5 block text-[11.5px] text-ink-muted">
-                        unit {item.unit_id}
-                        {item.is_anonymous ? ' · anonymous' : ''}
-                      </span>
-                    </Td>
-                    <Td className="text-ink-soft">{displayLabel(item.category)}</Td>
-                    <Td>
-                      <Chip tone={priority.tone} glyph={priority.glyph}>
-                        {displayLabel(item.priority)}
-                      </Chip>
-                    </Td>
-                    <Td>
-                      <Chip tone={statusMeta?.tone ?? 'neutral'} glyph={statusMeta?.glyph}>
-                        {statusMeta?.label ?? item.status}
-                      </Chip>
-                    </Td>
-                    <Td className="num text-right text-ink-muted">
-                      {relativeDays(item.created_at)}
-                    </Td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </TableShell>
+        {complaints.loading ? (
+          <LoadingState label="Loading complaints" />
+        ) : complaints.error ? (
+          <ErrorState
+            message={complaints.error.message}
+            requestId={complaints.error.requestId}
+            action={
+              <Button variant="secondary" onClick={complaints.reload}>
+                Try again
+              </Button>
+            }
+          />
+        ) : (
+          <div className="pt-4">
+            <DataTable
+              columns={columns}
+              rows={items as (Complaint & Record<string, unknown>)[]}
+              rowKey={(row) => row.id}
+              searchKeys={['description', 'category', 'priority', 'status']}
+              searchPlaceholder="Search this page"
+              onRowClick={(row) => setOpenId(row.id)}
+              emptyTitle={
+                isAdmin ? 'No complaints match these filters' : 'You have not logged any complaints'
+              }
+              emptyDescription={
+                isAdmin
+                  ? 'Clear the filters, or wait for residents to log an issue. Every complaint becomes a health signal.'
+                  : 'When something in your estate needs fixing, log it here. You will be able to follow it to resolution.'
+              }
+              emptyAction={
+                canLog ? (
+                  <BrandButton variant="default" onClick={() => setLogging(true)}>
+                    Log a complaint
+                  </BrandButton>
+                ) : undefined
+              }
+            />
+          </div>
+        )}
 
-          <div className="flex items-center justify-between gap-3">
-            <p className="num text-[12px] text-ink-muted">
+        {items.length > 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+            <p className="num text-[0.75rem] text-ink/40">
               {complaints.data?.total ?? 0} complaints · page {complaints.data?.page ?? 1} of{' '}
               {Math.max(pages, 1)}
             </p>
@@ -398,8 +413,8 @@ function ComplaintsBody() {
               </Button>
             </div>
           </div>
-        </>
-      )}
+        ) : null}
+      </Surface>
 
       {openId !== null ? (
         <ComplaintDrawer

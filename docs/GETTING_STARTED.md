@@ -193,6 +193,7 @@ set AI_PROVIDER=gemini
 set AI_MODEL=<a Gemini model your key can call>
 set GEMINI_API_KEY=<your key - never commit it, never paste it into a file in git>
 set AI_INSIGHTS_ENABLED=true
+set AI_TIMEOUT_SECONDS=75
 ```
 
 - With `AI_PROVIDER=gemini` a key is **required**; configuration refuses to start
@@ -209,9 +210,12 @@ set AI_INSIGHTS_ENABLED=true
   200/day) against the append-only `ai_call_events` ledger. A refused call is
   recorded, and no prompt or output is ever logged.
 
-A real-provider run has **not** been performed or claimed in this checkout: the
-wiring is tested against the fake provider, and the switch above is the operator's
-to make once a key exists.
+A Gemini smoke check previously succeeded for both feature flags, but a later
+request hit the free-tier 429 quota. The full health brief was not re-verified
+against Gemini after the output-budget fix. A timeout of 75 seconds is the current
+default because one measured brief took 55 seconds; an explicit environment
+setting overrides that default. Real-provider availability still depends on the
+selected model and the key's current quota.
 
 ## 7. Recover a locked-out account (no email yet)
 

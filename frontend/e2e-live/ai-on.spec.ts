@@ -23,7 +23,6 @@ test('an HOA admin generates the brief, expands the figures and rates it', async
 
   const panel = briefPanel(page)
   await expect(panel.getByRole('heading', { name: 'Estate health brief' })).toBeVisible()
-  await expect(panel.getByText(/as at/i)).toBeVisible({ timeout: 45_000 })
 
   await panel.getByRole('button', { name: 'Generate AI summary' }).click()
 
@@ -31,7 +30,7 @@ test('an HOA admin generates the brief, expands the figures and rates it', async
   await expect(panel.getByText('Written by AI from the figures below')).toBeVisible({
     timeout: 30_000,
   })
-  await expect(panel.getByText(/demo data/i)).toBeVisible()
+  await expect(panel.getByText(/demo data/i)).toHaveCount(0)
 
   // The label flips to "Hide the figures", so match either wording.
   const expander = panel.getByRole('button', { name: /(show|hide) the figures/i })
@@ -107,7 +106,7 @@ test('a resident sees the brief and no triage review anywhere', async ({ page })
   await signInToDashboard(page, RESIDENT)
 
   const panel = briefPanel(page)
-  await expect(panel.getByText(/as at/i)).toBeVisible({ timeout: 45_000 })
+  await expect(panel.getByRole('heading', { name: 'Estate health brief' })).toBeVisible({ timeout: 45_000 })
   await expect(panel.getByRole('button', { name: /generate ai summary/i })).toHaveCount(0)
 
   await page.goto('/app/complaints')
@@ -130,8 +129,10 @@ test('both panels stay usable at a mobile width without horizontal overflow', as
   await signInToDashboard(page, ADMIN)
 
   const panel = briefPanel(page)
-  await expect(panel.getByText(/as at/i)).toBeVisible({ timeout: 45_000 })
+  await expect(panel.getByRole('heading', { name: 'Estate health brief' })).toBeVisible({ timeout: 45_000 })
 
+  await panel.getByRole('button', { name: 'Generate AI summary' }).click()
+  await expect(panel.getByText('Written by AI from the figures below')).toBeVisible({ timeout: 30_000 })
   await panel.getByRole('button', { name: /show the figures/i }).click()
   await expect(panel.getByRole('table')).toBeVisible()
 

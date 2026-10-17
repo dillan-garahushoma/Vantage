@@ -21,7 +21,6 @@ import type { Tone } from '../lib/display'
  * claims to be AI.
  */
 const AI_WORDING = 'Written by AI from the figures below'
-const TEMPLATE_WORDING = 'Automatic summary'
 
 const DIRECTION_TONE: Record<string, Tone> = {
   improving: 'good',
@@ -273,19 +272,14 @@ export function HealthBrief({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-[15px] font-semibold tracking-tight">Estate health brief</h2>
-          {data ? (
+          {data?.source === 'ai' ? (
             <p className="mt-1 text-[12.5px] text-ink-muted">
-              <span>{data.source === 'ai' ? AI_WORDING : TEMPLATE_WORDING}</span>
+              <span>{AI_WORDING}</span>
               <span>{` · as at ${fullDate(data.as_of)}`}</span>
             </p>
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {data?.data_origin === 'demo' ? (
-            <Chip tone="neutral" glyph="◷">
-              Demo data
-            </Chip>
-          ) : null}
           {canGenerate ? (
             <Button variant="secondary" onClick={generate} disabled={generating}>
               {generating ? 'Generating…' : 'Generate AI summary'}
@@ -313,14 +307,8 @@ export function HealthBrief({
           <LoadingState label="Loading the estate brief" />
         ) : !data && brief.error ? (
           readFailure(brief.error)
-        ) : data ? (
+        ) : data?.source === 'ai' ? (
           <div className="space-y-4">
-            {data.ai_unavailable_reason ? (
-              <p className="border-l-2 border-l-ochre bg-ochre-wash px-3 py-2 text-[12.5px] text-ink-soft">
-                Showing the automatic summary.
-              </p>
-            ) : null}
-
             <div>
               <h3 className="text-[16px] leading-snug font-semibold tracking-tight">
                 {data.output.headline}
@@ -400,7 +388,16 @@ export function HealthBrief({
               <FeedbackForm estateId={estateId} insightId={data.insight_id} />
             ) : null}
           </div>
-        ) : null}
+        ) : (
+          <EmptyState
+            title={data?.ai_unavailable_reason ? 'AI summary unavailable' : 'No AI summary has been generated yet.'}
+            body={
+              data?.ai_unavailable_reason
+                ? 'No AI summary was created. The Living Score and its supporting figures remain available above; try again after the AI service is configured or available.'
+                : 'The Living Score and its supporting figures are calculated from this estate’s recorded data. Select Generate AI summary to request a live explanation when you are ready.'
+            }
+          />
+        )}
       </div>
     </Card>
   )

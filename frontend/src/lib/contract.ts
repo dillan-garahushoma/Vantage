@@ -30,10 +30,20 @@ export type JoinResult = Schemas['MembershipJoinResponse']
 export type ServiceProvider = Schemas['ServiceProviderResponse']
 export type ServiceProviderPage = Schemas['Page_ServiceProviderResponse_']
 
+/* ---------------------------------------------------- residency approvals */
+
+export type ResidencyRequest = Schemas['ResidencyRequestResponse']
+export type ResidencyRequestPage = Schemas['Page_ResidencyRequestResponse_']
+export type ResidencyRequestCreate = Schemas['ResidencyRequestCreate']
+export type ResidencyRequestReject = Schemas['ResidencyRequestReject']
+export type PendingResidencyCount = Schemas['PendingResidencyCountResponse']
+
 /* ----------------------------------------------------- living score (stored) */
 
 export type LivingScoreSnapshot = Schemas['LivingScoreSnapshotResponse']
 export type LivingScoreComponent = Schemas['LivingScoreComponentResponse']
+export type LivingScoreHistory = Schemas['LivingScoreHistoryResponse']
+export type LivingScoreHistoryRow = Schemas['LivingScoreHistoryRow']
 
 /* ----------------------------------------------------------- work / orders */
 

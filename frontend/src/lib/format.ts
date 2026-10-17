@@ -1,11 +1,19 @@
 /** Presentation-only formatters. All figures render in tabular mono via `.num`. */
 
-const zar = new Intl.NumberFormat('en-ZA', {
+const zarCurrency = new Intl.NumberFormat('en-ZA', {
   style: 'currency',
   currency: 'ZAR',
   minimumFractionDigits: 0,
   maximumFractionDigits: 0,
 })
+
+/*
+  The intelligence surfaces render rand as `R42,000` — the form the design uses
+  for an expected saving. `money()` above keeps the en-ZA spacing convention
+  (`R 42 000`) for the records it formats; the two are noted as an open question in
+  the batch report rather than silently reconciled here.
+*/
+const zarPlain = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 })
 
 const zarPrecise = new Intl.NumberFormat('en-ZA', {
   style: 'currency',
@@ -21,7 +29,19 @@ export function money(value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === '') return '—'
   const n = typeof value === 'number' ? value : Number(value)
   if (Number.isNaN(n)) return '—'
-  return zar.format(n)
+  return zarCurrency.format(n)
+}
+
+/** `R42000` — a rand figure with no currency symbol, grouped the SA way. */
+export function zar(value: number): string {
+  return `R${zarPlain.format(Math.round(value))}`
+}
+
+/** `R42k` / `R1.20m` — a rand figure compact enough for a metric tile. */
+export function zarShort(value: number): string {
+  if (Math.abs(value) >= 1_000_000) return `R${(value / 1_000_000).toFixed(2)}m`
+  if (Math.abs(value) >= 1000) return `R${Math.round(value / 1000)}k`
+  return `R${Math.round(value)}`
 }
 
 export function moneyPrecise(value: string | number | null | undefined): string {

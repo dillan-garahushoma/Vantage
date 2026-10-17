@@ -11,12 +11,25 @@
  * caller's membership and answers 403/404 from that.
  */
 import { api } from './api'
-import type { LivingScoreSnapshot } from './contract'
+import type { LivingScoreHistory, LivingScoreSnapshot } from './contract'
 
 /** The estate's latest stored Living Score. 404 when it has never been scored. */
 export function getLivingScore(estateId: number): Promise<LivingScoreSnapshot> {
   return api.get<LivingScoreSnapshot>('/api/v1/analytics/living-score', {
     estate_id: estateId,
+  })
+}
+
+/**
+ * The estate's stored snapshots, newest first. Values are returned exactly as the
+ * engine wrote them, so a trajectory is a series of published numbers, never a
+ * line the browser invented.
+ */
+export function getLivingScoreHistory(estateId: number, pageSize = 12): Promise<LivingScoreHistory> {
+  return api.get<LivingScoreHistory>('/api/v1/analytics/living-score/history', {
+    estate_id: estateId,
+    page: 1,
+    page_size: pageSize,
   })
 }
 

@@ -87,6 +87,7 @@ describe('Triage suggestion — advisory copy and eligibility', () => {
     renderPanel()
 
     expect(await screen.findByText(/suggestion for the hoa/i)).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'AI triage' })).toBeVisible()
     expect(screen.getByText(/nothing is assigned or changed automatically/i)).toBeVisible()
     // It says what it is not: no promise of emergency response or auto-assignment.
     expect(screen.queryByText(/emergency response/i)).toBeNull()
@@ -251,7 +252,8 @@ describe('Triage suggestion — failures', () => {
 
     await user.click(await screen.findByRole('button', { name: /suggest triage/i }))
 
-    expect(await screen.findByText('Suggestions are not available right now.')).toBeVisible()
+    expect(await screen.findByText(/AI triage is unavailable right now/)).toBeVisible()
+    expect(screen.getByText(/No triage was generated/)).toBeVisible()
     expect(screen.queryByText(/AI_UNAVAILABLE|provider_error|timeout|budget/)).toBeNull()
   })
 

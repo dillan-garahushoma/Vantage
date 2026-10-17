@@ -36,7 +36,7 @@ def requires_demo_database():
 
 
 @pytest.mark.asyncio
-async def test_seeded_demo_estate_is_flagged_as_demo(db_session, tmp_path) -> None:
+async def test_seeded_estate_is_operational_data_not_demo_data(db_session, tmp_path) -> None:
     summary = await seed_demo(
         db_session, expect_database=expected_database(), upload_dir=tmp_path
     )
@@ -45,7 +45,7 @@ async def test_seeded_demo_estate_is_flagged_as_demo(db_session, tmp_path) -> No
     estate = (
         await db_session.execute(select(Estate).where(Estate.name == DEMO_ESTATE_NAME))
     ).scalar_one()
-    assert estate.is_demo is True
+    assert estate.is_demo is False
 
 
 @pytest.mark.asyncio

@@ -96,7 +96,7 @@ beforeEach(() => {
 })
 
 describe('Health Brief — labels come from API fields', () => {
-  it('says an AI brief was written by AI, and shows no AI wording for the template', async () => {
+  it('does not present the deterministic fallback as an automatic AI summary', async () => {
     const { unmount } = renderPanel()
     expect(await screen.findByText('Written by AI from the figures below')).toBeVisible()
     unmount()
@@ -106,15 +106,17 @@ describe('Health Brief — labels come from API fields', () => {
     )
     renderPanel()
 
-    expect(await screen.findByText('Automatic summary')).toBeVisible()
+    expect(await screen.findByText('No AI summary has been generated yet.')).toBeVisible()
     expect(screen.queryByText(/written by ai/i)).toBeNull()
+    expect(screen.queryByText(/automatic summary/i)).toBeNull()
     expect(screen.queryByText(/provider|prompt version|model/i)).toBeNull()
   })
 
-  it('shows a persistent demo badge only for demo data, and always shows as_of', async () => {
+  it('never labels operational figures as demo data, and always shows as_of', async () => {
     vi.mocked(readHealthBrief).mockResolvedValue(brief({ data_origin: 'demo' }))
     const { unmount } = renderPanel()
-    expect(await screen.findByText('Demo data')).toBeVisible()
+    await screen.findByText(/as at/i)
+    expect(screen.queryByText('Demo data')).toBeNull()
     expect(screen.getByText(/as at/i)).toBeVisible()
     unmount()
 
@@ -134,14 +136,15 @@ describe('Health Brief — labels come from API fields', () => {
     expect(screen.getByText('Ask the guard contractor for a night-shift review.')).toBeVisible()
   })
 
-  it('notes an unavailable AI layer quietly, without an error', async () => {
+  it('keeps the real figures available when the AI layer cannot generate a summary', async () => {
     vi.mocked(readHealthBrief).mockResolvedValue(
       brief({ source: 'template', insight_id: null, ai_unavailable_reason: 'provider_error' }),
     )
     renderPanel()
 
-    expect(await screen.findByText('Showing the automatic summary.')).toBeVisible()
-    expect(screen.queryByText('That request was rejected')).toBeNull()
+    expect(await screen.findByText('AI summary unavailable')).toBeVisible()
+    expect(screen.getByText(/No AI summary was created/)).toBeVisible()
+    expect(screen.queryByText(/automatic summary/i)).toBeNull()
     expect(screen.queryByText(/provider_error/)).toBeNull()
   })
 })
@@ -266,7 +269,7 @@ describe('Health Brief — feedback', () => {
 
     vi.mocked(readHealthBrief).mockResolvedValue(brief({ source: 'template', insight_id: null }))
     renderPanel()
-    await screen.findByText('Automatic summary')
+    await screen.findByText('No AI summary has been generated yet.')
     expect(screen.queryByRole('button', { name: 'Helpful' })).toBeNull()
   })
 

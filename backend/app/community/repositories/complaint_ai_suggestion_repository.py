@@ -55,6 +55,51 @@ class ComplaintAISuggestionRepository:
         await self._db.flush()
         return suggestion
 
+    async def replace_seeded(
+        self,
+        *,
+        suggestion_id: int,
+        estate_id: int,
+        suggested_category: str,
+        suggested_priority: str,
+        suggested_trade: str | None,
+        provider: str,
+        model: str,
+        prompt_version: str,
+    ) -> ComplaintAISuggestion | None:
+        """Replace one legacy seeded row after an explicit new request.
+
+        The original row stays the one-per-complaint record, but its simulated
+        labels and prior decision are cleared before real, validated output is
+        recorded. No ordinary live suggestion is ever updated.
+        """
+        result = await self._db.execute(
+            update(ComplaintAISuggestion)
+            .where(
+                ComplaintAISuggestion.suggestion_id == suggestion_id,
+                ComplaintAISuggestion.estate_id == estate_id,
+                ComplaintAISuggestion.is_seeded.is_(True),
+            )
+            .values(
+                suggested_category=suggested_category,
+                suggested_priority=suggested_priority,
+                suggested_trade=suggested_trade,
+                provider=provider,
+                model=model,
+                prompt_version=prompt_version,
+                is_seeded=False,
+                decision=None,
+                decided_by=None,
+                decided_at=None,
+                decided_category=None,
+                decided_priority=None,
+                decided_trade=None,
+            )
+            .returning(ComplaintAISuggestion)
+        )
+        await self._db.flush()
+        return result.scalar_one_or_none()
+
     @staticmethod
     def decision_statement(
         *,

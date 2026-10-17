@@ -113,11 +113,11 @@ describe('Members — the register', () => {
     expect(mocks.list).toHaveBeenCalledWith(1, { role: undefined, page: 1, page_size: 20 })
   })
 
-  it('says how people get in, and that there is no approval queue', async () => {
+  it('says how people get in, naming both approvals and join codes', async () => {
     renderMembers()
 
-    expect(await screen.findByText(/no approval queue/i)).toBeVisible()
-    expect(screen.getByText(/the code and the unit are the proof/i)).toBeVisible()
+    expect((await screen.findAllByText(/approved on the approvals screen/i)).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/join code against their unit number/i).length).toBeGreaterThan(0)
   })
 
   it('offers removal for members but not for the estate’s administrators', async () => {
@@ -261,7 +261,7 @@ describe('Members — adding a provider', () => {
 
     expect(await screen.findByText(/no registered provider with that email/i)).toBeVisible()
     expect(screen.getByText(/must first create their own VALORA account/i)).toBeVisible()
-    expect(screen.getByText(/residents cannot be added here/i)).toBeVisible()
+    expect(screen.getByText(/residents are not added here/i)).toBeVisible()
   })
 
   it('adds a provider by email and reports it in the estate’s terms', async () => {

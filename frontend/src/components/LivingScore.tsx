@@ -220,11 +220,6 @@ export function LivingScorePanel({
           <h2 className="mt-1 text-[17px] font-semibold">Estate quality of life</h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {snapshot.is_demo ? (
-            <Chip tone="warn" glyph="◷">
-              Demo data
-            </Chip>
-          ) : null}
           <Chip
             tone={band.key === 'high' ? 'good' : band.key === 'mid' ? 'warn' : 'alert'}
             glyph="●"
@@ -324,11 +319,6 @@ function NoScoreYet({
           <h2 className="mt-1 text-[17px] font-semibold">Estate quality of life</h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {snapshot?.is_demo ? (
-            <Chip tone="warn" glyph="◷">
-              Demo data
-            </Chip>
-          ) : null}
           <Chip tone="warn" glyph="◷">
             Not enough data yet
           </Chip>

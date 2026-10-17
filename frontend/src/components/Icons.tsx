@@ -162,3 +162,34 @@ export const IconStar = ({ filled = false, ...p }: IconProps & { filled?: boolea
     <path d="M12 4l2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z" />
   </Base>
 )
+
+/** A stack of photographs — used where the count of published photos is shown. */
+export const IconImages = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M8 4h12v12" />
+    <rect x="4" y="8" width="12" height="12" />
+    <path d="M4 17l3.5-3.5 2.5 2.5 3-3L16 16" />
+  </Base>
+)
+
+export const IconChevronLeft = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M14.5 6 8.5 12l6 6" />
+  </Base>
+)
+
+export const IconChevronRight = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M9.5 6l6 6-6 6" />
+  </Base>
+)
+
+/** Four corner brackets: "open this, bigger". */
+export const IconExpand = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M4 9V4h5" />
+    <path d="M20 15v5h-5" />
+    <path d="M20 9V4h-5" />
+    <path d="M4 15v5h5" />
+  </Base>
+)

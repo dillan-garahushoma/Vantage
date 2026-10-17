@@ -912,6 +912,117 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/residency-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Residency Requests
+         * @description One page of this estate's requests, searchable and filterable by status.
+         */
+        get: operations["identity_list_residency_requests"];
+        put?: never;
+        /**
+         * Submit Residency Request
+         * @description Submit a request to be admitted to one unit of one estate.
+         *
+         *     Nothing is granted here: the request is recorded ``pending`` and the estate's
+         *     administrators are notified. A repeat submission while one is pending is a 409,
+         *     and repeated attempts against unknown units are rate-limited.
+         */
+        post: operations["identity_submit_residency_request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/residency-requests/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Residency Requests
+         * @description The requests the caller submitted, newest first, across all estates.
+         */
+        get: operations["identity_my_residency_requests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/residency-requests/pending-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pending Residency Count
+         * @description How many requests this estate has still to decide, for the nav badge.
+         */
+        get: operations["identity_pending_residency_count"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/residency-requests/{request_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve Residency Request
+         * @description Approve a pending request and grant the resident membership of the unit.
+         *
+         *     HOA administrators only. A request that another administrator already decided
+         *     is a 409, not an overwrite.
+         */
+        post: operations["identity_approve_residency_request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/residency-requests/{request_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject Residency Request
+         * @description Decline a pending request, recording an optional reason. HOA admins only.
+         */
+        post: operations["identity_reject_residency_request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/work-orders": {
         parameters: {
             query?: never;
@@ -1559,7 +1670,7 @@ export interface components {
          */
         HealthBriefResponse: {
             /** Ai Unavailable Reason */
-            ai_unavailable_reason: ("disabled" | "policy" | "budget" | "timeout" | "network" | "provider_error" | "invalid_output" | "ungrounded_output" | "insufficient_data") | null;
+            ai_unavailable_reason: ("disabled" | "policy" | "budget" | "timeout" | "network" | "provider_error" | "rate_limited" | "invalid_output" | "truncated" | "ungrounded_output" | "insufficient_data") | null;
             /**
              * As Of
              * Format: date-time
@@ -2008,6 +2119,22 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** Page[ResidencyRequestResponse] */
+        Page_ResidencyRequestResponse_: {
+            /** Items */
+            items: components["schemas"]["ResidencyRequestResponse"][];
+            /** Page */
+            page: number;
+            /**
+             * Pages
+             * @default 0
+             */
+            pages: number;
+            /** Size */
+            size: number;
+            /** Total */
+            total: number;
+        };
         /** Page[ServiceProviderResponse] */
         Page_ServiceProviderResponse_: {
             /** Items */
@@ -2039,6 +2166,14 @@ export interface components {
             size: number;
             /** Total */
             total: number;
+        };
+        /**
+         * PendingResidencyCountResponse
+         * @description The badge number for the admin navigation.
+         */
+        PendingResidencyCountResponse: {
+            /** Pending */
+            pending: number;
         };
         /** PropertyCreate */
         PropertyCreate: {
@@ -2203,6 +2338,70 @@ export interface components {
             /** Unit No */
             unit_no?: string | null;
         };
+        /**
+         * ResidencyRequestCreate
+         * @description A resident's request to be admitted to one unit of one estate.
+         */
+        ResidencyRequestCreate: {
+            /** Estate Id */
+            estate_id: number;
+            /** Note */
+            note?: string | null;
+            /** Unit No */
+            unit_no: string;
+        };
+        /**
+         * ResidencyRequestReject
+         * @description The optional reason an administrator declining a request may record.
+         */
+        ResidencyRequestReject: {
+            /** Note */
+            note?: string | null;
+        };
+        /**
+         * ResidencyRequestResponse
+         * @description One residency request, as the admin queue or the resident's own list shows it.
+         */
+        ResidencyRequestResponse: {
+            /** Applicant Email */
+            applicant_email: string;
+            /** Applicant Name */
+            applicant_name: string;
+            /** Applicant Phone */
+            applicant_phone?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at?: string | null;
+            /** Decision Note */
+            decision_note?: string | null;
+            /** Estate Id */
+            estate_id: number;
+            /** Estate Name */
+            estate_name?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Request Id */
+            request_id: number;
+            /** Status */
+            status: string;
+            /** Unit No */
+            unit_no: string;
+        };
+        /**
+         * ResidencyRequestStatus
+         * @description The lifecycle of a resident's request to join an estate.
+         *
+         *     A request is created ``pending`` by the resident and is only ever moved to
+         *     ``approved`` or ``rejected`` by an estate administrator of the *same* estate.
+         *     The three values are the database check constraint and the API vocabulary; a
+         *     new state is a migration, never a string typed at a call site.
+         * @enum {string}
+         */
+        ResidencyRequestStatus: "pending" | "approved" | "rejected";
         /** ServiceProviderResponse */
         ServiceProviderResponse: {
             /** Avg Rating */
@@ -4175,6 +4374,195 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    identity_list_residency_requests: {
+        parameters: {
+            query: {
+                estate_id: number;
+                status?: components["schemas"]["ResidencyRequestStatus"] | null;
+                search?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ResidencyRequestResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    identity_submit_residency_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResidencyRequestCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResidencyRequestResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    identity_my_residency_requests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResidencyRequestResponse"][];
+                };
+            };
+        };
+    };
+    identity_pending_residency_count: {
+        parameters: {
+            query: {
+                estate_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingResidencyCountResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    identity_approve_residency_request: {
+        parameters: {
+            query: {
+                estate_id: number;
+            };
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResidencyRequestResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    identity_reject_residency_request: {
+        parameters: {
+            query: {
+                estate_id: number;
+            };
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResidencyRequestReject"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResidencyRequestResponse"];
                 };
             };
             /** @description Validation Error */

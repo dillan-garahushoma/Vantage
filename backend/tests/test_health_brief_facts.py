@@ -23,6 +23,8 @@ from app.analytics.ai.brief_facts import (
     build_brief_facts,
 )
 from app.analytics.ai.brief_output import (
+    MAX_ACTIONS,
+    MAX_DRIVERS,
     PROMPT_VERSION,
     BriefOutput,
     build_user_prompt,
@@ -472,6 +474,17 @@ def test_the_prompt_version_and_schema_are_fixed() -> None:
     assert schema["properties"]["actions"]["items"]["properties"]["component"]["enum"] == list(
         COMPONENT_KEYS
     )
+
+
+def test_the_schema_bounds_the_lists_the_contract_bounds() -> None:
+    """The provider is told the list limits that the DTO then enforces.
+
+    Without ``maxItems`` the model returned five drivers against a contract that
+    allows three, so a usable brief was thrown away as invalid output.
+    """
+    schema = brief_output_schema()
+    assert schema["properties"]["drivers"]["maxItems"] == MAX_DRIVERS
+    assert schema["properties"]["actions"]["maxItems"] == MAX_ACTIONS
 
 
 def test_the_schema_is_a_fresh_object_every_call() -> None:

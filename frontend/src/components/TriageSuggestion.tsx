@@ -26,7 +26,7 @@ import { Button, Chip, ErrorState, Field, LoadingState, Select } from './ui'
  * endpoints are admin-only anyway.
  */
 const ANONYMOUS_MESSAGE = 'AI triage is not available for anonymous complaints.'
-const UNAVAILABLE_MESSAGE = 'Suggestions are not available right now.'
+const UNAVAILABLE_MESSAGE = 'AI triage is unavailable right now. No triage was generated.'
 
 function decidedLabel(decision: string | null): string {
   return decision === null ? 'Not decided' : displayLabel(decision)
@@ -213,7 +213,7 @@ export function TriageSuggestion({
     return (
       <section className="mt-2">
         <h4 className="text-[12px] font-medium tracking-wider text-ink-muted uppercase">
-          Triage suggestion
+          AI triage
         </h4>
         <p className="mt-2 text-[13px] text-ink-soft">{ANONYMOUS_MESSAGE}</p>
       </section>
@@ -223,11 +223,11 @@ export function TriageSuggestion({
   return (
     <section>
       <h4 className="text-[12px] font-medium tracking-wider text-ink-muted uppercase">
-        Triage suggestion
+        AI triage
       </h4>
       <p className="mt-1.5 text-[12.5px] text-ink-soft">
-        A suggestion for the HOA's review. Nothing is assigned or changed automatically, and this is
-        not an emergency channel.
+        Uses this complaint's current estate record only when requested. A suggestion for the HOA's review;
+        nothing is assigned or changed automatically, and this is not an emergency channel.
       </p>
 
       <p role="status" aria-live="polite" className="sr-only">
@@ -279,7 +279,7 @@ export function TriageSuggestion({
             <p className="mb-2 text-[12.5px] text-ink-muted">{stored.error?.message}</p>
           ) : null}
           <Button variant="secondary" onClick={request} disabled={busy}>
-            {busy ? 'Requesting…' : 'Suggest triage'}
+            {busy ? 'Requesting…' : 'Suggest triage with AI'}
           </Button>
         </div>
       ) : null}

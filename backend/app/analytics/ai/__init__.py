@@ -1,3 +1,4 @@
+
 """The optional estate health brief (BATCH AI-4).
 
 A brief *explains* the latest stored Living Score snapshot in plain English. It

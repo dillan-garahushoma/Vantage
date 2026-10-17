@@ -33,6 +33,18 @@ from app.core.ai.errors import AIUnavailableError
 GEMINI_INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions"
 
 
+def _is_incomplete(data: Mapping[str, Any]) -> bool:
+    """True when the interaction stopped because the output budget ran out.
+
+    Thinking tokens count against ``max_output_tokens`` in this API, so a cap
+    that is too small for the model's reasoning is spent before any text is
+    written and the envelope comes back ``incomplete`` with nothing in it. The
+    provider HTTP status is still 200, which is why this has to be read from the
+    body rather than from the status code.
+    """
+    return data.get("status") == "incomplete"
+
+
 def _extract_text(data: Any) -> str:
     if not isinstance(data, Mapping):
         raise AIUnavailableError("invalid_output")
@@ -75,6 +87,7 @@ class GeminiLLMClient:
         model: str,
         max_output_tokens: int,
         timeout_seconds: float,
+        thinking_level: str | None = None,
         url: str = GEMINI_INTERACTIONS_URL,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
@@ -82,8 +95,19 @@ class GeminiLLMClient:
         self.model = model
         self.max_output_tokens = max_output_tokens
         self._timeout = timeout_seconds
+        # ``None`` leaves the model's own reasoning effort in place. Every
+        # feature here asks the model to *write*, not to analyse, so a lower
+        # level both costs less and leaves the output budget for the answer.
+        self.thinking_level = thinking_level
         self._url = url
         self._transport = transport
+
+    def _generation_config(self) -> dict[str, Any]:
+        """The ``generation_config`` block, with the thinking level when set."""
+        config: dict[str, Any] = {"max_output_tokens": self.max_output_tokens}
+        if self.thinking_level:
+            config["thinking_level"] = self.thinking_level
+        return config
 
     async def generate_json(
         self,
@@ -103,7 +127,7 @@ class GeminiLLMClient:
                 "mime_type": "application/json",
                 "schema": dict(schema),
             },
-            "generation_config": {"max_output_tokens": self.max_output_tokens},
+            "generation_config": self._generation_config(),
             # Never let the provider retain the prompt or the response.
             "store": False,
         }
@@ -124,6 +148,8 @@ class GeminiLLMClient:
         except httpx.HTTPError as exc:
             raise AIUnavailableError(http_error_reason(exc)) from None
 
+        if response.status_code == 429:
+            raise AIUnavailableError("rate_limited")
         if response.status_code >= 400:
             raise AIUnavailableError("provider_error")
 
@@ -132,7 +158,15 @@ class GeminiLLMClient:
         except ValueError:
             raise AIUnavailableError("invalid_output") from None
 
-        parsed = parse_json_output(_extract_text(payload), schema)
+        try:
+            parsed = parse_json_output(_extract_text(payload), schema)
+        except AIUnavailableError as exc:
+            # A usable answer always wins; but when there is not one and the
+            # interaction is ``incomplete``, the output budget ran out mid-answer,
+            # which is a spent budget rather than a malformed response.
+            if exc.reason == "invalid_output" and _is_incomplete(payload):
+                raise AIUnavailableError("truncated") from None
+            raise
         latency_ms = int((time.perf_counter() - started) * 1000)
         return LLMResult(
             parsed=parsed,

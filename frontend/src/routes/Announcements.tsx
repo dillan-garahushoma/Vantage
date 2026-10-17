@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { IconMegaphone, IconPlus } from '../components/Icons'
+import { Megaphone } from 'lucide-react'
+import { IconPlus } from '../components/Icons'
 import { RequireEstate } from '../components/RequireEstate'
 import {
   Button,
-  Card,
-  Chip,
   Drawer,
   EmptyState,
   ErrorState,
@@ -13,6 +12,10 @@ import {
   LoadingState,
   Textarea,
 } from '../components/ui'
+import { Badge } from '../components/ui/badge'
+import { Button as BrandButton } from '../components/ui/button'
+import { SectionHeading } from '../components/valora/SectionHeading'
+import { Surface } from '../components/valora/Surface'
 import { useAuth } from '../context/AuthContext'
 import { useEstateScope } from '../context/EstateContext'
 import { api, ApiError } from '../lib/api'
@@ -137,37 +140,32 @@ function AnnouncementsBody() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="num text-[11px] tracking-[0.18em] text-accent-ink uppercase">
-            Governance activity
-          </p>
-          <h1 className="mt-2 text-[26px] leading-tight font-semibold">Announcements</h1>
-          <p className="mt-1 text-[13.5px] text-ink-muted">
-            One place for the notices that currently scatter across WhatsApp groups, emails and
-            letterboxes.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {isAdmin ? (
-            <label className="flex items-center gap-2 text-[12.5px] text-ink-soft">
-              <input
-                type="checkbox"
-                checked={includeExpired}
-                onChange={(event) => setIncludeExpired(event.target.checked)}
-                className="h-4 w-4 accent-[#1F6F5C]"
-              />
-              Include expired
-            </label>
-          ) : null}
-          {isAdmin ? (
-            <Button variant="primary" onClick={() => setPublishing(true)}>
-              <IconPlus size={16} />
-              Publish
-            </Button>
-          ) : null}
-        </div>
-      </header>
+      <SectionHeading
+        eyebrow="Estate"
+        title="Announcements"
+        description="One place for the notices that currently scatter across WhatsApp groups, emails and letterboxes."
+        action={
+          <div className="flex flex-wrap items-center gap-3">
+            {isAdmin ? (
+              <label className="flex items-center gap-2 text-[0.8rem] text-ink-soft">
+                <input
+                  type="checkbox"
+                  checked={includeExpired}
+                  onChange={(event) => setIncludeExpired(event.target.checked)}
+                  className="h-4 w-4 accent-[#7C3AED]"
+                />
+                Include expired
+              </label>
+            ) : null}
+            {isAdmin ? (
+              <BrandButton variant="ink" onClick={() => setPublishing(true)} className="rounded-full px-5">
+                <IconPlus size={16} />
+                Publish
+              </BrandButton>
+            ) : null}
+          </div>
+        }
+      />
 
       {actionError ? <ErrorState message={actionError.message} requestId={actionError.requestId} /> : null}
 
@@ -185,9 +183,9 @@ function AnnouncementsBody() {
           }
           action={
             isAdmin ? (
-              <Button variant="primary" onClick={() => setPublishing(true)}>
+              <BrandButton variant="default" onClick={() => setPublishing(true)}>
                 Publish an announcement
-              </Button>
+              </BrandButton>
             ) : undefined
           }
         />
@@ -197,21 +195,26 @@ function AnnouncementsBody() {
             const expired = item.expires_at ? new Date(item.expires_at) < new Date() : false
             return (
               <li key={item.id}>
-                <Card className="p-5">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+                <Surface hover className="relative overflow-hidden">
+                  <span className="absolute inset-y-0 left-0 w-1 bg-brand-soft" />
+                  <div className="flex flex-wrap items-start justify-between gap-3 pl-2">
                     <div className="flex min-w-0 items-start gap-3">
-                      <span className="mt-0.5 shrink-0 text-accent-ink">
-                        <IconMegaphone size={18} />
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-canvas text-brand">
+                        <Megaphone className="h-4 w-4" />
                       </span>
                       <div className="min-w-0">
-                        <h2 className="text-[15.5px] font-semibold">{item.title}</h2>
-                        <p className="num mt-0.5 text-[11.5px] text-ink-muted">
+                        <h2 className="font-heading text-[1rem] leading-snug font-bold text-ink">
+                          {item.title}
+                        </h2>
+                        <p className="num mt-0.5 text-[0.72rem] text-ink-muted">
                           Published {fullDate(item.created_at)} · by user #{item.created_by}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {expired ? <Chip tone="warn" glyph="◷">Expired</Chip> : <Chip tone="progress">Active</Chip>}
+                      <Badge variant={expired ? 'attention' : 'positive'}>
+                        {expired ? 'Expired' : 'Active'}
+                      </Badge>
                       {isAdmin ? (
                         <Button
                           variant="ghost"
@@ -223,15 +226,15 @@ function AnnouncementsBody() {
                       ) : null}
                     </div>
                   </div>
-                  <p className="mt-3 text-[13.5px] leading-relaxed whitespace-pre-line text-ink-soft">
+                  <p className="mt-3 pl-2 text-[0.86rem] leading-relaxed whitespace-pre-line text-ink-soft">
                     {item.message}
                   </p>
                   {item.expires_at ? (
-                    <p className="num mt-3 border-t border-ink/10 pt-2.5 text-[11.5px] text-ink-muted">
+                    <p className="num mt-3 border-t border-line pt-2.5 pl-2 text-[0.72rem] text-ink-muted">
                       Expires {shortDate(item.expires_at)}
                     </p>
                   ) : null}
-                </Card>
+                </Surface>
               </li>
             )
           })}

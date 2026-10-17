@@ -237,7 +237,7 @@ class ComplaintTriageService:
         existing = await self._repo.get_by_complaint_id_in_estate(
             complaint_id=complaint_id, estate_id=estate_id
         )
-        if existing is not None:
+        if existing is not None and not bool(getattr(existing, "is_seeded", False)):
             return TriageSuggestionResponse.model_validate(existing)
 
         self._require_eligible(complaint)
@@ -252,16 +252,30 @@ class ComplaintTriageService:
         )
         category, priority, trade = self._validated_suggestion(result.parsed)
 
-        suggestion = await self._repo.add(
-            complaint_id=complaint_id,
-            estate_id=estate_id,
-            suggested_category=category,
-            suggested_priority=priority,
-            suggested_trade=trade,
-            provider=result.provider,
-            model=result.model,
-            prompt_version=PROMPT_VERSION,
-        )
+        if existing is not None:
+            suggestion = await self._repo.replace_seeded(
+                suggestion_id=existing.suggestion_id,
+                estate_id=estate_id,
+                suggested_category=category,
+                suggested_priority=priority,
+                suggested_trade=trade,
+                provider=result.provider,
+                model=result.model,
+                prompt_version=PROMPT_VERSION,
+            )
+            if suggestion is None:
+                raise ConflictException("A live triage suggestion already exists. Reload and try again.")
+        else:
+            suggestion = await self._repo.add(
+                complaint_id=complaint_id,
+                estate_id=estate_id,
+                suggested_category=category,
+                suggested_priority=priority,
+                suggested_trade=trade,
+                provider=result.provider,
+                model=result.model,
+                prompt_version=PROMPT_VERSION,
+            )
         await self._db.commit()
         return TriageSuggestionResponse.model_validate(suggestion)
 
@@ -272,6 +286,10 @@ class ComplaintTriageService:
         await self._require_estate_admin(admin, estate_id)
         await self._get_complaint_or_404(complaint_id, estate_id)
         suggestion = await self._get_suggestion_or_404(complaint_id, estate_id)
+        if bool(getattr(suggestion, "is_seeded", False)):
+            raise NotFoundException(
+                f"No live triage suggestion exists for complaint {complaint_id}."
+            )
         return TriageSuggestionResponse.model_validate(suggestion)
 
     async def decide(
@@ -285,6 +303,10 @@ class ComplaintTriageService:
         await self._require_estate_admin(admin, estate_id)
         await self._get_complaint_or_404(complaint_id, estate_id)
         suggestion = await self._get_suggestion_or_404(complaint_id, estate_id)
+        if bool(getattr(suggestion, "is_seeded", False)):
+            raise NotFoundException(
+                f"No live triage suggestion exists for complaint {complaint_id}."
+            )
 
         if suggestion.decision is not None:
             raise ConflictException("This suggestion has already been decided.")

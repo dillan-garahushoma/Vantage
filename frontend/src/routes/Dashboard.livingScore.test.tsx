@@ -139,7 +139,7 @@ describe('Dashboard — Living Score', () => {
     )
 
     expect(await screen.findByText('86,4')).toBeVisible()
-    expect(screen.getByText('Demo data')).toBeVisible()
+    expect(screen.queryByText('Demo data')).toBeNull()
     expect(screen.getByText('Resolution speed')).toBeVisible()
     expect(mocks.get).toHaveBeenCalledWith('/api/v1/analytics/living-score', {
       estate_id: 1,

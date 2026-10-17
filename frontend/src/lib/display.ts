@@ -118,6 +118,99 @@ export function scoreBand(score: number): ScoreBand {
   }
 }
 
+/**
+ * The tone vocabulary the filled status pills use.
+ *
+ * `Tone` above describes how the hairlines and chips of the older screens are
+ * painted; this is the same idea for the intelligence surfaces, expressed as the
+ * five families the palette actually has: mint (healthy), amber (watch), rose
+ * (risk), violet (in progress / informational) and grey (no state yet).
+ *
+ * Look-up is case-insensitive and tolerant of the shape the *backend* uses
+ * (`in_progress`) as well as the shape a card shows (`In progress`), because
+ * both reach this function.
+ */
+export type StatusTone = 'positive' | 'attention' | 'critical' | 'brand' | 'neutral'
+
+export const statusToneClasses: Record<StatusTone, { pill: string; dot: string }> = {
+  positive: { pill: 'bg-mint-wash text-mint-ink', dot: 'bg-mint' },
+  attention: { pill: 'bg-ochre-wash text-ochre-ink', dot: 'bg-ochre' },
+  critical: { pill: 'bg-signal-wash text-signal-ink', dot: 'bg-signal' },
+  brand: { pill: 'bg-brand-wash text-brand-ink', dot: 'bg-brand' },
+  neutral: { pill: 'bg-ink/5 text-ink-muted', dot: 'bg-ink/30' },
+}
+
+const STATUS_TONES: Record<string, StatusTone> = {
+  // healthy / done
+  healthy: 'positive',
+  'on track': 'positive',
+  operational: 'positive',
+  complete: 'positive',
+  completed: 'positive',
+  resolved: 'positive',
+  rated: 'positive',
+  'within sla': 'positive',
+  confirmed: 'positive',
+  preferred: 'positive',
+  approved: 'positive',
+  sent: 'positive',
+  active: 'positive',
+  // watch
+  watch: 'attention',
+  attention: 'attention',
+  open: 'attention',
+  pending: 'attention',
+  'under investigation': 'attention',
+  investigating: 'attention',
+  medium: 'attention',
+  'awaiting approval': 'attention',
+  'awaiting sign-off': 'attention',
+  'at risk': 'critical',
+  // risk
+  critical: 'critical',
+  urgent: 'critical',
+  high: 'critical',
+  overdue: 'critical',
+  escalated: 'critical',
+  breached: 'critical',
+  declined: 'critical',
+  failed: 'critical',
+  // in flight / informational
+  scheduled: 'brand',
+  triaged: 'brand',
+  'in progress': 'brand',
+  'in review': 'brand',
+  good: 'brand',
+  // nothing recorded yet
+  received: 'neutral',
+  planned: 'neutral',
+  draft: 'neutral',
+  low: 'neutral',
+  inactive: 'neutral',
+  neutral: 'neutral',
+}
+
+/** The tone for a status word, from either the backend or the screen. */
+export function statusTone(status: string | null | undefined): StatusTone {
+  if (!status) return 'neutral'
+  const key = status.replace(/[_-]+/g, ' ').trim().toLowerCase()
+  return STATUS_TONES[key] ?? 'neutral'
+}
+
+/**
+ * How a Living Score *band* is painted and labelled.
+ *
+ * The thresholds describe the number the backend published; nothing here
+ * calculates one. 85+ is healthy, 75+ warrants a watch, 65+ is at risk, and
+ * below that the estate is critical.
+ */
+export function pillarBand(score: number): { tone: StatusTone; label: string } {
+  if (score >= 85) return { tone: 'positive', label: 'Healthy' }
+  if (score >= 75) return { tone: 'attention', label: 'Watch' }
+  if (score >= 65) return { tone: 'critical', label: 'At risk' }
+  return { tone: 'critical', label: 'Critical' }
+}
+
 /** Plain-language role names for the UI. */
 export const roleLabels: Record<string, string> = {
   casual_visitor: 'Visitor',

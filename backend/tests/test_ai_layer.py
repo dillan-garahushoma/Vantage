@@ -253,6 +253,27 @@ def gemini_ok_body(text: str) -> dict[str, Any]:
     }
 
 
+def gemini_incomplete_body() -> dict[str, Any]:
+    """What the provider returns when the output budget ran out mid-thought.
+
+    Observed verbatim against gemini-3.8-flash: HTTP 200, ``status``
+    ``incomplete``, a handful of output tokens, hundreds of *thought* tokens and
+    no text at all. Thinking counts against ``max_output_tokens``, so an
+    undersized cap produces exactly this.
+    """
+    return {
+        "id": "v1_test",
+        "object": "interaction",
+        "model": "gemini-test-model",
+        "status": "incomplete",
+        "usage": {
+            "total_output_tokens": 9,
+            "total_thought_tokens": 577,
+        },
+        "steps": [],
+    }
+
+
 def make_gemini(**overrides: Any) -> GeminiLLMClient:
     kwargs: dict[str, Any] = {
         "api_key": "test-gemini-key",
@@ -275,6 +296,85 @@ async def test_gemini_adapter_parses_schema_valid_output() -> None:
     assert result.model == "gemini-test-model"
     assert result.input_chars == len("system") + len("user")
     assert result.latency_ms >= 0
+
+
+@pytest.mark.asyncio
+async def test_compat_answer_cut_off_at_the_token_limit_raises_truncated() -> None:
+    """``finish_reason: length`` is an exhausted budget, not a bad answer."""
+    body = compat_ok_body('{"ok": tr')
+    body["choices"][0]["finish_reason"] = "length"
+    client = make_compat(transport=compat_transport(body=body))
+
+    with pytest.raises(AIUnavailableError) as exc:
+        await call(client)
+    assert exc.value.reason == "truncated"
+
+
+@pytest.mark.asyncio
+async def test_compat_answer_cut_off_with_no_content_raises_truncated() -> None:
+    body = compat_ok_body("")
+    body["choices"][0]["finish_reason"] = "length"
+    client = make_compat(transport=compat_transport(body=body))
+
+    with pytest.raises(AIUnavailableError) as exc:
+        await call(client)
+    assert exc.value.reason == "truncated"
+
+
+@pytest.mark.asyncio
+async def test_compat_complete_answer_at_the_token_limit_is_still_used() -> None:
+    """A finished, valid answer is never thrown away for being at the limit."""
+    body = compat_ok_body('{"ok": true}')
+    body["choices"][0]["finish_reason"] = "length"
+    client = make_compat(transport=compat_transport(body=body))
+
+    result = await call(client)
+    assert result.parsed == {"ok": True}
+
+
+@pytest.mark.asyncio
+async def test_gemini_incomplete_interaction_raises_truncated() -> None:
+    """An exhausted output budget is not a malformed answer and must say so."""
+    client = make_gemini(transport=gemini_transport(body=gemini_incomplete_body()))
+
+    with pytest.raises(AIUnavailableError) as exc:
+        await call(client)
+    assert exc.value.reason == "truncated"
+
+
+@pytest.mark.asyncio
+async def test_gemini_completed_interaction_without_text_raises_invalid_output() -> None:
+    """A finished interaction with no text is a provider contract failure."""
+    body = gemini_incomplete_body()
+    body["status"] = "completed"
+    client = make_gemini(transport=gemini_transport(body=body))
+
+    with pytest.raises(AIUnavailableError) as exc:
+        await call(client)
+    assert exc.value.reason == "invalid_output"
+
+
+@pytest.mark.asyncio
+async def test_gemini_sends_the_configured_thinking_level() -> None:
+    capture: dict[str, Any] = {}
+    client = make_gemini(
+        thinking_level="low",
+        transport=gemini_transport(body=gemini_ok_body('{"ok": true}'), capture=capture),
+    )
+    await call(client)
+
+    assert capture["body"]["generation_config"]["thinking_level"] == "low"
+
+
+@pytest.mark.asyncio
+async def test_gemini_omits_thinking_level_when_it_is_not_configured() -> None:
+    capture: dict[str, Any] = {}
+    client = make_gemini(
+        transport=gemini_transport(body=gemini_ok_body('{"ok": true}'), capture=capture)
+    )
+    await call(client)
+
+    assert "thinking_level" not in capture["body"]["generation_config"]
 
 
 @pytest.mark.asyncio
@@ -392,10 +492,23 @@ async def test_openai_compatible_base_url_without_v1_suffix() -> None:
 # ------------------------------------------------------------- failure mapping
 
 
-@pytest.mark.parametrize("status_code", [401, 403, 429, 500, 503])
+@pytest.mark.parametrize(
+    ("status_code", "reason"),
+    [
+        (401, "provider_error"),
+        (403, "provider_error"),
+        (500, "provider_error"),
+        (503, "provider_error"),
+        # A spent quota is not a broken key or a bug: it is a limit, and an
+        # operator has to be able to tell the two apart from the reason code.
+        (429, "rate_limited"),
+    ],
+)
 @pytest.mark.parametrize("adapter", ["gemini", "compat"])
 @pytest.mark.asyncio
-async def test_http_error_statuses_raise_ai_unavailable(adapter: str, status_code: int) -> None:
+async def test_http_error_statuses_raise_ai_unavailable(
+    adapter: str, status_code: int, reason: str
+) -> None:
     if adapter == "gemini":
         client = make_gemini(
             transport=gemini_transport(status_code=status_code, body={"error": "nope"})
@@ -407,7 +520,7 @@ async def test_http_error_statuses_raise_ai_unavailable(adapter: str, status_cod
 
     with pytest.raises(AIUnavailableError) as exc:
         await call(client)
-    assert exc.value.reason == "provider_error"
+    assert exc.value.reason == reason
 
 
 @pytest.mark.parametrize("adapter", ["gemini", "compat"])
@@ -534,6 +647,26 @@ async def test_provider_error_message_does_not_echo_provider_body() -> None:
 # ------------------------------------------------------------- config validation
 
 
+def test_shipped_ai_defaults_allow_a_gemini_brief_to_complete() -> None:
+    """Leave room for reasoning and for the measured provider latency.
+
+    600 was the old default and it was spent on thoughts: the interaction came
+    back ``incomplete`` with no text, which surfaced as ``invalid_output``.
+    Gemini also took 55 seconds for one brief; a 15-second cap timed out first.
+    """
+    assert Settings.model_fields["AI_MAX_OUTPUT_TOKENS"].default >= 2048
+    assert Settings.model_fields["AI_THINKING_LEVEL"].default == "low"
+    assert Settings.model_fields["AI_TIMEOUT_SECONDS"].default == 75.0
+
+
+def test_thinking_level_accepts_the_documented_levels_and_a_provider_default() -> None:
+    for level in ("minimal", "low", "medium", "high", "default"):
+        assert make_settings(AI_THINKING_LEVEL=level).AI_THINKING_LEVEL == level
+
+    with pytest.raises(ValidationError):
+        make_settings(AI_THINKING_LEVEL="enormous")
+
+
 def test_ai_enabled_requires_gemini_key_and_model() -> None:
     with pytest.raises(ValidationError, match="GEMINI_API_KEY"):
         make_settings(AI_ENABLED=True, AI_PROVIDER="gemini", GEMINI_API_KEY=None, AI_MODEL="m")
@@ -631,6 +764,44 @@ async def test_factory_passes_max_output_tokens_to_the_gemini_provider() -> None
 
 
 @pytest.mark.asyncio
+async def test_factory_passes_the_thinking_level_to_the_gemini_provider() -> None:
+    capture: dict[str, Any] = {}
+    settings = make_settings(
+        AI_ENABLED=True,
+        AI_INSIGHTS_ENABLED=True,
+        AI_PROVIDER="gemini",
+        AI_MODEL="gemini-test-model",
+        GEMINI_API_KEY="test-gemini-key",
+        AI_THINKING_LEVEL="low",
+    )
+    client = get_llm_client(
+        settings, transport=gemini_transport(body=gemini_ok_body('{"ok": true}'), capture=capture)
+    )
+    await call(client)
+
+    assert capture["body"]["generation_config"]["thinking_level"] == "low"
+
+
+@pytest.mark.asyncio
+async def test_factory_leaves_thinking_to_the_provider_when_level_is_default() -> None:
+    capture: dict[str, Any] = {}
+    settings = make_settings(
+        AI_ENABLED=True,
+        AI_INSIGHTS_ENABLED=True,
+        AI_PROVIDER="gemini",
+        AI_MODEL="gemini-test-model",
+        GEMINI_API_KEY="test-gemini-key",
+        AI_THINKING_LEVEL="default",
+    )
+    client = get_llm_client(
+        settings, transport=gemini_transport(body=gemini_ok_body('{"ok": true}'), capture=capture)
+    )
+    await call(client)
+
+    assert "thinking_level" not in capture["body"]["generation_config"]
+
+
+@pytest.mark.asyncio
 async def test_factory_gemini_end_to_end_through_gates() -> None:
     settings = make_settings(
         AI_ENABLED=True,
@@ -713,6 +884,27 @@ def test_schema_validator_enforces_enums() -> None:
     validate_json_schema("low", schema)
     with pytest.raises(AIUnavailableError):
         validate_json_schema("medium", schema)
+
+
+def test_schema_validator_enforces_array_length_bounds() -> None:
+    """``maxItems``/``minItems`` are part of the subset we ask providers for."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "drivers": {"type": "array", "items": {"type": "string"}, "maxItems": 3, "minItems": 1}
+        },
+        "required": ["drivers"],
+    }
+
+    validate_json_schema({"drivers": ["a", "b", "c"]}, schema)
+
+    with pytest.raises(AIUnavailableError) as too_many:
+        validate_json_schema({"drivers": ["a", "b", "c", "d"]}, schema)
+    assert too_many.value.reason == "invalid_output"
+
+    with pytest.raises(AIUnavailableError) as too_few:
+        validate_json_schema({"drivers": []}, schema)
+    assert too_few.value.reason == "invalid_output"
 
 
 # --------------------------------------------------------------- error object

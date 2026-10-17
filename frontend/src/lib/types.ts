@@ -135,6 +135,30 @@ export interface Property {
   bathrooms: number | null
 }
 
+/**
+ * A security incident: the Living Score's security input.
+ *
+ * `category`, `severity` and `status` are the backend's controlled vocabulary,
+ * kept as strings here because the contract publishes them as `Literal` unions
+ * rather than an enum the runtime can read. They are always rendered through
+ * `displayLabel`/`StatusChip`, never compared against a hand-typed list.
+ */
+export interface Incident {
+  id: number
+  estate_id: number
+  category: string
+  severity: string
+  status: string
+  occurred_at: string
+  resolved_at: string | null
+  /** Null for everyone who is not an estate administrator. */
+  property_id: number | null
+  resolution_notes: string | null
+  created_by: number | null
+  created_at: string | null
+  updated_at: string | null
+}
+
 export interface ServiceProvider {
   id: number
   full_name: string

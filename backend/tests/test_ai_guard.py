@@ -388,7 +388,14 @@ async def test_guard_reports_the_inner_provider_and_model() -> None:
 
 @pytest.mark.asyncio
 async def test_every_provider_failure_reason_counts_as_a_failed_call() -> None:
-    for reason in ("timeout", "network", "provider_error", "invalid_output"):
+    for reason in (
+        "timeout",
+        "network",
+        "provider_error",
+        "rate_limited",
+        "invalid_output",
+        "truncated",
+    ):
         ledger = FakeLedger()
         guard = make_guard(ledger=ledger, inner=StubClient(reason=reason))
         with pytest.raises(AIUnavailableError):

@@ -4,22 +4,32 @@ import { AppShell } from './components/AppShell'
 import { LoadingState } from './components/ui'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { EstateProvider } from './context/EstateContext'
+import { AdminResidency } from './routes/AdminResidency'
 import { AdminSetup } from './routes/AdminSetup'
 import { Announcements } from './routes/Announcements'
+import { Assets } from './routes/Assets'
+import { Community } from './routes/Community'
 import { Complaints } from './routes/Complaints'
 import { Dashboard } from './routes/Dashboard'
+import { EstateHealth } from './routes/EstateHealth'
+import { Financial } from './routes/Financial'
+import { Incidents } from './routes/Incidents'
+import { Intelligence } from './routes/Intelligence'
 import { Join } from './routes/Join'
 import { Landing } from './routes/Landing'
 import { Login } from './routes/Login'
 import { Members } from './routes/Members'
 import { NotFound } from './routes/NotFound'
 import { Properties } from './routes/Properties'
+import { ProviderPortal } from './routes/ProviderPortal'
 import { ProviderWaiting } from './routes/ProviderWaiting'
 import { ProviderWork } from './routes/ProviderWork'
 import { Providers } from './routes/Providers'
 import { PublicEstateDetail } from './routes/PublicEstateDetail'
 import { PublicEstates } from './routes/PublicEstates'
 import { Register } from './routes/Register'
+import { RequestAccess } from './routes/RequestAccess'
+import { Settings } from './routes/Settings'
 import { Welcome } from './routes/Welcome'
 import { WorkOrders } from './routes/WorkOrders'
 
@@ -70,6 +80,16 @@ export function App() {
               </Protected>
             }
           />
+          {/* The approval-based resident path. A join code remains available
+              beside it for an estate office that prefers to hand one out. */}
+          <Route
+            path="/request-access"
+            element={
+              <Protected>
+                <RequestAccess />
+              </Protected>
+            }
+          />
           <Route
             path="/provider/waiting"
             element={
@@ -88,11 +108,30 @@ export function App() {
             }
           >
             <Route index element={<Dashboard />} />
+            <Route path="health" element={<EstateHealth />} />
+            <Route path="assets" element={<Assets />} />
             <Route path="complaints" element={<Complaints />} />
             <Route path="work-orders" element={<WorkOrders />} />
             <Route path="announcements" element={<Announcements />} />
+            <Route path="incidents" element={<Incidents />} />
+            <Route path="financial" element={<Financial />} />
+            <Route path="community" element={<Community />} />
             <Route path="properties" element={<Properties />} />
             <Route path="providers" element={<Providers />} />
+          </Route>
+
+          {/* VALORA Intelligence is a workspace of its own rather than a tab of
+              the dashboard: it carries the briefing, the findings and the panel,
+              and it is scoped to the estate selected in the shell. */}
+          <Route
+            path="/intelligence"
+            element={
+              <Protected>
+                <AppShell />
+              </Protected>
+            }
+          >
+            <Route index element={<Intelligence />} />
           </Route>
 
           {/* The administrator and provider views share the app shell, so the
@@ -106,7 +145,9 @@ export function App() {
             }
           >
             <Route path="setup" element={<AdminSetup />} />
+            <Route path="residency" element={<AdminResidency />} />
             <Route path="members" element={<Members />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
 
           <Route
@@ -118,6 +159,7 @@ export function App() {
             }
           >
             <Route path="work" element={<ProviderWork />} />
+            <Route path="portal" element={<ProviderPortal />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

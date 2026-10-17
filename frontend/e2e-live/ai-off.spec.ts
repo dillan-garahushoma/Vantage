@@ -13,31 +13,28 @@ import {
  * AI OFF (`AI_ENABLED=false`) — the product must work anyway.
  *
  * Nothing on these screens may turn into an error just because the AI layer is
- * switched off: the brief falls back to the deterministic summary and says so
- * quietly, the triage panel says suggestions are unavailable, and the rest of
- * the estate data is unaffected.
+ * switched off: no simulated prose is presented as an AI result, the triage
+ * panel says that no triage was generated, and the rest of the estate data is
+ * unaffected.
  */
-test('the brief falls back to the automatic summary with no AI wording and no error', async ({
+test('the brief makes unavailable AI explicit and never displays a simulated summary', async ({
   page,
 }) => {
   const problems = watchForErrors(page)
   await signInToDashboard(page, ADMIN)
 
   const panel = briefPanel(page)
-  await expect(panel.getByText(/as at/i)).toBeVisible({ timeout: 45_000 })
+  await expect(panel.getByRole('heading', { name: 'Estate health brief' })).toBeVisible({ timeout: 45_000 })
 
-  // Asking for a brief while the layer is off answers with the deterministic
-  // summary and the quiet note — never an error, and never a reason code.
+  // Asking while the layer is off never substitutes a deterministic template
+  // for a requested AI result.
   await panel.getByRole('button', { name: 'Generate AI summary' }).click()
-  await expect(panel.getByText('Automatic summary')).toBeVisible({ timeout: 60_000 })
-  await expect(panel.getByText(/showing the automatic summary/i)).toBeVisible({ timeout: 60_000 })
+  await expect(panel.getByText('AI summary unavailable')).toBeVisible({ timeout: 60_000 })
+  await expect(panel.getByText(/No AI summary was created/i)).toBeVisible({ timeout: 60_000 })
   await expect(panel.getByText(/written by ai/i)).toHaveCount(0)
+  await expect(panel.getByText(/automatic summary/i)).toHaveCount(0)
   await expect(panel.getByText(/could not|rejected|failed/i)).toHaveCount(0)
   await expect(panel.getByText(/provider_error|timeout|budget|AI_UNAVAILABLE/)).toHaveCount(0)
-
-  // The deterministic summary is still a real summary with real figures.
-  await panel.getByRole('button', { name: /show the figures/i }).click()
-  await expect(panel.getByRole('table')).toBeVisible()
 
   expect(problems).toEqual([])
 })
@@ -59,7 +56,7 @@ test('the triage panel says suggestions are unavailable, without a reason code',
   })
   if (await suggest.isVisible()) {
     await suggest.click()
-    await expect(dialog.getByText('Suggestions are not available right now.')).toBeVisible({
+    await expect(dialog.getByText(/AI triage is unavailable right now/)).toBeVisible({
       timeout: 60_000,
     })
     await expect(dialog.getByText(/AI_UNAVAILABLE|provider_error/)).toHaveCount(0)
@@ -72,7 +69,7 @@ test('a resident can still read the estate without the AI layer', async ({ page 
   const problems = watchForErrors(page)
   await signInToDashboard(page, RESIDENT)
 
-  await expect(briefPanel(page).getByText(/as at/i)).toBeVisible({ timeout: 45_000 })
+  await expect(briefPanel(page).getByRole('heading', { name: 'Estate health brief' })).toBeVisible({ timeout: 45_000 })
   await expect(page.getByText(/suggest triage/i)).toHaveCount(0)
 
   expect(problems).toEqual([])

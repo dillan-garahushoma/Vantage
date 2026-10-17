@@ -124,8 +124,11 @@ def brief_output_schema() -> dict[str, Any]:
         "properties": {
             "headline": {"type": "string"},
             "summary": {"type": "string"},
-            "drivers": {"type": "array", "items": driver},
-            "actions": {"type": "array", "items": action},
+            # The same list limits BriefOutput enforces. Without them the model
+            # answered with five drivers against a three-driver contract, and a
+            # usable brief was discarded as invalid output.
+            "drivers": {"type": "array", "items": driver, "maxItems": MAX_DRIVERS},
+            "actions": {"type": "array", "items": action, "maxItems": MAX_ACTIONS},
         },
         "required": ["headline", "summary", "drivers", "actions"],
         "additionalProperties": False,

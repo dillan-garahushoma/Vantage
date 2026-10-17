@@ -11,6 +11,7 @@ from app.db.base import Base  # noqa: F401 — ensures metadata is available
 from app.identity.models.estate_membership import EstateMembership  # noqa: F401
 from app.identity.models.estate_join_code import EstateJoinCode  # noqa: F401
 from app.identity.models.estate_membership_event import EstateMembershipEvent  # noqa: F401
+from app.identity.models.estate_residency_request import EstateResidencyRequest  # noqa: F401
 from app.identity.models.user import User  # noqa: F401
 from app.identity.models.session import Session  # noqa: F401
 from app.identity.models.login_attempt import LoginAttempts  # noqa: F401
