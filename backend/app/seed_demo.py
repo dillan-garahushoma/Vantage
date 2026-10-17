@@ -90,7 +90,7 @@ def validate_seed_target(database_name: str, *, expect_database: str) -> None:
             f"The connected database {database_name!r} is not a demo database "
             "(its name must contain 'demo'). Nothing was seeded."
         )
-    if "demo" not in db_lower and database_name != "valora_db":
+    if "demo" not in db_lower and database_name not in ("valora_db", "neondb"):
         raise SeedGuardError(
             f"The connected database {database_name!r} is not a demo database "
             "(its name must contain 'demo'). Nothing was seeded."
