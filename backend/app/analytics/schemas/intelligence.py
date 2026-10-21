@@ -9,9 +9,9 @@ Defines the exact contracts for:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 RecommendationKind = Literal[
     "PREVENTIVE MAINTENANCE",
@@ -93,14 +93,20 @@ class EstateIntelligenceResponse(BaseModel):
     briefing: WeeklyBriefing
     recommendations: list[PriorityRecommendation]
     operational_signals: OperationalSignalCounts
-    source: Literal["n8n", "live_llm", "sample_baseline"]
+    source: Literal["n8n", "live_llm", "sample_baseline", "stored_records"]
+    briefing_id: int | None = None
+    template_version: str = "operational-v1"
+    data_origin: Literal['demo', 'live'] = 'live'
+    facts: dict = Field(default_factory=dict)
+    evidence: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
 
 
 class AskValoraRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    question: str = Field(..., min_length=3, max_length=500)
-    estate_id: int = Field(..., gt=0)
+    question: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=500)]
+    estate_id: int = Field(..., gt=0, le=2147483647)
 
 
 class AskValoraResponse(BaseModel):
@@ -111,6 +117,9 @@ class AskValoraResponse(BaseModel):
     recommendation: str = ""
     related: list[str] = Field(default_factory=list)
     source: Literal["n8n", "estate-domain", "llm"]
+    as_of: datetime | None = None
+    estate_id: int | None = None
+    limitations: list[str] = Field(default_factory=list)
 
 
 class IngestIntelligencePayload(BaseModel):
@@ -139,3 +148,5 @@ class EstateSignalsExport(BaseModel):
     generated_at: datetime
     counts: OperationalSignalCounts
     signals: list[EstateSignalItem]
+    limit_per_type: int = 50
+    scope: str = 'Recent record metadata only; counts cover all matching records.'

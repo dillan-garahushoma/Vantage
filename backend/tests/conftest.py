@@ -75,7 +75,9 @@ def apply_migrations():
     alembic_ini_path = backend_dir / "alembic.ini"
     alembic_cfg = Config(str(alembic_ini_path))
     sync_url = test_db_url.replace("+asyncpg", "")
-    alembic_cfg.set_main_option("sqlalchemy.url", sync_url)
+    from app.db.migration_config import configure_database_url
+
+    configure_database_url(alembic_cfg, sync_url)
     command.upgrade(alembic_cfg, "head")
 
 

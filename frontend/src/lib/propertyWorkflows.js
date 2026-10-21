@@ -1,0 +1,27 @@
+const propertyRoles = ['resident', 'hoa_admin', 'investor', 'estate_agent'];
+/** The old project's property journeys, reconciled with Vantage's current contracts. */
+export const propertyWorkflows = [
+    { id: 'units', title: 'My property & residential units', status: 'Available', roles: propertyRoles,
+        description: 'Read the units your estate membership permits. Administrators can register units through the current estate-scoped API.', to: '/app/properties', linkLabel: 'Open residential units' },
+    { id: 'listings', title: 'Agent listings', status: 'Backend ready', roles: ['hoa_admin', 'estate_agent'],
+        description: 'Current estate-scoped APIs support approved requests, draft listings, publication, content updates and withdrawal. Legacy routes remain isolated.',
+        needs: 'Connect the JavaScript listing editor, publication controls and listing register to the property-market API.' },
+    { id: 'sales', title: 'Sales register', status: 'Backend ready', roles: ['hoa_admin', 'estate_agent', 'investor'],
+        description: 'The current API stores actual sale and rental outcomes separately from asking prices, with participant access and audit attribution.',
+        needs: 'Connect the completion form and private sales/rental register. Recording an outcome does not transfer legal title or process payment.' },
+    { id: 'pricing', title: 'Listing price & price history', status: 'Backend ready', roles: ['hoa_admin', 'estate_agent'],
+        description: 'Set and revise the asking price for an authorized listing. The asking price is a marketing decision, separate from a calculated valuation.',
+        needs: 'Connect the asking-price editor and immutable history view, including the expected listing version for stale-edit protection.' },
+    { id: 'requests', title: 'Sale & rental requests', status: 'Backend ready', roles: ['resident', 'hoa_admin', 'investor'],
+        description: 'An HOA-verified owner or representative requests permission to sell or rent a unit. Residency alone does not permit marketing. The HOA reviews and assigns an authorized agent.',
+        needs: 'Connect marketing-authority verification, owner requests, the HOA decision queue and request history forms.' },
+    { id: 'enquiries', title: 'Buyer & agent enquiries', status: 'Backend required', roles: propertyRoles,
+        description: 'Keep property questions and agent replies in one shared conversation across accounts.',
+        needs: 'Enquiry and reply persistence, participant authorization and agent assignment.' },
+    { id: 'valuation', title: 'Valuation', status: 'Backend required', roles: propertyRoles,
+        description: 'Show a property estimate with its evidence and calculation date. The estate Living Score is available separately and is not a property valuation.',
+        needs: 'An agreed backend valuation method, recorded comparable sales, valuation history and an explainable response that changes with supported property data. No price is calculated in the browser.' },
+    { id: 'roi', title: 'Rental yield & 10-year ROI', status: 'Backend required', roles: ['investor', 'hoa_admin'],
+        description: 'Compare investment returns using recorded costs, rental income and explicit assumptions.',
+        needs: 'Backend cash-flow and rental inputs, versioned assumptions and a deterministic investment-calculation API.' },
+];

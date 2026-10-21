@@ -491,6 +491,7 @@ async def seed_demo(
     *,
     expect_database: str,
     upload_dir: str | Path | None = None,
+    image_dir: str | Path | None = None,
 ) -> dict[str, object]:
     """Provision all five fictional South African demo complexes."""
     target = await current_database_name(db)
@@ -514,7 +515,7 @@ async def seed_demo(
     anchor = _anchor()
     password_hash = hash_password(_demo_password())
     repo_root = Path(__file__).resolve().parents[2]
-    asset_dir = repo_root / "estate-demo-images"
+    asset_dir = Path(image_dir) if image_dir is not None else repo_root / "estate-demo-images"
 
     estates_summary = []
     all_users = []

@@ -16,19 +16,16 @@ from app.analytics.schemas.intelligence import (
     WeeklyBriefing,
     WorkOrderDefaults,
 )
-from app.analytics.services.intelligence_service import _default_recommendations, _domain_answer
+from app.analytics.services.intelligence_service import _briefing
 from app.main import app
 
 
-def test_priority_recommendations_schema_valid() -> None:
-    recs = _default_recommendations()
-    assert len(recs) == 3
-    assert recs[0].id == "AI-01"
-    assert recs[0].kind == "PREVENTIVE MAINTENANCE"
-    assert recs[0].confidence == "High"
-    assert recs[0].confidence_value == 91
-    assert recs[0].savings_zar == 42000.0
-    assert recs[0].work_order_defaults.priority == "high"
+def test_grounded_briefing_contains_only_measured_counts():
+    facts = {'counts': {'open_complaints': 101, 'work_orders_in_flight': 2, 'unresolved_incidents': 1}}
+    briefing = _briefing('Fictional Musgrave', facts)
+    assert briefing.signals_reviewed == 104
+    assert briefing.avoidable_zar == 0
+    assert '101 open complaints' in briefing.body
 
 
 def test_weekly_briefing_schema_valid() -> None:
@@ -45,31 +42,6 @@ def test_weekly_briefing_schema_valid() -> None:
     assert dump["windowLabel"] == "Rolling 7 days"
     assert dump["signalsReviewed"] == 1284
     assert dump["avoidableZar"] == 86000.0
-
-
-def test_domain_answers_coverage() -> None:
-    # 1. health score question
-    ans1 = _domain_answer("Why did our estate health score change?", "Greenhaven Estate")
-    assert ans1.source == "estate-domain"
-    assert "score moved because" in ans1.summary.lower()
-    assert len(ans1.evidence) >= 3
-    assert len(ans1.recommendation) > 10
-
-    # 2. attention next month question
-    ans2 = _domain_answer("What is likely to need attention next month?", "Greenhaven Estate")
-    assert ans2.source == "estate-domain"
-    assert "november" in ans2.summary.lower() or "reactive spend" in ans2.summary.lower()
-    assert any("Pool Pump 02" in ev for ev in ans2.evidence)
-
-    # 3. board question
-    ans3 = _domain_answer("Summarise infrastructure risks for the board.", "Greenhaven Estate")
-    assert ans3.source == "estate-domain"
-    assert "water and pumping" in ans3.summary.lower()
-
-    # 4. generic fallback
-    ans4 = _domain_answer("Can we repair the clubhouse gate?", "Greenhaven Estate")
-    assert ans4.source == "estate-domain"
-    assert "scoped to greenhaven estate" in ans4.summary.lower()
 
 
 def test_ask_valora_request_validation() -> None:

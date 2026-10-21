@@ -38,7 +38,7 @@ from app.providers.models.service_provider import ServiceProvider
 from app.seed_demo import (
     DEMO_ESTATE_NAME,
     DEMO_HISTORY_DAYS,
-    DEMO_PHOTO_COUNT,
+    COMPLEX_CONFIGS,
     DEMO_SCORE_AS_OF_OFFSETS,
     SeedGuardError,
     count_demo_ai_rows,
@@ -100,11 +100,27 @@ async def test_a_refused_seed_writes_nothing(db_session, tmp_path) -> None:
 # --------------------------------------------------------------------------- #
 # Content
 # --------------------------------------------------------------------------- #
+@pytest.fixture
+def image_sources(tmp_path):
+    """Real synthetic JPEG inputs; tests do not depend on untracked demo media."""
+    from PIL import Image
+
+    directory = tmp_path / 'source-images'
+    directory.mkdir()
+    for config in COMPLEX_CONFIGS:
+        for filename, _caption in config['image_assets']:
+            image = Image.new('RGB', (800, 600), color=(90, 120, 150))
+            exif = image.getexif()
+            exif[270] = 'Synthetic acceptance image; strip this metadata'
+            image.save(directory / filename, format='JPEG', exif=exif)
+    return directory
+
+
 @pytest_asyncio.fixture
-async def seeded(db_session, tmp_path):
-    """One demonstration estate, seeded once per test."""
+async def seeded(db_session, tmp_path, image_sources):
+    """Current five-estate demonstration portfolio, seeded once per test."""
     summary = await seed_demo(
-        db_session, expect_database=expected_database(), upload_dir=tmp_path
+        db_session, expect_database=expected_database(), upload_dir=tmp_path, image_dir=image_sources
     )
     assert summary["created"] is True
     return summary, db_session, tmp_path
@@ -115,20 +131,21 @@ async def test_the_demo_world_has_the_people_the_brief_asks_for(seeded) -> None:
     summary, db, _tmp = seeded
 
     assert summary["properties"] == 24
-    assert await _count(db, Property) == 24
+    assert len(summary['estates']) == 5
+    assert await _count(db, Property) == 90
 
     roles = (await db.execute(select(User.role, func.count()).group_by(User.role))).all()
     by_role = {role: count for role, count in roles}
-    assert by_role[UserRole.hoa_admin.value] == 1
-    assert by_role[UserRole.resident.value] == 20
-    assert by_role[UserRole.service_provider.value] == 2
+    assert by_role[UserRole.hoa_admin.value] == 5
+    assert by_role[UserRole.resident.value] == 81
+    assert by_role[UserRole.service_provider.value] == 10
 
     # Both providers are linked to a provider profile *and* are members of the
     # estate: that is what makes them assignable to work.
     providers = (
         await db.execute(select(ServiceProvider).order_by(ServiceProvider.provider_id))
     ).scalars().all()
-    assert len(providers) == 2
+    assert len(providers) == 10
     assert all(provider.user_id is not None for provider in providers)
 
     linked_ids = {provider.user_id for provider in providers}
@@ -150,16 +167,15 @@ async def test_the_demo_world_has_the_people_the_brief_asks_for(seeded) -> None:
 
 
 @pytest.mark.asyncio
-async def test_the_demo_history_covers_every_complaint_state_consistently(seeded) -> None:
+async def test_the_demo_history_matches_the_five_operational_profiles(seeded) -> None:
     _summary, db, _tmp = seeded
 
-    assert await _count(db, Complaint) == 36
+    assert await _count(db, Complaint) == 154
     statuses = {
         status for (status,) in (await db.execute(select(Complaint.status))).all()
     }
     assert statuses == {
         ComplaintStatus.submitted.value,
-        ComplaintStatus.reviewed.value,
         ComplaintStatus.assigned.value,
         ComplaintStatus.in_progress.value,
         ComplaintStatus.resolved.value,
@@ -199,8 +215,8 @@ async def test_the_demo_history_covers_every_complaint_state_consistently(seeded
         )
     ).scalar_one()
     assert int(rated) >= 5
-    assert await _count(db, SecurityIncident) == 6
-    assert await _count(db, Announcement) == 5
+    assert await _count(db, SecurityIncident) == 27
+    assert await _count(db, Announcement) == 13
 
 
 @pytest.mark.asyncio
@@ -208,7 +224,8 @@ async def test_placeholder_photographs_are_stored_through_the_real_pipeline(seed
     summary, db, upload_dir = seeded
 
     rows = (await db.execute(select(EstatePhoto))).scalars().all()
-    assert len(rows) == DEMO_PHOTO_COUNT
+    assert len(rows) == 20
+    captions = {caption for config in COMPLEX_CONFIGS for _filename, caption in config['image_assets']}
 
     from PIL import Image
 
@@ -217,7 +234,7 @@ async def test_placeholder_photographs_are_stored_through_the_real_pipeline(seed
         thumb = photo_path(upload_dir, row.public_id, thumb=True)
         assert full.exists() and thumb.exists()
         assert full.stat().st_size == row.bytes
-        assert "placeholder" in (row.caption or "").lower()
+        assert row.caption in captions
 
         with Image.open(full) as image:
             # re-encoded by the pipeline: no EXIF at all, and bounded to 1920 px
@@ -226,7 +243,8 @@ async def test_placeholder_photographs_are_stored_through_the_real_pipeline(seed
         with Image.open(thumb) as image:
             assert max(image.size) <= 480
 
-    assert summary["photo_public_ids"] == [row.public_id for row in rows]
+    assert sum(estate['photos'] for estate in summary['estates']) == 20
+    assert all(sum(row.estate_id == estate['estate_id'] for row in rows) == 4 for estate in summary['estates'])
 
 
 @pytest.mark.asyncio
@@ -273,9 +291,9 @@ async def test_no_ai_output_is_ever_seeded(seeded) -> None:
 
 
 @pytest.mark.asyncio
-async def test_running_the_seed_twice_adds_nothing(db_session, tmp_path) -> None:
+async def test_running_the_seed_twice_adds_nothing(db_session, tmp_path, image_sources) -> None:
     first = await seed_demo(
-        db_session, expect_database=expected_database(), upload_dir=tmp_path
+        db_session, expect_database=expected_database(), upload_dir=tmp_path, image_dir=image_sources
     )
     counts = {
         model: await _count(db_session, model)
@@ -283,10 +301,10 @@ async def test_running_the_seed_twice_adds_nothing(db_session, tmp_path) -> None
     }
 
     second = await seed_demo(
-        db_session, expect_database=expected_database(), upload_dir=tmp_path
+        db_session, expect_database=expected_database(), upload_dir=tmp_path, image_dir=image_sources
     )
 
     assert first["created"] is True and second["created"] is False
     for model, before in counts.items():
         assert await _count(db_session, model) == before, f"{model.__name__} grew on a re-run"
-    assert len(list(tmp_path.glob("*.jpg"))) == DEMO_PHOTO_COUNT * 2
+    assert len(list(tmp_path.glob("*.jpg"))) == 40

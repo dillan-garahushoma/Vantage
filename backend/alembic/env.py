@@ -23,9 +23,10 @@ sys.path.insert(0, dirname(dirname(abspath(__file__))))
 
 from app.core.config import get_settings
 from app.db.database import Base
+from app.db.migration_config import configure_database_url
 
 settings = get_settings()
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+configure_database_url(config, settings.DATABASE_URL)
 
 # add your model's MetaData object here
 # for 'autogenerate' support

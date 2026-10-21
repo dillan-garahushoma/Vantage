@@ -982,7 +982,10 @@ async def test_operator_cli_dry_run_does_not_change_the_role() -> None:
 
 
 @pytest.mark.asyncio
-async def test_operator_cli_apply_promotes_the_account() -> None:
+async def test_operator_cli_apply_promotes_the_account(monkeypatch) -> None:
+    # This CLI unit test injects a fake session; its safety context must not
+    # depend on the real integration suite's guarded demo database name.
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://localhost/valora_operator_test")
     user = _operator()
     session = OperatorSession(user)
 
@@ -997,7 +1000,8 @@ async def test_operator_cli_apply_promotes_the_account() -> None:
 
 
 @pytest.mark.asyncio
-async def test_operator_cli_missing_account_is_an_error() -> None:
+async def test_operator_cli_missing_account_is_an_error(monkeypatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://localhost/valora_operator_test")
     session = OperatorSession(None)
 
     code = await opa.main(

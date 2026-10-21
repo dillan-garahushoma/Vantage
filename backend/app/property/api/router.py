@@ -8,7 +8,9 @@ from fastapi import APIRouter
 
 from app.core.config import get_settings
 from app.property.api.estates import router as estates_router
+from app.property.api.investments import router as investments_router
 from app.property.api.listings import router as listings_router
+from app.property.api.market import router as market_router
 from app.property.api.properties import router as properties_router
 from app.property.api.public import router as public_router
 from app.property.api.sales import router as sales_router
@@ -20,6 +22,8 @@ def create_router(enable_legacy_routes: bool | None = None) -> APIRouter:
 
     router = APIRouter()
     router.include_router(properties_router)
+    router.include_router(investments_router)
+    router.include_router(market_router)
     router.include_router(estates_router)
     router.include_router(public_router)
     if enable_legacy_routes:

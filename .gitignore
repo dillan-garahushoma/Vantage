@@ -28,3 +28,17 @@ Thumbs.db
 # Uploaded estate photos: local files, never committed
 backend/uploads/
 uploads/
+
+# Local launcher state and browser-test artifacts
+.local/
+frontend/test-results/
+frontend/playwright-report/
+
+# Private local handoff/session notes
+/docs/progress/
+/batches/
+/review-evidence/
+/SYSTEM_GAPS.md
+/LOCAL_DATABASE.md
+/LOCAL_RUN.md
+/Vantage-handoff-*/

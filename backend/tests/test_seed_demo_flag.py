@@ -60,7 +60,7 @@ async def test_seeding_an_existing_demo_estate_changes_nothing(db_session, tmp_p
     )
 
     assert second["created"] is False
-    assert "already exists" in str(second["message"])
+    assert "already exist" in str(second["message"])
     estates = await db_session.execute(
         select(func.count()).select_from(Estate).where(Estate.name == DEMO_ESTATE_NAME)
     )

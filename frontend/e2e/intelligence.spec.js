@@ -1,0 +1,69 @@
+/** Browser wiring only: explicit API fixtures, separate from PostgreSQL acceptance. */
+import { expect, test } from '@playwright/test';
+
+async function intelligenceWorld(page, { denied = false, admin = true } = {}) {
+    const user = { id: 1, email: 'fixture@example.com', full_name: 'Fixture member', role: admin ? 'hoa_admin' : 'resident' };
+    const estate = { estate_id: 1, estate_name: 'Fictional Musgrave Complex', suburb: 'Musgrave', city: 'Durban',
+        province: 'KwaZulu-Natal', membership_roles: [user.role], property_ids: [], is_estate_admin: admin, is_estate_provider: false };
+    let saved = false;
+    const briefing = () => ({ estate_id: 1, estate_name: estate.estate_name, source: 'stored_records',
+        as_of: '2026-10-21T10:00:00Z', briefing_id: saved ? 4 : null, template_version: 'operational-v1', data_origin: 'demo',
+        briefing: { headline: 'Stored operational records for Fictional Musgrave Complex.',
+            body: 'There are 105 open complaints. Forecasts and savings are unavailable.', windowLabel: 'Current stored records',
+            signalsReviewed: 105, sources: 3, avoidableZar: 0 }, recommendations: [],
+        operational_signals: { open_complaints: 105, work_orders_in_flight: 0, unresolved_incidents: 0 },
+        limitations: ['Counts describe stored records, not a weekly activity total.'] });
+    await page.route(/https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.abort());
+    await page.addInitScript((value) => {
+        localStorage.setItem('valora.token', 'fixture-token');
+        localStorage.setItem('valora.user', JSON.stringify(value));
+        localStorage.setItem('valora.estate', '1');
+    }, user);
+    await page.route('**/api/v1/**', async route => {
+        const path = new URL(route.request().url()).pathname;
+        if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204 });
+        if (path === '/api/v1/auth/me') return route.fulfill({ json: user });
+        if (path === '/api/v1/auth/estates') return route.fulfill({ json: { estates: [estate] } });
+        if (path === '/api/v1/analytics/intelligence/ask') return route.fulfill({ json: {
+            summary: 'No stored Living Score snapshot is available for this estate.',
+            evidence: ['complaints [estate_id=1]: 105 open.'], recommendation: 'Review the cited records.', related: [], source: 'estate-domain' } });
+        if (path === '/api/v1/analytics/intelligence/briefing/generate') {
+            saved = true;
+            return route.fulfill({ status: 201, json: briefing() });
+        }
+        if (path === '/api/v1/analytics/intelligence') return denied
+            ? route.fulfill({ status: 403, json: { detail: { code: 'FORBIDDEN', message: 'Estate access denied.' } } })
+            : route.fulfill({ json: briefing() });
+        return route.fulfill({ json: { items: [], total: 0, page: 1, size: 20, pages: 0 } });
+    });
+}
+
+test('shows measured counts, saves a dated briefing and asks the authenticated API', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await intelligenceWorld(page);
+    await page.goto('/intelligence');
+    await expect(page.getByText('105', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Save current briefing' }).click();
+    await expect(page.getByText(/Saved briefing ·/)).toBeVisible();
+    await expect(page.getByText(/Counts are frozen at the briefing date/)).toBeVisible();
+    await page.getByRole('button', { name: 'Why did our estate health score change?' }).click();
+    await expect(page.getByText('No stored Living Score snapshot is available for this estate.')).toBeVisible();
+    expect(errors).toEqual([]);
+});
+
+test('a backend denial never displays fictional pump or savings claims', async ({ page }) => {
+    await intelligenceWorld(page, { denied: true });
+    await page.goto('/intelligence');
+    await expect(page.getByText('Intelligence unavailable')).toBeVisible();
+    await expect(page.getByText('Estate access denied.')).toBeVisible();
+    await expect(page.getByText(/Pool Pump 02/)).toHaveCount(0);
+    await expect(page.getByText('R42,000')).toHaveCount(0);
+});
+
+test('members can read safe aggregates while save controls require estate HOA capability', async ({ page }) => {
+    await intelligenceWorld(page, { admin: false });
+    await page.goto('/intelligence');
+    await expect(page.getByText('105', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save current briefing' })).toHaveCount(0);
+});

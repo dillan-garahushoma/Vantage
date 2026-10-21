@@ -20,6 +20,11 @@ from app.identity.models.login_attempt import LoginAttempts  # noqa: F401
 from app.property.models.estate import Estate  # noqa: F401
 from app.property.models.estate_photo import EstatePhoto  # noqa: F401
 from app.property.models.property import Property  # noqa: F401
+from app.property.models.investment_scenario import InvestmentScenario  # noqa: F401
+from app.property.models.market import (  # noqa: F401
+    MarketingAuthority, MarketingRequest, MarketListing,
+    ListingPriceEvent, MarketTransaction, MarketEvent,
+)
 from app.property.models.listing import Listing  # noqa: F401
 from app.property.models.sale import Sale  # noqa: F401
 
@@ -37,6 +42,7 @@ from app.providers.models.review import Review  # noqa: F401
 
 # Analytics domain
 from app.analytics.models.ai_analytic import AIAnalytic  # noqa: F401
+from app.analytics.models.intelligence_briefing import IntelligenceBriefing  # noqa: F401
 from app.analytics.models.ai_call_event import AICallEvent  # noqa: F401
 from app.analytics.models.ai_insight import AIInsight  # noqa: F401
 from app.analytics.models.ai_insight_feedback import AIInsightFeedback  # noqa: F401

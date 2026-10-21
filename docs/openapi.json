@@ -158,6 +158,223 @@
         "title": "AnnouncementUpdate",
         "type": "object"
       },
+      "AnnualInvestmentCashFlow": {
+        "additionalProperties": false,
+        "properties": {
+          "closing_debt": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Closing Debt",
+            "type": "string"
+          },
+          "collected_rent": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Collected Rent",
+            "type": "string"
+          },
+          "exit_equity": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Exit Equity",
+            "type": "string"
+          },
+          "fixed_costs": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Fixed Costs",
+            "type": "string"
+          },
+          "interest": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Interest",
+            "type": "string"
+          },
+          "loan_payments": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Loan Payments",
+            "type": "string"
+          },
+          "loan_service_fees": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Loan Service Fees",
+            "type": "string"
+          },
+          "maintenance": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Maintenance",
+            "type": "string"
+          },
+          "management": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Management",
+            "type": "string"
+          },
+          "net_operating_income": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Net Operating Income",
+            "type": "string"
+          },
+          "operating_cash": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Operating Cash",
+            "type": "string"
+          },
+          "principal": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Principal",
+            "type": "string"
+          },
+          "sale_price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Sale Price",
+            "type": "string"
+          },
+          "scheduled_capital_costs": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Scheduled Capital Costs",
+            "type": "string"
+          },
+          "scheduled_rent": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Scheduled Rent",
+            "type": "string"
+          },
+          "selling_costs": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Selling Costs",
+            "type": "string"
+          },
+          "total_cash": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Cash",
+            "type": "string"
+          },
+          "vacancy_loss": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Vacancy Loss",
+            "type": "string"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "scheduled_rent",
+          "vacancy_loss",
+          "collected_rent",
+          "fixed_costs",
+          "management",
+          "maintenance",
+          "net_operating_income",
+          "scheduled_capital_costs",
+          "interest",
+          "principal",
+          "loan_payments",
+          "loan_service_fees",
+          "operating_cash",
+          "closing_debt",
+          "sale_price",
+          "selling_costs",
+          "exit_equity",
+          "total_cash"
+        ],
+        "title": "AnnualInvestmentCashFlow",
+        "type": "object"
+      },
+      "AskValoraRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "estate_id": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2147483647.0,
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "question": {
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "estate_id"
+        ],
+        "title": "AskValoraRequest",
+        "type": "object"
+      },
+      "AskValoraResponse": {
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "estate_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estate Id"
+          },
+          "evidence": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "recommendation": {
+            "default": "",
+            "title": "Recommendation",
+            "type": "string"
+          },
+          "related": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Related",
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "n8n",
+              "estate-domain",
+              "llm"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary",
+          "source"
+        ],
+        "title": "AskValoraResponse",
+        "type": "object"
+      },
       "AuthResponse": {
         "properties": {
           "access_token": {
@@ -178,6 +395,106 @@
           "user"
         ],
         "title": "AuthResponse",
+        "type": "object"
+      },
+      "AuthorityCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "property_id": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2147483647.0,
+            "title": "Property Id",
+            "type": "integer"
+          },
+          "representative_id": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2147483647.0,
+            "title": "Representative Id",
+            "type": "integer"
+          },
+          "verification_reference": {
+            "maxLength": 240,
+            "minLength": 3,
+            "title": "Verification Reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "property_id",
+          "representative_id",
+          "verification_reference"
+        ],
+        "title": "AuthorityCreate",
+        "type": "object"
+      },
+      "AuthorityResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "authority_id": {
+            "title": "Authority Id",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "property_id": {
+            "title": "Property Id",
+            "type": "integer"
+          },
+          "representative_id": {
+            "title": "Representative Id",
+            "type": "integer"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "revoked_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked By"
+          },
+          "verification_reference": {
+            "title": "Verification Reference",
+            "type": "string"
+          },
+          "verified_by": {
+            "title": "Verified By",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "authority_id",
+          "estate_id",
+          "property_id",
+          "representative_id",
+          "verified_by",
+          "verification_reference",
+          "created_at",
+          "revoked_at",
+          "revoked_by"
+        ],
+        "title": "AuthorityResponse",
         "type": "object"
       },
       "Body_estates_upload_estate_photo": {
@@ -1050,6 +1367,50 @@
         "title": "ComplaintStatusUpdate",
         "type": "object"
       },
+      "CompletionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "actual_amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 9999999999.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Actual Amount"
+          },
+          "effective_date": {
+            "format": "date",
+            "title": "Effective Date",
+            "type": "string"
+          },
+          "expected_version": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2147483647.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reference": {
+            "maxLength": 240,
+            "minLength": 3,
+            "title": "Reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "actual_amount",
+          "effective_date",
+          "expected_version",
+          "reference"
+        ],
+        "title": "CompletionCreate",
+        "type": "object"
+      },
       "ContactRequest": {
         "properties": {
           "email": {
@@ -1219,6 +1580,101 @@
           "is_estate_provider"
         ],
         "title": "EstateAccessResponse",
+        "type": "object"
+      },
+      "EstateIntelligenceResponse": {
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "briefing": {
+            "$ref": "#/components/schemas/WeeklyBriefing-Output"
+          },
+          "briefing_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Briefing Id"
+          },
+          "data_origin": {
+            "default": "live",
+            "enum": [
+              "demo",
+              "live"
+            ],
+            "title": "Data Origin",
+            "type": "string"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "estate_name": {
+            "title": "Estate Name",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "facts": {
+            "additionalProperties": true,
+            "title": "Facts",
+            "type": "object"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "operational_signals": {
+            "$ref": "#/components/schemas/OperationalSignalCounts"
+          },
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/PriorityRecommendation-Output"
+            },
+            "title": "Recommendations",
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "n8n",
+              "live_llm",
+              "sample_baseline",
+              "stored_records"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "template_version": {
+            "default": "operational-v1",
+            "title": "Template Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estate_id",
+          "estate_name",
+          "as_of",
+          "briefing",
+          "recommendations",
+          "operational_signals",
+          "source"
+        ],
+        "title": "EstateIntelligenceResponse",
         "type": "object"
       },
       "EstatePhotoResponse": {
@@ -1419,6 +1875,104 @@
         "title": "EstateProfileUpdate",
         "type": "object"
       },
+      "EstateSignalItem": {
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Id"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "complaint",
+              "work_order",
+              "incident",
+              "telemetry",
+              "living_score"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "title",
+          "status",
+          "date",
+          "detail"
+        ],
+        "title": "EstateSignalItem",
+        "type": "object"
+      },
+      "EstateSignalsExport": {
+        "properties": {
+          "counts": {
+            "$ref": "#/components/schemas/OperationalSignalCounts"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "estate_name": {
+            "title": "Estate Name",
+            "type": "string"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "limit_per_type": {
+            "default": 50,
+            "title": "Limit Per Type",
+            "type": "integer"
+          },
+          "scope": {
+            "default": "Recent record metadata only; counts cover all matching records.",
+            "title": "Scope",
+            "type": "string"
+          },
+          "signals": {
+            "items": {
+              "$ref": "#/components/schemas/EstateSignalItem"
+            },
+            "title": "Signals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "estate_id",
+          "estate_name",
+          "generated_at",
+          "counts",
+          "signals"
+        ],
+        "title": "EstateSignalsExport",
+        "type": "object"
+      },
       "EstateSignup": {
         "additionalProperties": false,
         "description": "The estate an estate_admin registers in the same transaction as their account.",
@@ -1467,6 +2021,185 @@
           "province"
         ],
         "title": "EstateSignup",
+        "type": "object"
+      },
+      "EventResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "actor_id": {
+            "title": "Actor Id",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": true,
+            "title": "Details",
+            "type": "object"
+          },
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "integer"
+          },
+          "entity_type": {
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "event_id",
+          "estate_id",
+          "entity_type",
+          "entity_id",
+          "action",
+          "actor_id",
+          "details",
+          "created_at"
+        ],
+        "title": "EventResponse",
+        "type": "object"
+      },
+      "FinancingInputs-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "annual_interest_rate": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+                "type": "string"
+              }
+            ],
+            "default": "0.105",
+            "title": "Annual Interest Rate"
+          },
+          "deposit_fraction": {
+            "anyOf": [
+              {
+                "exclusiveMaximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+                "type": "string"
+              }
+            ],
+            "default": "0.20",
+            "title": "Deposit Fraction"
+          },
+          "monthly_service_fee": {
+            "anyOf": [
+              {
+                "maximum": 10000000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "default": "69",
+            "title": "Monthly Service Fee"
+          },
+          "rate_changes": {
+            "items": {
+              "$ref": "#/components/schemas/RateChange-Input"
+            },
+            "maxItems": 40,
+            "title": "Rate Changes",
+            "type": "array"
+          },
+          "registration_cost": {
+            "anyOf": [
+              {
+                "maximum": 10000000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "default": "25000",
+            "title": "Registration Cost"
+          },
+          "term_months": {
+            "default": 240,
+            "maximum": 480.0,
+            "minimum": 1.0,
+            "title": "Term Months",
+            "type": "integer"
+          }
+        },
+        "title": "FinancingInputs",
+        "type": "object"
+      },
+      "FinancingInputs-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "annual_interest_rate": {
+            "default": "0.105",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+            "title": "Annual Interest Rate",
+            "type": "string"
+          },
+          "deposit_fraction": {
+            "default": "0.20",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+            "title": "Deposit Fraction",
+            "type": "string"
+          },
+          "monthly_service_fee": {
+            "default": "69",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+            "title": "Monthly Service Fee",
+            "type": "string"
+          },
+          "rate_changes": {
+            "items": {
+              "$ref": "#/components/schemas/RateChange-Output"
+            },
+            "maxItems": 40,
+            "title": "Rate Changes",
+            "type": "array"
+          },
+          "registration_cost": {
+            "default": "25000",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+            "title": "Registration Cost",
+            "type": "string"
+          },
+          "term_months": {
+            "default": 240,
+            "maximum": 480.0,
+            "minimum": 1.0,
+            "title": "Term Months",
+            "type": "integer"
+          }
+        },
+        "title": "FinancingInputs",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -1928,6 +2661,810 @@
         "title": "IncidentUpdate",
         "type": "object"
       },
+      "IngestIntelligencePayload": {
+        "additionalProperties": false,
+        "properties": {
+          "briefing": {
+            "$ref": "#/components/schemas/WeeklyBriefing-Input"
+          },
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/PriorityRecommendation-Input"
+            },
+            "title": "Recommendations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "briefing",
+          "recommendations"
+        ],
+        "title": "IngestIntelligencePayload",
+        "type": "object"
+      },
+      "InvestmentCalculationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "$ref": "#/components/schemas/InvestmentInputs-Input"
+          },
+          "estate_id": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2147483647.0,
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "property_id": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2147483647.0,
+            "title": "Property Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "estate_id",
+          "property_id",
+          "assumptions"
+        ],
+        "title": "InvestmentCalculationRequest",
+        "type": "object"
+      },
+      "InvestmentInputs-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "acquisition_date": {
+            "format": "date",
+            "title": "Acquisition Date",
+            "type": "string"
+          },
+          "capital_growth": {
+            "anyOf": [
+              {
+                "maximum": 0.25,
+                "minimum": -0.5,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Capital Growth"
+          },
+          "currency": {
+            "const": "ZAR",
+            "default": "ZAR",
+            "title": "Currency",
+            "type": "string"
+          },
+          "data_source": {
+            "default": "user_assumptions",
+            "enum": [
+              "user_assumptions",
+              "fictional_musgrave"
+            ],
+            "title": "Data Source",
+            "type": "string"
+          },
+          "exit_fixed_cost": {
+            "anyOf": [
+              {
+                "maximum": 10000000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Exit Fixed Cost"
+          },
+          "financing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FinancingInputs-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fixed_cost_growth": {
+            "anyOf": [
+              {
+                "maximum": 0.25,
+                "minimum": -0.5,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Fixed Cost Growth"
+          },
+          "horizon_years": {
+            "default": 10,
+            "maximum": 40.0,
+            "minimum": 1.0,
+            "title": "Horizon Years",
+            "type": "integer"
+          },
+          "initial_make_ready": {
+            "anyOf": [
+              {
+                "maximum": 10000000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Initial Make Ready"
+          },
+          "maintenance_fraction": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Maintenance Fraction"
+          },
+          "management_fraction": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Management Fraction"
+          },
+          "monthly_insurance": {
+            "anyOf": [
+              {
+                "maximum": 10000000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Monthly Insurance"
+          },
+          "monthly_levy": {
+            "anyOf": [
+              {
+                "maximum": 10000000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Monthly Levy"
+          },
+          "monthly_rates": {
+            "anyOf": [
+              {
+                "maximum": 10000000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Monthly Rates"
+          },
+          "monthly_rent": {
+            "anyOf": [
+              {
+                "maximum": 10000000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Monthly Rent"
+          },
+          "price_basis": {
+            "const": "assumed_purchase_price",
+            "default": "assumed_purchase_price",
+            "title": "Price Basis",
+            "type": "string"
+          },
+          "purchase_price": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 10000000000.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Purchase Price"
+          },
+          "rent_growth": {
+            "anyOf": [
+              {
+                "maximum": 0.25,
+                "minimum": -0.5,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Rent Growth"
+          },
+          "scheduled_costs": {
+            "items": {
+              "$ref": "#/components/schemas/ScheduledCost-Input"
+            },
+            "maxItems": 80,
+            "title": "Scheduled Costs",
+            "type": "array"
+          },
+          "selling_cost_fraction": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Selling Cost Fraction"
+          },
+          "transfer_duty_value": {
+            "anyOf": [
+              {
+                "maximum": 10000000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transfer Duty Value"
+          },
+          "transfer_legal_cost": {
+            "anyOf": [
+              {
+                "maximum": 10000000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Transfer Legal Cost"
+          },
+          "vacancy_fraction": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+                "type": "string"
+              }
+            ],
+            "default": "0.05",
+            "title": "Vacancy Fraction"
+          }
+        },
+        "required": [
+          "acquisition_date",
+          "purchase_price",
+          "monthly_rent"
+        ],
+        "title": "InvestmentInputs",
+        "type": "object"
+      },
+      "InvestmentInputs-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "acquisition_date": {
+            "format": "date",
+            "title": "Acquisition Date",
+            "type": "string"
+          },
+          "capital_growth": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+            "title": "Capital Growth",
+            "type": "string"
+          },
+          "currency": {
+            "const": "ZAR",
+            "default": "ZAR",
+            "title": "Currency",
+            "type": "string"
+          },
+          "data_source": {
+            "default": "user_assumptions",
+            "enum": [
+              "user_assumptions",
+              "fictional_musgrave"
+            ],
+            "title": "Data Source",
+            "type": "string"
+          },
+          "exit_fixed_cost": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+            "title": "Exit Fixed Cost",
+            "type": "string"
+          },
+          "financing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FinancingInputs-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fixed_cost_growth": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+            "title": "Fixed Cost Growth",
+            "type": "string"
+          },
+          "horizon_years": {
+            "default": 10,
+            "maximum": 40.0,
+            "minimum": 1.0,
+            "title": "Horizon Years",
+            "type": "integer"
+          },
+          "initial_make_ready": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+            "title": "Initial Make Ready",
+            "type": "string"
+          },
+          "maintenance_fraction": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+            "title": "Maintenance Fraction",
+            "type": "string"
+          },
+          "management_fraction": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+            "title": "Management Fraction",
+            "type": "string"
+          },
+          "monthly_insurance": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+            "title": "Monthly Insurance",
+            "type": "string"
+          },
+          "monthly_levy": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+            "title": "Monthly Levy",
+            "type": "string"
+          },
+          "monthly_rates": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+            "title": "Monthly Rates",
+            "type": "string"
+          },
+          "monthly_rent": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+            "title": "Monthly Rent",
+            "type": "string"
+          },
+          "price_basis": {
+            "const": "assumed_purchase_price",
+            "default": "assumed_purchase_price",
+            "title": "Price Basis",
+            "type": "string"
+          },
+          "purchase_price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+            "title": "Purchase Price",
+            "type": "string"
+          },
+          "rent_growth": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+            "title": "Rent Growth",
+            "type": "string"
+          },
+          "scheduled_costs": {
+            "items": {
+              "$ref": "#/components/schemas/ScheduledCost-Output"
+            },
+            "maxItems": 80,
+            "title": "Scheduled Costs",
+            "type": "array"
+          },
+          "selling_cost_fraction": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+            "title": "Selling Cost Fraction",
+            "type": "string"
+          },
+          "transfer_duty_value": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transfer Duty Value"
+          },
+          "transfer_legal_cost": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+            "title": "Transfer Legal Cost",
+            "type": "string"
+          },
+          "vacancy_fraction": {
+            "default": "0.05",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+            "title": "Vacancy Fraction",
+            "type": "string"
+          }
+        },
+        "required": [
+          "acquisition_date",
+          "purchase_price",
+          "monthly_rent"
+        ],
+        "title": "InvestmentInputs",
+        "type": "object"
+      },
+      "InvestmentResult": {
+        "additionalProperties": false,
+        "properties": {
+          "acquisition_cost": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Acquisition Cost",
+            "type": "string"
+          },
+          "annual_cash_flows": {
+            "items": {
+              "$ref": "#/components/schemas/AnnualInvestmentCashFlow"
+            },
+            "title": "Annual Cash Flows",
+            "type": "array"
+          },
+          "annual_irr_percent": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annual Irr Percent"
+          },
+          "before_personal_tax": {
+            "const": true,
+            "default": true,
+            "title": "Before Personal Tax",
+            "type": "boolean"
+          },
+          "currency": {
+            "const": "ZAR",
+            "default": "ZAR",
+            "title": "Currency",
+            "type": "string"
+          },
+          "data_source": {
+            "enum": [
+              "user_assumptions",
+              "fictional_musgrave"
+            ],
+            "title": "Data Source",
+            "type": "string"
+          },
+          "formula_version": {
+            "title": "Formula Version",
+            "type": "string"
+          },
+          "gross_yield_percent": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Gross Yield Percent",
+            "type": "string"
+          },
+          "initial_cash": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Initial Cash",
+            "type": "string"
+          },
+          "initial_monthly_bond_payment": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Initial Monthly Bond Payment",
+            "type": "string"
+          },
+          "irr_status": {
+            "enum": [
+              "available",
+              "non_unique_or_unavailable"
+            ],
+            "title": "Irr Status",
+            "type": "string"
+          },
+          "net_profit": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Net Profit",
+            "type": "string"
+          },
+          "net_yield_on_cost_percent": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Net Yield On Cost Percent",
+            "type": "string"
+          },
+          "net_yield_percent": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Net Yield Percent",
+            "type": "string"
+          },
+          "nominal_amounts": {
+            "const": true,
+            "default": true,
+            "title": "Nominal Amounts",
+            "type": "boolean"
+          },
+          "tax_schedule_version": {
+            "title": "Tax Schedule Version",
+            "type": "string"
+          },
+          "timing": {
+            "const": "year_end_cash_flows_monthly_amortization",
+            "default": "year_end_cash_flows_monthly_amortization",
+            "title": "Timing",
+            "type": "string"
+          },
+          "total_contributions": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Contributions",
+            "type": "string"
+          },
+          "total_distributions": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Distributions",
+            "type": "string"
+          },
+          "total_roi_percent": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Roi Percent"
+          },
+          "total_topups": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Topups",
+            "type": "string"
+          },
+          "transfer_duty": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Transfer Duty",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          },
+          "year_one_cash_on_cash_percent": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year One Cash On Cash Percent"
+          }
+        },
+        "required": [
+          "formula_version",
+          "tax_schedule_version",
+          "data_source",
+          "transfer_duty",
+          "acquisition_cost",
+          "initial_cash",
+          "initial_monthly_bond_payment",
+          "gross_yield_percent",
+          "net_yield_percent",
+          "net_yield_on_cost_percent",
+          "year_one_cash_on_cash_percent",
+          "total_topups",
+          "total_contributions",
+          "total_distributions",
+          "net_profit",
+          "total_roi_percent",
+          "annual_irr_percent",
+          "irr_status",
+          "warnings",
+          "annual_cash_flows"
+        ],
+        "title": "InvestmentResult",
+        "type": "object"
+      },
+      "InvestmentScenarioCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "$ref": "#/components/schemas/InvestmentInputs-Input"
+          },
+          "estate_id": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2147483647.0,
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Name",
+            "type": "string"
+          },
+          "property_id": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2147483647.0,
+            "title": "Property Id",
+            "type": "integer"
+          },
+          "revision_of": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 2147483647.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Of"
+          }
+        },
+        "required": [
+          "estate_id",
+          "property_id",
+          "assumptions",
+          "name"
+        ],
+        "title": "InvestmentScenarioCreate",
+        "type": "object"
+      },
+      "InvestmentScenarioResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "$ref": "#/components/schemas/InvestmentInputs-Output"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "formula_version": {
+            "title": "Formula Version",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "property_id": {
+            "title": "Property Id",
+            "type": "integer"
+          },
+          "result": {
+            "$ref": "#/components/schemas/InvestmentResult"
+          },
+          "revision_of": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Of"
+          },
+          "scenario_id": {
+            "title": "Scenario Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "estate_id",
+          "property_id",
+          "name",
+          "revision_of",
+          "formula_version",
+          "assumptions",
+          "result",
+          "created_at"
+        ],
+        "title": "InvestmentScenarioResponse",
+        "type": "object"
+      },
       "JoinCodeCreateRequest": {
         "additionalProperties": false,
         "description": "Rotate the estate's join code.\n\n``expires_in_days`` is optional: an omitted value issues a code that does not\nexpire until it is rotated. The estate is never part of the body - it is a\nquery parameter, and the membership check is what proves access.",
@@ -2030,6 +3567,204 @@
           "work_orders_considered"
         ],
         "title": "LegacyPropertyScoreResponse",
+        "type": "object"
+      },
+      "ListingAction": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "publish",
+              "withdraw"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "expected_version": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2147483647.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "expected_version",
+          "reason"
+        ],
+        "title": "ListingAction",
+        "type": "object"
+      },
+      "ListingContent": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "maxLength": 4000,
+            "minLength": 3,
+            "title": "Description",
+            "type": "string"
+          },
+          "expected_version": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2147483647.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 3,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "expected_version",
+          "reason"
+        ],
+        "title": "ListingContent",
+        "type": "object"
+      },
+      "ListingCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "asking_price": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 9999999999.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Asking Price"
+          },
+          "description": {
+            "maxLength": 4000,
+            "minLength": 3,
+            "title": "Description",
+            "type": "string"
+          },
+          "request_id": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2147483647.0,
+            "title": "Request Id",
+            "type": "integer"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 3,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "title",
+          "description",
+          "asking_price"
+        ],
+        "title": "ListingCreate",
+        "type": "object"
+      },
+      "ListingResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "asking_price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Asking Price",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency": {
+            "const": "ZAR",
+            "default": "ZAR",
+            "title": "Currency",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "listing_id": {
+            "title": "Listing Id",
+            "type": "integer"
+          },
+          "property_id": {
+            "title": "Property Id",
+            "type": "integer"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "purpose": {
+            "enum": [
+              "sale",
+              "rent"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "listing_id",
+          "estate_id",
+          "property_id",
+          "purpose",
+          "title",
+          "description",
+          "asking_price",
+          "status",
+          "version",
+          "created_at",
+          "published_at"
+        ],
+        "title": "ListingResponse",
         "type": "object"
       },
       "LivingScoreComponentResponse": {
@@ -2456,6 +4191,27 @@
         "title": "MembershipResponse",
         "type": "object"
       },
+      "OperationalSignalCounts": {
+        "properties": {
+          "open_complaints": {
+            "default": 0,
+            "title": "Open Complaints",
+            "type": "integer"
+          },
+          "unresolved_incidents": {
+            "default": 0,
+            "title": "Unresolved Incidents",
+            "type": "integer"
+          },
+          "work_orders_in_flight": {
+            "default": 0,
+            "title": "Work Orders In Flight",
+            "type": "integer"
+          }
+        },
+        "title": "OperationalSignalCounts",
+        "type": "object"
+      },
       "Page_AnnouncementResponse_": {
         "properties": {
           "items": {
@@ -2490,6 +4246,42 @@
           "size"
         ],
         "title": "Page[AnnouncementResponse]",
+        "type": "object"
+      },
+      "Page_AuthorityResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuthorityResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[AuthorityResponse]",
         "type": "object"
       },
       "Page_ComplaintResponse_": {
@@ -2528,6 +4320,78 @@
         "title": "Page[ComplaintResponse]",
         "type": "object"
       },
+      "Page_EstateIntelligenceResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EstateIntelligenceResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[EstateIntelligenceResponse]",
+        "type": "object"
+      },
+      "Page_EventResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EventResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[EventResponse]",
+        "type": "object"
+      },
       "Page_IncidentResponse_": {
         "properties": {
           "items": {
@@ -2564,6 +4428,78 @@
         "title": "Page[IncidentResponse]",
         "type": "object"
       },
+      "Page_InvestmentScenarioResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InvestmentScenarioResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[InvestmentScenarioResponse]",
+        "type": "object"
+      },
+      "Page_ListingResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ListingResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[ListingResponse]",
+        "type": "object"
+      },
       "Page_MembershipResponse_": {
         "properties": {
           "items": {
@@ -2598,6 +4534,42 @@
           "size"
         ],
         "title": "Page[MembershipResponse]",
+        "type": "object"
+      },
+      "Page_PriceResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PriceResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[PriceResponse]",
         "type": "object"
       },
       "Page_PropertyResponse_": {
@@ -2672,6 +4644,42 @@
         "title": "Page[PublicEstateListItem]",
         "type": "object"
       },
+      "Page_RequestResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RequestResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[RequestResponse]",
+        "type": "object"
+      },
       "Page_ResidencyRequestResponse_": {
         "properties": {
           "items": {
@@ -2744,6 +4752,42 @@
         "title": "Page[ServiceProviderResponse]",
         "type": "object"
       },
+      "Page_TransactionResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TransactionResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 0,
+            "title": "Pages",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "Page[TransactionResponse]",
+        "type": "object"
+      },
       "Page_WorkOrderResponse_": {
         "properties": {
           "items": {
@@ -2792,6 +4836,256 @@
           "pending"
         ],
         "title": "PendingResidencyCountResponse",
+        "type": "object"
+      },
+      "PriceChange": {
+        "additionalProperties": false,
+        "properties": {
+          "asking_price": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 9999999999.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Asking Price"
+          },
+          "expected_version": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2147483647.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asking_price",
+          "expected_version",
+          "reason"
+        ],
+        "title": "PriceChange",
+        "type": "object"
+      },
+      "PriceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "changed_by": {
+            "title": "Changed By",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "listing_id": {
+            "title": "Listing Id",
+            "type": "integer"
+          },
+          "listing_version": {
+            "title": "Listing Version",
+            "type": "integer"
+          },
+          "new_price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "New Price",
+            "type": "string"
+          },
+          "old_price": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Price"
+          },
+          "price_id": {
+            "title": "Price Id",
+            "type": "integer"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "price_id",
+          "estate_id",
+          "listing_id",
+          "old_price",
+          "new_price",
+          "changed_by",
+          "reason",
+          "listing_version",
+          "created_at"
+        ],
+        "title": "PriceResponse",
+        "type": "object"
+      },
+      "PriorityRecommendation-Input": {
+        "properties": {
+          "confidence": {
+            "enum": [
+              "High",
+              "Medium",
+              "Low"
+            ],
+            "title": "Confidence",
+            "type": "string"
+          },
+          "confidence_value": {
+            "title": "Confidence Value",
+            "type": "integer"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendationEvidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "impact": {
+            "title": "Impact",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "PREVENTIVE MAINTENANCE",
+              "EMERGING SERVICE RISK",
+              "BUDGET & PROVIDER OPTIMISATION"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "savings_zar": {
+            "title": "Savings Zar",
+            "type": "number"
+          },
+          "suggested_action": {
+            "title": "Suggested Action",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "work_order_defaults": {
+            "$ref": "#/components/schemas/WorkOrderDefaults-Input"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "summary",
+          "confidence",
+          "confidence_value",
+          "impact",
+          "savings_zar",
+          "suggested_action",
+          "work_order_defaults"
+        ],
+        "title": "PriorityRecommendation",
+        "type": "object"
+      },
+      "PriorityRecommendation-Output": {
+        "properties": {
+          "confidence": {
+            "enum": [
+              "High",
+              "Medium",
+              "Low"
+            ],
+            "title": "Confidence",
+            "type": "string"
+          },
+          "confidenceValue": {
+            "title": "Confidencevalue",
+            "type": "integer"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendationEvidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "impact": {
+            "title": "Impact",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "PREVENTIVE MAINTENANCE",
+              "EMERGING SERVICE RISK",
+              "BUDGET & PROVIDER OPTIMISATION"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "savingsZar": {
+            "title": "Savingszar",
+            "type": "number"
+          },
+          "suggestedAction": {
+            "title": "Suggestedaction",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "workOrderDefaults": {
+            "$ref": "#/components/schemas/WorkOrderDefaults-Output"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "summary",
+          "confidence",
+          "confidenceValue",
+          "impact",
+          "savingsZar",
+          "suggestedAction",
+          "workOrderDefaults"
+        ],
+        "title": "PriorityRecommendation",
         "type": "object"
       },
       "PropertyCreate": {
@@ -3194,6 +5488,98 @@
         "title": "PublicPhotoResponse",
         "type": "object"
       },
+      "RateChange-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "annual_rate": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+                "type": "string"
+              }
+            ],
+            "title": "Annual Rate"
+          },
+          "start_month": {
+            "maximum": 480.0,
+            "minimum": 1.0,
+            "title": "Start Month",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_month",
+          "annual_rate"
+        ],
+        "title": "RateChange",
+        "type": "object"
+      },
+      "RateChange-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "annual_rate": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,6}0*$",
+            "title": "Annual Rate",
+            "type": "string"
+          },
+          "start_month": {
+            "maximum": 480.0,
+            "minimum": 1.0,
+            "title": "Start Month",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_month",
+          "annual_rate"
+        ],
+        "title": "RateChange",
+        "type": "object"
+      },
+      "Reason": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "Reason",
+        "type": "object"
+      },
+      "RecommendationEvidence": {
+        "properties": {
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "source": {
+            "default": "",
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "title": "RecommendationEvidence",
+        "type": "object"
+      },
       "RegisterRequest": {
         "additionalProperties": false,
         "description": "Public registration contract.\n\nA person may register as a resident, as an estate admin (registering their\nestate in the same step) or as a service provider. A ``role`` field is still\nrejected: the role always follows from ``account_type``, never the request.",
@@ -3273,6 +5659,218 @@
           "password"
         ],
         "title": "RegisterRequest",
+        "type": "object"
+      },
+      "RequestCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "property_id": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2147483647.0,
+            "title": "Property Id",
+            "type": "integer"
+          },
+          "purpose": {
+            "enum": [
+              "sale",
+              "rent"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "requested_price": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 9999999999.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Requested Price"
+          }
+        },
+        "required": [
+          "property_id",
+          "purpose",
+          "requested_price"
+        ],
+        "title": "RequestCreate",
+        "type": "object"
+      },
+      "RequestDecision": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 2147483647.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "decision": {
+            "enum": [
+              "approved",
+              "rejected"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "reason"
+        ],
+        "title": "RequestDecision",
+        "type": "object"
+      },
+      "RequestResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "authority_id": {
+            "title": "Authority Id",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided By"
+          },
+          "decision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Reason"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "property_id": {
+            "title": "Property Id",
+            "type": "integer"
+          },
+          "purpose": {
+            "enum": [
+              "sale",
+              "rent"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "integer"
+          },
+          "requested_price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Requested Price",
+            "type": "string"
+          },
+          "requester_id": {
+            "title": "Requester Id",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "estate_id",
+          "property_id",
+          "authority_id",
+          "requester_id",
+          "purpose",
+          "requested_price",
+          "notes",
+          "status",
+          "agent_id",
+          "decision_reason",
+          "decided_by",
+          "created_at",
+          "decided_at"
+        ],
+        "title": "RequestResponse",
         "type": "object"
       },
       "ResidencyRequestCreate": {
@@ -3441,6 +6039,77 @@
         "title": "ResidencyRequestStatus",
         "type": "string"
       },
+      "ScheduledCost-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "maximum": 10000000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Amount"
+          },
+          "kind": {
+            "enum": [
+              "special_levy",
+              "capex"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "year": {
+            "maximum": 40.0,
+            "minimum": 1.0,
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "amount",
+          "kind"
+        ],
+        "title": "ScheduledCost",
+        "type": "object"
+      },
+      "ScheduledCost-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,14}0*$)\\d{0,11}\\.\\d{0,2}0*$)",
+            "title": "Amount",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "special_levy",
+              "capex"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "year": {
+            "maximum": 40.0,
+            "minimum": 1.0,
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "amount",
+          "kind"
+        ],
+        "title": "ScheduledCost",
+        "type": "object"
+      },
       "ServiceProviderResponse": {
         "properties": {
           "avg_rating": {
@@ -3507,6 +6176,78 @@
           "emergency_available"
         ],
         "title": "ServiceProviderResponse",
+        "type": "object"
+      },
+      "TransactionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "actual_amount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Actual Amount",
+            "type": "string"
+          },
+          "asking_price_at_completion": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Asking Price At Completion",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "effective_date": {
+            "format": "date",
+            "title": "Effective Date",
+            "type": "string"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "listing_id": {
+            "title": "Listing Id",
+            "type": "integer"
+          },
+          "property_id": {
+            "title": "Property Id",
+            "type": "integer"
+          },
+          "purpose": {
+            "enum": [
+              "sale",
+              "rent"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "recorded_by": {
+            "title": "Recorded By",
+            "type": "integer"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "transaction_id": {
+            "title": "Transaction Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "transaction_id",
+          "estate_id",
+          "property_id",
+          "listing_id",
+          "purpose",
+          "actual_amount",
+          "asking_price_at_completion",
+          "effective_date",
+          "recorded_by",
+          "reference",
+          "created_at"
+        ],
+        "title": "TransactionResponse",
         "type": "object"
       },
       "TriageDecisionRequest": {
@@ -3882,6 +6623,82 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "WeeklyBriefing-Input": {
+        "properties": {
+          "avoidable_zar": {
+            "title": "Avoidable Zar",
+            "type": "number"
+          },
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "headline": {
+            "title": "Headline",
+            "type": "string"
+          },
+          "signals_reviewed": {
+            "title": "Signals Reviewed",
+            "type": "integer"
+          },
+          "sources": {
+            "title": "Sources",
+            "type": "integer"
+          },
+          "window_label": {
+            "title": "Window Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "headline",
+          "body",
+          "window_label",
+          "signals_reviewed",
+          "sources",
+          "avoidable_zar"
+        ],
+        "title": "WeeklyBriefing",
+        "type": "object"
+      },
+      "WeeklyBriefing-Output": {
+        "properties": {
+          "avoidableZar": {
+            "title": "Avoidablezar",
+            "type": "number"
+          },
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "headline": {
+            "title": "Headline",
+            "type": "string"
+          },
+          "signalsReviewed": {
+            "title": "Signalsreviewed",
+            "type": "integer"
+          },
+          "sources": {
+            "title": "Sources",
+            "type": "integer"
+          },
+          "windowLabel": {
+            "title": "Windowlabel",
+            "type": "string"
+          }
+        },
+        "required": [
+          "headline",
+          "body",
+          "windowLabel",
+          "signalsReviewed",
+          "sources",
+          "avoidableZar"
+        ],
+        "title": "WeeklyBriefing",
+        "type": "object"
+      },
       "WorkOrderCreate": {
         "properties": {
           "complaint_id": {
@@ -3928,6 +6745,186 @@
           "provider_id"
         ],
         "title": "WorkOrderCreate",
+        "type": "object"
+      },
+      "WorkOrderDefaults-Input": {
+        "properties": {
+          "asset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asset"
+          },
+          "asset_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asset Class"
+          },
+          "cost_zar": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Zar"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "priority": {
+            "default": "medium",
+            "enum": [
+              "urgent",
+              "high",
+              "medium",
+              "low"
+            ],
+            "title": "Priority",
+            "type": "string"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "WorkOrderDefaults",
+        "type": "object"
+      },
+      "WorkOrderDefaults-Output": {
+        "properties": {
+          "asset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asset"
+          },
+          "assetClass": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assetclass"
+          },
+          "costZar": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costzar"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "priority": {
+            "default": "medium",
+            "enum": [
+              "urgent",
+              "high",
+              "medium",
+              "low"
+            ],
+            "title": "Priority",
+            "type": "string"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "WorkOrderDefaults",
         "type": "object"
       },
       "WorkOrderRating": {
@@ -4358,6 +7355,449 @@
           }
         ],
         "summary": "Submit Health Brief Feedback",
+        "tags": [
+          "analytics",
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/intelligence": {
+      "get": {
+        "description": "Fetch the weekly executive briefing and priority recommendations for the specified estate.",
+        "operationId": "analytics_get_estate_intelligence",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstateIntelligenceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Estate Intelligence",
+        "tags": [
+          "analytics",
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/intelligence/ask": {
+      "post": {
+        "description": "Ask VALORA a natural language question scoped to the selected estate.",
+        "operationId": "analytics_ask_valora_endpoint",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskValoraRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AskValoraResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Ask Valora Endpoint",
+        "tags": [
+          "analytics",
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/intelligence/briefing": {
+      "post": {
+        "description": "Accept only the grounded current projection, with estate HOA authorization.",
+        "operationId": "analytics_ingest_intelligence_briefing",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Valora-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Valora-Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestIntelligencePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "integer"
+                      }
+                    ]
+                  },
+                  "title": "Response Analytics Ingest Intelligence Briefing",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Ingest Intelligence Briefing",
+        "tags": [
+          "analytics",
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/intelligence/briefing/generate": {
+      "post": {
+        "description": "Save an immutable summary of authorized stored estate facts.",
+        "operationId": "analytics_generate_briefing",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstateIntelligenceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Generate Briefing",
+        "tags": [
+          "analytics",
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/intelligence/history": {
+      "get": {
+        "operationId": "analytics_intelligence_history",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "1-based page number.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "1-based page number.",
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Items per page.",
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "description": "Items per page.",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_EstateIntelligenceResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Intelligence History",
+        "tags": [
+          "analytics",
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/intelligence/history/{briefing_id}": {
+      "get": {
+        "operationId": "analytics_intelligence_history_detail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "briefing_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Briefing Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstateIntelligenceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Intelligence History Detail",
+        "tags": [
+          "analytics",
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/intelligence/signals": {
+      "get": {
+        "description": "Export operational signals for n8n workflow synthesis.\n\nRequires an authenticated HOA administrator with matching estate membership.",
+        "operationId": "analytics_export_estate_signals",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Valora-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Valora-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstateSignalsExport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Export Estate Signals",
         "tags": [
           "analytics",
           "analytics"
@@ -6414,6 +9854,290 @@
         ]
       }
     },
+    "/api/v1/investment-scenarios": {
+      "get": {
+        "operationId": "investments_list_scenarios",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_InvestmentScenarioResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Scenarios",
+        "tags": [
+          "investments"
+        ]
+      },
+      "post": {
+        "description": "Create an immutable snapshot; revision_of creates a new linked snapshot.",
+        "operationId": "investments_save_scenario",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvestmentScenarioCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentScenarioResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Save Scenario",
+        "tags": [
+          "investments"
+        ]
+      }
+    },
+    "/api/v1/investment-scenarios/calculate": {
+      "post": {
+        "operationId": "investments_calculate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvestmentCalculationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Calculate",
+        "tags": [
+          "investments"
+        ]
+      }
+    },
+    "/api/v1/investment-scenarios/presets/musgrave": {
+      "get": {
+        "description": "Fictional assumptions for an authorized existing property; nothing is saved.",
+        "operationId": "investments_musgrave_inputs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Property Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentInputs-Output"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Musgrave Inputs",
+        "tags": [
+          "investments"
+        ]
+      }
+    },
+    "/api/v1/investment-scenarios/{scenario_id}": {
+      "get": {
+        "operationId": "investments_get_scenario",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scenario_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Scenario Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentScenarioResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Scenario",
+        "tags": [
+          "investments"
+        ]
+      }
+    },
     "/api/v1/join-codes": {
       "post": {
         "description": "Revoke the current code and issue a new one.",
@@ -7146,6 +10870,1402 @@
         "summary": "Get Living Score",
         "tags": [
           "property"
+        ]
+      }
+    },
+    "/api/v1/property-market/authorities": {
+      "get": {
+        "operationId": "property_market_list_market_authorities",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 2147483647,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_AuthorityResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Market Authorities",
+        "tags": [
+          "property-market"
+        ]
+      },
+      "post": {
+        "operationId": "property_market_create_authority",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthorityCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Authority",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/authorities/{authority_id}/revoke": {
+      "post": {
+        "operationId": "property_market_revoke_authority",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "authority_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Authority Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reason"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Revoke Authority",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/listings": {
+      "get": {
+        "operationId": "property_market_list_market_listings",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 2147483647,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ListingResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Market Listings",
+        "tags": [
+          "property-market"
+        ]
+      },
+      "post": {
+        "operationId": "property_market_create_listing",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListingCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Listing",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/listings/{listing_id}": {
+      "get": {
+        "operationId": "property_market_get_listing",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "listing_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Listing Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Listing",
+        "tags": [
+          "property-market"
+        ]
+      },
+      "patch": {
+        "operationId": "property_market_edit_listing_content",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "listing_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Listing Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListingContent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Edit Listing Content",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/listings/{listing_id}/actions": {
+      "post": {
+        "operationId": "property_market_listing_action",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "listing_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Listing Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListingAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Listing Action",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/listings/{listing_id}/complete": {
+      "post": {
+        "operationId": "property_market_complete_listing",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "listing_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Listing Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompletionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Complete Listing",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/listings/{listing_id}/history": {
+      "get": {
+        "operationId": "property_market_listing_history",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "listing_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Listing Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 2147483647,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_EventResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Listing History",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/listings/{listing_id}/price": {
+      "patch": {
+        "operationId": "property_market_listing_price",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "listing_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Listing Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriceChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Listing Price",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/listings/{listing_id}/price-history": {
+      "get": {
+        "operationId": "property_market_price_history",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "listing_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Listing Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 2147483647,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PriceResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Price History",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/rentals": {
+      "get": {
+        "operationId": "property_market_list_market_rentals",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 2147483647,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_TransactionResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Market Rentals",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/requests": {
+      "get": {
+        "operationId": "property_market_list_market_requests",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 2147483647,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_RequestResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Market Requests",
+        "tags": [
+          "property-market"
+        ]
+      },
+      "post": {
+        "operationId": "property_market_create_request",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Request",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/requests/{request_id}": {
+      "get": {
+        "operationId": "property_market_get_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Request Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Request",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/requests/{request_id}/cancel": {
+      "post": {
+        "operationId": "property_market_cancel_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Request Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reason"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Cancel Request",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/requests/{request_id}/decision": {
+      "post": {
+        "operationId": "property_market_decide_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Request Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestDecision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Decide Request",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/requests/{request_id}/history": {
+      "get": {
+        "operationId": "property_market_request_history",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Request Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 2147483647,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_EventResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Request History",
+        "tags": [
+          "property-market"
+        ]
+      }
+    },
+    "/api/v1/property-market/sales": {
+      "get": {
+        "operationId": "property_market_list_market_sales",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 2147483647,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_TransactionResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Market Sales",
+        "tags": [
+          "property-market"
         ]
       }
     },

@@ -3,7 +3,7 @@
  * Fails when `src/api/generated/` no longer matches `docs/openapi.json`.
  *
  * The generated files are regenerated into a scratch directory and compared byte
- * for byte, so a stale contract type or vocabulary cannot be committed quietly.
+ * for byte, so a stale API vocabulary cannot be committed quietly.
  *
  * Usage: node scripts/check-api.mjs
  */
@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url'
 const here = dirname(fileURLToPath(import.meta.url))
 const frontendRoot = resolve(here, '..')
 const committedDir = join(frontendRoot, 'src', 'api', 'generated')
-const GENERATED_FILES = ['schema.d.ts', 'enums.ts']
+const GENERATED_FILES = ['enums.js']
 
 const scratch = mkdtempSync(join(tmpdir(), 'valora-api-check-'))
 let failed = false

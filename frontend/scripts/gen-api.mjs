@@ -1,22 +1,10 @@
 #!/usr/bin/env node
 /**
- * Generates `src/api/generated/` from the backend's published contract.
- *
- * Nothing in that directory is hand-edited: `npm run gen:api` rewrites it and
- * `npm run check:api` fails when the committed output has drifted.
- *
- * Two outputs, because they solve different problems:
- *
- *  * `schema.d.ts` — the whole contract as types, courtesy of `openapi-typescript`.
- *  * `enums.ts`    — the fixed vocabularies as RUNTIME arrays. The generator can
- *    emit `enum` declarations, but it writes a `.d.ts`, which has no runtime
- *    presence, so a dropdown could not read the values from it. Rather than retype
- *    them, this script reads the same `enum` arrays the contract publishes.
- *
+ * Generates JavaScript runtime vocabularies from docs/openapi.json.
+ * The backend OpenAPI document remains the complete API contract.
  * Usage: node scripts/gen-api.mjs [--out-dir <dir>]
  */
-import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -77,34 +65,16 @@ function renderEnums(document) {
   ]
   for (const vocabulary of VOCABULARIES) {
     const values = enumValues(document, vocabulary)
-    const literal = `[${values.map((value) => `'${value}'`).join(', ')}] as const`
+    const literal = `[${values.map((value) => `'${value}'`).join(', ')}]`
     lines.push(`export const ${vocabulary.exportName} = ${literal}`)
-    lines.push(`export type ${vocabulary.typeName} = (typeof ${vocabulary.exportName})[number]`)
     lines.push('')
   }
   return `${lines.join('\n').trimEnd()}\n`
 }
 
-function generateTypes(target) {
-  const packageJsonPath = join(frontendRoot, 'node_modules', 'openapi-typescript', 'package.json')
-  if (!existsSync(packageJsonPath)) {
-    throw new Error('openapi-typescript is not installed. Run `npm install` first.')
-  }
-  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
-  const bin = typeof packageJson.bin === 'string' ? packageJson.bin : packageJson.bin?.['openapi-typescript']
-  if (!bin) throw new Error('openapi-typescript exposes no CLI entry point.')
-
-  execFileSync(
-    process.execPath,
-    [join(dirname(packageJsonPath), bin), openapiPath, '--output', target],
-    { stdio: 'inherit' },
-  )
-}
-
 const document = JSON.parse(readFileSync(openapiPath, 'utf8'))
 mkdirSync(outDir, { recursive: true })
 
-generateTypes(join(outDir, 'schema.d.ts'))
-writeFileSync(join(outDir, 'enums.ts'), renderEnums(document), 'utf8')
+writeFileSync(join(outDir, 'enums.js'), renderEnums(document), 'utf8')
 
 process.stdout.write(`Generated ${outDir} from ${openapiPath}\n`)
