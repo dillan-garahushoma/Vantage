@@ -1,4 +1,4 @@
-import { Activity, Building2, HardHat, LayoutDashboard, Megaphone, ShieldAlert, Sparkles, UserCheck, Users, Wrench, } from 'lucide-react';
+import { Activity, Building2, HardHat, LayoutDashboard, Megaphone, Settings, ShieldAlert, Sparkles, UserCheck, Users, Wrench, } from 'lucide-react';
 export const navGroups = [
     {
         label: 'Estate',
