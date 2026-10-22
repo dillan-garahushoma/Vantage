@@ -183,6 +183,14 @@
   .vl-pop[data-state='closed'] {
     animation: vl-fade-in 120ms ease-in reverse;
   }
+
+  /* Center modal panel — scale-in from center */
+  .vl-panel-center[data-state='open'] {
+    animation: vl-pop-in 220ms var(--ease-soft);
+  }
+  .vl-panel-center[data-state='closed'] {
+    animation: vl-scale-out 180ms ease-in;
+  }
 }
 
 @layer utilities {
@@ -253,6 +261,13 @@
 
   .vl-lift:hover {
     transform: translateY(-2px);
+  }
+
+  /* Glassmorphism surface — used for centered modals */
+  .glass {
+    background: color-mix(in srgb, var(--color-surface) 84%, transparent);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
   }
 }
 

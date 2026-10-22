@@ -45,27 +45,108 @@ export function setupChecklist({ profile, unitCount, photoCount, hasJoinCode }) 
         },
     ];
 }
-function Checklist({ input }) {
-    const items = setupChecklist(input);
-    const done = items.filter((item) => item.done).length;
-    return (<Card as="section" className="p-5">
-      <SectionTitle title="Setup checklist" hint="Derived from what the API currently holds for this estate" action={<span className="num text-[12.5px] text-ink-muted">
-            {done} of {items.length}
-          </span>}/>
-      <ol className="space-y-2.5">
-        {items.map((item) => (<li key={item.key} className="flex gap-3">
-            <span className={item.done
-                ? 'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-xs bg-accent text-white'
-                : 'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-xs border border-ink/25 text-ink-muted'}>
-              {item.done ? <IconCheck size={13}/> : <span className="h-1.5 w-1.5 bg-current"/>}
-            </span>
-            <span>
-              <span className="block text-[13.5px] font-medium">{item.label}</span>
-              <span className="block text-[12.5px] text-ink-muted">{item.hint}</span>
-            </span>
-          </li>))}
-      </ol>
-    </Card>);
+function ChecklistPanel({ input, onPublish, publishing }) {
+  const items = setupChecklist(input);
+  const nonPublishItems = items.filter((i) => i.key !== 'publish');
+  const readyToPublish = nonPublishItems.every((i) => i.done);
+  const isPublished = items.find((i) => i.key === 'publish')?.done;
+  const doneCount = items.filter((i) => i.done).length;
+
+  return (
+    <div className="sticky top-6 flex flex-col gap-3">
+      {/* Glass progress card */}
+      <div
+        style={{
+          background: 'color-mix(in srgb, var(--color-surface) 82%, transparent)',
+          backdropFilter: 'blur(16px) saturate(1.4)',
+          WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
+        }}
+        className="rounded-2xl border border-line/60 p-5 shadow-soft"
+      >
+        <p className="text-[11px] font-semibold tracking-[0.14em] text-ink/40 uppercase">
+          Setup progress
+        </p>
+
+        {/* Progress bar */}
+        <div className="mt-3 flex items-center gap-3">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
+            <div
+              className="h-full rounded-full bg-accent transition-[width] duration-500 ease-soft"
+              style={{ width: `${(doneCount / items.length) * 100}%` }}
+            />
+          </div>
+          <span className="num text-[12px] text-ink-muted">
+            {doneCount}/{items.length}
+          </span>
+        </div>
+
+        {/* Steps (excluding publish — shown separately) */}
+        <ol className="mt-4 space-y-3">
+          {nonPublishItems.map((item) => (
+            <li key={item.key} className="flex items-start gap-3">
+              <span
+                className={
+                  item.done
+                    ? 'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-mint-wash border border-mint/30'
+                    : 'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-ink/20 bg-surface/60'
+                }
+              >
+                {item.done ? (
+                  <IconCheck size={11} className="text-mint-ink" />
+                ) : (
+                  <span className="h-1.5 w-1.5 rounded-full bg-ink/20" />
+                )}
+              </span>
+              <span>
+                <span
+                  className={`block text-[13px] font-medium ${
+                    item.done ? 'text-ink/50 line-through' : 'text-ink'
+                  }`}
+                >
+                  {item.label}
+                </span>
+                <span className="block text-[11.5px] text-ink-muted">{item.hint}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      {/* Publish button / state */}
+      {isPublished ? (
+        <div
+          style={{
+            background: 'color-mix(in srgb, var(--color-mint-wash) 80%, transparent)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          }}
+          className="rounded-2xl border border-mint/20 px-4 py-3 text-center"
+        >
+          <span className="text-[13px] font-semibold text-mint-ink">✓ Estate published</span>
+        </div>
+      ) : readyToPublish ? (
+        <button
+          type="button"
+          onClick={onPublish}
+          disabled={publishing}
+          className="w-full rounded-2xl bg-accent px-4 py-3.5 text-[14px] font-semibold text-white shadow-lift transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {publishing ? 'Publishing…' : '🚀 Publish estate'}
+        </button>
+      ) : (
+        <div
+          style={{
+            background: 'color-mix(in srgb, var(--color-surface) 70%, transparent)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+          }}
+          className="rounded-2xl border border-line/40 px-4 py-3 text-center opacity-60"
+        >
+          <span className="text-[12px] text-ink-muted">Complete steps above to publish</span>
+        </div>
+      )}
+    </div>
+  );
 }
 /* ------------------------------------------------------------- description */
 function DescriptionEditor({ profile, onSaved, }) {
@@ -618,6 +699,8 @@ function AdminSetupBody() {
     const units = useAsync(() => (scope ? api.get('/api/v1/properties', { estate_id: scope, size: 1 }) : Promise.resolve(null)), [scope]);
     const photos = useAsync(() => (scope ? listEstatePhotos(scope) : Promise.resolve([])), [scope]);
     const code = useAsync(() => (scope ? currentJoinCode(scope) : Promise.resolve(null)), [scope]);
+    const [publishing, setPublishing] = useState(false);
+    const [publishError, setPublishError] = useState(null);
     const reloadAll = useCallback(() => {
         profile.reload();
         units.reload();
@@ -642,67 +725,163 @@ function AdminSetupBody() {
     const detail = profile.data;
     if (!detail)
         return null;
-    return (<div className="space-y-5">
-      <header>
-        <p className="num text-[11px] tracking-[0.18em] text-accent-ink uppercase">
-          Estate administration
-        </p>
-        <h1 className="mt-2 text-[26px] leading-tight font-semibold">Set up {detail.name}</h1>
-        <p className="mt-1 max-w-2xl text-[13.5px] text-ink-muted">
-          Five steps and the complex is usable end to end: described, unitised, with a join code,
-          photographs, and published if you want it found.
-        </p>
-      </header>
 
-      <Checklist input={{
-            profile: detail,
-            unitCount: units.data?.total ?? (units.error ? null : 0),
-            photoCount: photos.error ? null : (photos.data?.length ?? 0),
-            hasJoinCode: code.error ? (code.error.status === 404 ? false : null) : code.data ? true : null,
-        }}/>
+    async function publishEstate() {
+      if (!detail || publishing) return;
+      setPublishing(true);
+      setPublishError(null);
+      try {
+        await updateEstateProfile(detail.estate_id, { is_public: true });
+        profile.reload();
+      } catch (cause) {
+        setPublishError(toApiError(cause, 'Could not publish the estate.'));
+      } finally {
+        setPublishing(false);
+      }
+    }
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <DescriptionEditor profile={detail} onSaved={profile.reload}/>
-        <PublishToggles profile={detail} onSaved={profile.reload}/>
-      </div>
+    return (
+      <div className="space-y-5">
+        <AdminSetupBanner />
+        <header>
+          <p className="num text-[11px] tracking-[0.18em] text-accent-ink uppercase">
+            Estate administration
+          </p>
+          <h1 className="mt-2 text-[26px] leading-tight font-semibold">Set up {detail.name}</h1>
+          <p className="mt-1 max-w-2xl text-[13.5px] text-ink-muted">
+            Five steps and the complex is usable end to end: described, unitised, with a join code,
+            photographs, and published if you want it found.
+          </p>
+        </header>
 
-      <UnitsBulkAdd estateId={scope} onCreated={reloadAll}/>
+        {publishError ? (
+          <ErrorState message={publishError.message} requestId={publishError.requestId} />
+        ) : null}
 
-      <Card as="section" className="p-5">
-        <SectionTitle title="Photographs" hint={photos.error
-            ? 'Could not load the photographs'
-            : `${photos.data?.length ?? 0} of 12 uploaded`}/>
-        {photos.error ? (<ErrorState message={photos.error.message} requestId={photos.error.requestId} action={<Button variant="secondary" onClick={photos.reload}>
-                Try again
-              </Button>}/>) : null}
-        {!photos.error ? (<div className="space-y-5">
-            <PhotoList estateId={scope} photos={photos.data ?? []} onChanged={photos.reload}/>
-            <PhotoUploader estateId={scope} existingCount={photos.data?.length ?? 0} onChanged={reloadAll}/>
-          </div>) : null}
-      </Card>
+        <div className="grid gap-8 lg:grid-cols-[272px_1fr]">
+          {/* ---- Sticky glass checklist (left) ---- */}
+          <ChecklistPanel
+            input={{
+              profile: detail,
+              unitCount: units.data?.total ?? (units.error ? null : 0),
+              photoCount: photos.error ? null : (photos.data?.length ?? 0),
+              hasJoinCode: code.error
+                ? code.error.status === 404
+                  ? false
+                  : null
+                : code.data
+                ? true
+                : null,
+            }}
+            onPublish={publishEstate}
+            publishing={publishing}
+          />
 
-      {code.error && code.error.status !== 404 ? (<ErrorState title="Could not read the join code" message={code.error.message} requestId={code.error.requestId} action={<Button variant="secondary" onClick={code.reload}>
-              Try again
-            </Button>}/>) : (<JoinCodeCard estateId={scope} code={code.data ?? null} onChanged={code.reload}/>)}
+          {/* ---- Scrollable setup sections (right) ---- */}
+          <div className="space-y-5">
+            <div className="grid gap-5 lg:grid-cols-2">
+              <DescriptionEditor profile={detail} onSaved={profile.reload} />
+              <PublishToggles profile={detail} onSaved={profile.reload} />
+            </div>
 
-      <Card as="section" className="p-5">
-        <SectionTitle title="Next" hint="Once the checklist is complete"/>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={() => {
-            window.location.assign('/app/members');
-        }}>
-            <IconSearch size={16}/>
-            Manage members
-          </Button>
-          <Button variant="secondary" onClick={() => {
-            window.location.assign('/app');
-        }}>
-            Go to the dashboard
-          </Button>
+            <UnitsBulkAdd estateId={scope} onCreated={reloadAll} />
+
+            <Card as="section" className="p-5">
+              <SectionTitle
+                title="Photographs"
+                hint={
+                  photos.error
+                    ? 'Could not load the photographs'
+                    : `${photos.data?.length ?? 0} of 12 uploaded`
+                }
+              />
+              {photos.error ? (
+                <ErrorState
+                  message={photos.error.message}
+                  requestId={photos.error.requestId}
+                  action={
+                    <Button variant="secondary" onClick={photos.reload}>
+                      Try again
+                    </Button>
+                  }
+                />
+              ) : null}
+              {!photos.error ? (
+                <div className="space-y-5">
+                  <PhotoList
+                    estateId={scope}
+                    photos={photos.data ?? []}
+                    onChanged={photos.reload}
+                  />
+                  <PhotoUploader
+                    estateId={scope}
+                    existingCount={photos.data?.length ?? 0}
+                    onChanged={reloadAll}
+                  />
+                </div>
+              ) : null}
+            </Card>
+
+            {code.error && code.error.status !== 404 ? (
+              <ErrorState
+                title="Could not read the join code"
+                message={code.error.message}
+                requestId={code.error.requestId}
+                action={
+                  <Button variant="secondary" onClick={code.reload}>
+                    Try again
+                  </Button>
+                }
+              />
+            ) : (
+              <JoinCodeCard estateId={scope} code={code.data ?? null} onChanged={code.reload} />
+            )}
+
+            <Card as="section" className="p-5">
+              <SectionTitle title="Next" hint="Once the checklist is complete" />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    window.location.assign('/app/members');
+                  }}
+                >
+                  <IconSearch size={16} />
+                  Manage members
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    window.location.assign('/app');
+                  }}
+                >
+                  Go to the dashboard
+                </Button>
+              </div>
+            </Card>
+          </div>
         </div>
-      </Card>
-    </div>);
+      </div>
+    );
 }
+function AdminSetupBanner() {
+  return (
+    <div className="mb-6 rounded-xl border border-accent/20 bg-accent-wash/40 px-5 py-4">
+      <div className="flex items-center gap-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-[13px] font-bold text-white">
+          1
+        </div>
+        <div>
+          <p className="text-[13px] font-semibold text-ink">Estate setup</p>
+          <p className="text-[12px] text-ink-muted">
+            Complete the checklist below to go live. Each step unlocks the next for your residents.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AdminSetup() {
     return (<RequireEstate>
       <AdminSetupBody />

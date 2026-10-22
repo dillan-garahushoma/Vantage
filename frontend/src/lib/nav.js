@@ -82,8 +82,8 @@ export const navGroups = [
                 to: '/app/providers',
                 label: 'Providers',
                 icon: Users,
-                roles: ['hoa_admin'],
-                hint: 'The estate’s service-provider directory',
+                roles: ['resident', 'hoa_admin'],
+                hint: 'Estate-verified service providers and contractors',
             },
             {
                 to: '/admin/settings',

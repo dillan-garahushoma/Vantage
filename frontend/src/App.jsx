@@ -16,6 +16,7 @@ import { Join } from './routes/Join';
 import { Landing } from './routes/Landing';
 import { Login } from './routes/Login';
 import { Members } from './routes/Members';
+import { Methodology } from './routes/Methodology';
 import { Notifications } from './routes/Notifications';
 import { NotFound } from './routes/NotFound';
 import { Properties } from './routes/Properties';
@@ -27,7 +28,9 @@ import { Register } from './routes/Register';
 import { RequestAccess } from './routes/RequestAccess';
 import { Settings } from './routes/Settings';
 import { Welcome } from './routes/Welcome';
+import { WelcomeSuccess } from './routes/WelcomeSuccess';
 import { WorkOrders } from './routes/WorkOrders';
+
 function Protected({ children }) {
     const { user, checking } = useAuth();
     const location = useLocation();
@@ -40,6 +43,7 @@ function Protected({ children }) {
         return <Navigate to="/login" replace state={{ from: location.pathname }}/>;
     return <>{children}</>;
 }
+
 export function App() {
     return (<AuthProvider>
       <EstateProvider>
@@ -49,6 +53,7 @@ export function App() {
           <Route path="/password-recovery" element={<PasswordRecovery />}/>
           <Route path="/register" element={<Register />}/>
           <Route path="/contact" element={<Contact />}/>
+          <Route path="/methodology" element={<Methodology />}/>
 
           {/* Onboarding routes: each one decides for itself whether the state
             still applies (a resident who already has an estate is sent to
@@ -63,6 +68,9 @@ export function App() {
             beside it for an estate office that prefers to hand one out. */}
           <Route path="/request-access" element={<Protected>
                 <RequestAccess />
+              </Protected>}/>
+          <Route path="/welcome-success" element={<Protected>
+                <WelcomeSuccess />
               </Protected>}/>
           <Route path="/provider/waiting" element={<Protected>
                 <ProviderWaiting />
