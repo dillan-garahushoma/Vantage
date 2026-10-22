@@ -16,11 +16,15 @@ const mocks = vi.hoisted(() => ({
     list: vi.fn(),
     remove: vi.fn(),
     addProvider: vi.fn(),
+    transfer: vi.fn(),
+    properties: vi.fn(),
 }));
 vi.mock('../lib/estateAdmin', () => ({
     listEstateMembers: mocks.list,
     removeEstateMember: mocks.remove,
     addProviderMember: mocks.addProvider,
+    transferEstateMemberUnit: mocks.transfer,
+    listEstateProperties: mocks.properties,
 }));
 let role = 'hoa_admin';
 vi.mock('../context/AuthContext', () => ({
@@ -83,7 +87,13 @@ beforeEach(() => {
     mocks.list.mockReset();
     mocks.remove.mockReset();
     mocks.addProvider.mockReset();
+    mocks.transfer.mockReset();
+    mocks.properties.mockReset();
     mocks.list.mockResolvedValue(pageOf(MEMBERS));
+    mocks.properties.mockResolvedValue(pageOf([
+        { id: 1, unit_no: 'A-101', street_address: '1 Ridge Close' },
+        { id: 2, unit_no: 'B-202', street_address: '2 Ridge Close' },
+    ]));
 });
 describe('Members — the register', () => {
     it('lists members with their role, unit and joining date', async () => {
@@ -109,8 +119,8 @@ describe('Members — the register', () => {
         const rows = screen.getAllByRole('row');
         const resident = rows.find((row) => row.textContent?.includes('Thandi Nkosi'));
         const admin = rows.find((row) => row.textContent?.includes('Nomvula Dlamini'));
-        expect(within(resident).getByRole('button', { name: 'Remove' })).toBeVisible();
-        expect(within(admin).queryByRole('button', { name: 'Remove' })).toBeNull();
+        expect(within(resident).getByRole('button', { name: 'Move out' })).toBeVisible();
+        expect(within(admin).queryByRole('button', { name: 'Move out' })).toBeNull();
         expect(within(admin).getByText(/remove from the estate profile/i)).toBeVisible();
     });
     it('filters by role through the API, not in the browser', async () => {
@@ -153,7 +163,7 @@ describe('Members — removal', () => {
         await screen.findByText('Thandi Nkosi');
         const rows = screen.getAllByRole('row');
         const resident = rows.find((row) => row.textContent?.includes('Thandi Nkosi'));
-        await user.click(within(resident).getByRole('button', { name: 'Remove' }));
+        await user.click(within(resident).getByRole('button', { name: 'Move out' }));
         const dialog = await screen.findByRole('dialog');
         expect(within(dialog).getByText(/ends their access to/i)).toBeVisible();
         expect(within(dialog).getByText(/does not delete their account/i)).toBeVisible();
@@ -168,8 +178,8 @@ describe('Members — removal', () => {
         await screen.findByText('Thandi Nkosi');
         const rows = screen.getAllByRole('row');
         const resident = rows.find((row) => row.textContent?.includes('Thandi Nkosi'));
-        await user.click(within(resident).getByRole('button', { name: 'Remove' }));
-        await user.click(await screen.findByRole('button', { name: /remove from the estate/i }));
+        await user.click(within(resident).getByRole('button', { name: 'Move out' }));
+        await user.click(await screen.findByRole('button', { name: /move out of the estate/i }));
         expect(mocks.remove).toHaveBeenCalledWith(1, 11);
         await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
         expect(mocks.list).toHaveBeenCalledTimes(2);
@@ -180,7 +190,7 @@ describe('Members — removal', () => {
         await screen.findByText('Thandi Nkosi');
         const rows = screen.getAllByRole('row');
         const resident = rows.find((row) => row.textContent?.includes('Thandi Nkosi'));
-        await user.click(within(resident).getByRole('button', { name: 'Remove' }));
+        await user.click(within(resident).getByRole('button', { name: 'Move out' }));
         await user.click(await screen.findByRole('button', { name: /keep the member/i }));
         expect(mocks.remove).not.toHaveBeenCalled();
         await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
@@ -192,11 +202,23 @@ describe('Members — removal', () => {
         await screen.findByText('Thandi Nkosi');
         const rows = screen.getAllByRole('row');
         const resident = rows.find((row) => row.textContent?.includes('Thandi Nkosi'));
-        await user.click(within(resident).getByRole('button', { name: 'Remove' }));
-        await user.click(await screen.findByRole('button', { name: /remove from the estate/i }));
+        await user.click(within(resident).getByRole('button', { name: 'Move out' }));
+        await user.click(await screen.findByRole('button', { name: /move out of the estate/i }));
         const dialog = await screen.findByRole('dialog');
         expect(within(dialog).getByText(/membership not found in this estate/i)).toBeVisible();
         expect(within(dialog).getByText(/req-404/)).toBeVisible();
+    });
+});
+describe('Members — resident transfers', () => {
+    it('moves a resident through the estate-scoped transfer endpoint', async () => {
+        mocks.transfer.mockResolvedValue({ ...MEMBERS[0], unit_no: 'B-202' });
+        const user = userEvent.setup();
+        renderMembers();
+        const resident = (await screen.findAllByRole('row')).find((row) => row.textContent?.includes('Thandi Nkosi'));
+        await user.click(within(resident).getByRole('button', { name: 'Move unit' }));
+        await user.selectOptions(await screen.findByLabelText('New unit'), '2');
+        await user.click(screen.getByRole('button', { name: 'Move resident' }));
+        await waitFor(() => expect(mocks.transfer).toHaveBeenCalledWith(1, 11, 2));
     });
 });
 describe('Members — adding a provider', () => {
@@ -208,7 +230,7 @@ describe('Members — adding a provider', () => {
         await user.type(screen.getByLabelText(/provider email/i), 'nobody@example.co.za');
         await user.click(screen.getByRole('button', { name: /add provider/i }));
         expect(await screen.findByText(/no registered provider with that email/i)).toBeVisible();
-        expect(screen.getByText(/must first create their own VALORA account/i)).toBeVisible();
+        expect(screen.getByText(/must first be provisioned by an operator/i)).toBeVisible();
         expect(screen.getByText(/residents are not added here/i)).toBeVisible();
     });
     it('adds a provider by email and reports it in the estate’s terms', async () => {

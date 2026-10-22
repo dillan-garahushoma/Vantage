@@ -99,6 +99,14 @@ export function listEstateMembers(estateId, params = {}) {
 export function removeEstateMember(estateId, membershipId) {
     return api.remove(`/api/v1/memberships/${membershipId}`, { estate_id: estateId });
 }
+export function transferEstateMemberUnit(estateId, membershipId, propertyId) {
+    return api.patch(`/api/v1/memberships/${membershipId}/unit`, { property_id: propertyId }, {
+        estate_id: estateId,
+    });
+}
+export function listEstateProperties(estateId) {
+    return api.get('/api/v1/properties', { estate_id: estateId, page: 1, size: 100 });
+}
 /** Add a service provider who has registered, by email. One uniform 404 if not. */
 export function addProviderMember(estateId, email) {
     return api.post('/api/v1/memberships/providers', { email: email.trim() }, { estate_id: estateId });
@@ -167,6 +175,12 @@ export function rateWorkOrder(estateId, workOrderId, rating) {
 /** The work order raised for one complaint: its author, or an estate admin. */
 export function getComplaintWorkOrder(estateId, complaintId) {
     return api.get(`/api/v1/complaints/${complaintId}/work-order`, {
+        estate_id: estateId,
+    });
+}
+/** Reopening preserves the original repair record; the server starts a new review cycle. */
+export function reopenComplaint(estateId, complaintId, note) {
+    return api.post(`/api/v1/complaints/${complaintId}/reopen`, { note }, {
         estate_id: estateId,
     });
 }

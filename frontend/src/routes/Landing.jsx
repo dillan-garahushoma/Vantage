@@ -3,7 +3,7 @@ import { Keyline } from '../components/Brand';
 import { EstatePlan } from '../components/EstatePlan';
 import { LivingScoreFactors } from '../components/LivingScore';
 import { PublicShell } from '../components/PublicShell';
-import { IconArrowRight, IconChart, IconPin, IconShield, IconSparkle, IconUsers } from '../components/Icons';
+import { IconArrowRight, IconChart, IconShield, IconSparkle, IconUsers } from '../components/Icons';
 import { Card, Chip, LinkButton } from '../components/ui';
 const VALUE_CHAIN = [
     {
@@ -23,8 +23,8 @@ const VALUE_CHAIN = [
     },
     {
         step: '04',
-        title: 'Community health informs property intelligence',
-        body: 'Buyers and investors see not only what a property costs, but how well the community is run — the signal no listing platform has.',
+        title: 'Evidence supports accountable maintenance',
+        body: 'The stored record shows what was reported, who acted, how long it took and whether the resident rated the completed repair.',
     },
 ];
 const AUDIENCE = [
@@ -35,8 +35,8 @@ const AUDIENCE = [
     },
     {
         icon: <IconChart size={18}/>,
-        who: 'Investors',
-        line: 'Read the estate’s operational record before committing capital — resolution times and complaint trends, not rumours.',
+        who: 'Service providers',
+        line: 'See assigned work, record progress and provide completion evidence for the estate and resident.',
     },
     {
         icon: <IconShield size={18}/>,
@@ -44,18 +44,18 @@ const AUDIENCE = [
         line: 'One dashboard for complaints, work orders, verified providers and announcements. Prove governance quality with data.',
     },
     {
-        icon: <IconPin size={18}/>,
-        who: 'Estate agents',
-        line: 'Market a property with an operational track record attached — nothing a competitor can match.',
+        icon: <IconChart size={18}/>,
+        who: 'Estate managers',
+        line: 'Use evidence-based maintenance intelligence to prioritise work and improve the Living Score.',
     },
 ];
 const COMPARISON = [
-    ['Bedrooms, bathrooms, price', 'Everything a listing shows', 'yes'],
-    ['Complaint history and resolution time', 'Hidden in emails and minutes', 'no'],
-    ['Maintenance quality and provider ratings', 'Word of mouth', 'no'],
-    ['Security incident frequency', 'Facebook groups', 'no'],
-    ['Resident satisfaction', 'Nowhere — unmeasured', 'no'],
-    ['Estate living quality, scored', 'Does not exist', 'no'],
+    ['Which issues need attention now?', 'Scattered messages and emails', 'yes'],
+    ['Complaint history and resolution time', 'Emails and meeting minutes', 'yes'],
+    ['Maintenance quality and resident ratings', 'Word of mouth', 'yes'],
+    ['Security incident frequency', 'Separate incident records', 'yes'],
+    ['Resident satisfaction after completed repairs', 'Rarely connected to the repair', 'yes'],
+    ['Estate living quality, scored', 'No shared operational measure', 'yes'],
 ];
 function Section({ id, eyebrow, title, intro, children, }) {
     return (<section id={id} className="mx-auto max-w-[1200px] px-5 py-14">
@@ -81,16 +81,16 @@ export function Landing() {
             </div>
 
             <h1 className="mt-5 text-[38px] leading-[1.05] font-semibold tracking-tight sm:text-[52px]">
-              Know what a property costs.
+              Know what your estate needs.
               <br />
-              <span className="text-accent-ink">Know why it’s worth it.</span>
+              <span className="text-accent-ink">See what changes.</span>
             </h1>
 
             <p className="mt-5 max-w-xl text-[16px] text-ink-soft">
-              A property’s value is not only bedrooms and bathrooms. It is how fast the estate fixes
-              a sewage leak, whether the perimeter holds, and whether the HOA answers. VALORA turns
-              that operational reality into intelligence — for one private residential community at
-              a time, inside its own estate boundary.
+              Track the maintenance and management work that makes an apartment complex run: how
+              quickly issues are resolved, whether the perimeter holds, and whether residents are
+              heard. VALORA turns that operational record into estate intelligence, inside its own
+              estate boundary.
             </p>
 
             <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -100,10 +100,6 @@ export function Landing() {
               </LinkButton>
               <LinkButton to="/login" variant="secondary" className="px-5 py-2.5">
                 Sign in to an estate
-              </LinkButton>
-              <LinkButton to="/estates" variant="ghost" className="px-5 py-2.5">
-                Browse published complexes
-                <IconArrowRight size={17}/>
               </LinkButton>
             </div>
 
@@ -142,7 +138,7 @@ export function Landing() {
       </section>
 
       {/* ------------------------------------------------------ value chain */}
-      <Section id="how" eyebrow="How the value chain works" title="Every feature exists because it feeds the next link" intro="VALORA is not a complaint tool with a valuation bolted on. It is a single chain: what happens in a community becomes measurable health, and measurable health becomes investment intelligence.">
+      <Section id="how" eyebrow="How the operational record works" title="Every feature supports the next maintenance decision" intro="VALORA is a management system: what happens in a community becomes measurable health, then evidence for better maintenance decisions.">
         <ol className="grid gap-4 md:grid-cols-2">
           {VALUE_CHAIN.map((link) => (<li key={link.step}>
               <Card className="h-full p-5">
@@ -216,10 +212,10 @@ export function Landing() {
       <section className="border-t border-ink/15 bg-surface">
         <div className="mx-auto max-w-[1200px] px-5 py-14">
           <p className="num text-[11px] tracking-[0.18em] text-accent-ink uppercase">
-            What a listing cannot tell you
+            More than a unit register
           </p>
           <h2 className="mt-3 max-w-2xl text-[26px] leading-tight font-semibold sm:text-[32px]">
-            The data only exists inside the communities that run on it
+            The operational record exists inside the community that runs on it
           </h2>
 
           <div className="mt-8 hairline overflow-hidden rounded-xs bg-surface">
@@ -227,10 +223,10 @@ export function Landing() {
               <thead>
                 <tr>
                   <th className="border-b border-ink/15 bg-paper px-4 py-2.5 text-[11px] font-medium tracking-wider text-ink-muted uppercase">
-                    Question a buyer actually asks
+                    Operational question
                   </th>
                   <th className="border-b border-ink/15 bg-paper px-4 py-2.5 text-[11px] font-medium tracking-wider text-ink-muted uppercase">
-                    Where it lives today
+                    Without a shared system
                   </th>
                   <th className="border-b border-ink/15 bg-paper px-4 py-2.5 text-right text-[11px] font-medium tracking-wider text-ink-muted uppercase">
                     On VALORA

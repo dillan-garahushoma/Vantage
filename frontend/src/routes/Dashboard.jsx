@@ -1,7 +1,6 @@
 import { Area, AreaChart, ResponsiveContainer, Tooltip as ChartTooltip, XAxis, YAxis } from 'recharts';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText } from 'lucide-react';
 import { IconAlert, IconArrowRight, IconClock, IconMegaphone, IconReport, IconWrench } from '../components/Icons';
 import { HealthBrief } from '../components/HealthBrief';
 import { RequireEstate } from '../components/RequireEstate';
@@ -13,8 +12,6 @@ import { ScoreCard } from '../components/valora/ScoreCard';
 import { SectionHeading } from '../components/valora/SectionHeading';
 import { Surface } from '../components/valora/Surface';
 import { AttentionPanel } from '../components/valora/AttentionPanel';
-import { BoardReportDialog } from '../components/valora/BoardReportDialog';
-import { Timeline } from '../components/valora/Timeline';
 import { useAuth } from '../context/AuthContext';
 import { useEstateScope } from '../context/EstateContext';
 import { api, ApiError } from '../lib/api';
@@ -22,7 +19,6 @@ import { getLivingScore, getLivingScoreHistory, recalculateLivingScore } from '.
 import { complaintStatus, pillarBand, workOrderStatus } from '../lib/display';
 import { durationHours, displayLabel, ratio, relativeDays, shortDate } from '../lib/format';
 import { useAsync } from '../lib/useAsync';
-import { defaultBoardSummary, attentionItems, weekTimeline } from '../lib/estateMockData';
 const OPEN_STATUSES = new Set(['submitted', 'reviewed', 'assigned', 'in_progress']);
 function EstateCard() {
     const { estate } = useEstateScope();
@@ -78,7 +74,7 @@ function NeedsAttention({ complaints }) {
                     ? 'At Risk'
                     : 'Watch',
         }))
-        : attentionItems;
+        : [];
     return <AttentionPanel items={items}/>;
 }
 function AnnouncementList({ announcements }) {
@@ -180,14 +176,29 @@ function DashboardBody() {
     const unitCount = properties.data?.total ?? null;
     const averageResolution = stats.data?.avg_resolution_hours;
     const workOrdersInFlight = (workOrders.data?.items ?? []).filter((order) => ['assigned', 'in_progress'].includes(order.status ?? '')).length;
-    const [boardReportOpen, setBoardReportOpen] = useState(false);
+    const operationalTimeline = [
+        ...(complaints.data?.items ?? []).map((item) => ({
+            id: `complaint-${item.id}`,
+            date: shortDate(item.updated_at ?? item.created_at),
+            title: `Complaint #${item.id}: ${displayLabel(item.status ?? 'submitted')}`,
+            description: item.description,
+            meta: `Unit ${item.unit_id} · ${displayLabel(item.category)}`,
+            status: OPEN_STATUSES.has(item.status ?? '') ? 'current' : 'completed',
+            occurredAt: item.updated_at ?? item.created_at,
+        })),
+        ...(isAdmin ? (workOrders.data?.items ?? []).map((order) => ({
+            id: `work-order-${order.id}`,
+            date: shortDate(order.updated_at ?? order.created_at),
+            title: `Work order #${order.id}: ${displayLabel(order.status ?? 'assigned')}`,
+            description: order.completion_notes ?? `Complaint #${order.complaint_id} · provider #${order.provider_id}`,
+            meta: `Work order #${order.id}`,
+            status: ['assigned', 'in_progress'].includes(order.status ?? '') ? 'current' : 'completed',
+            occurredAt: order.updated_at ?? order.created_at,
+        })) : []),
+    ].sort((left, right) => new Date(right.occurredAt ?? 0).getTime() - new Date(left.occurredAt ?? 0).getTime()).slice(0, 8);
     return (<div className="space-y-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <SectionHeading eyebrow={isAdmin ? 'Governance overview' : 'Estate overview'} title="Property health at a glance" description="Operational data as recorded by the estate. Each score shows its own calculation date."/>
-        {isAdmin && (<Button variant="outline" onClick={() => setBoardReportOpen(true)} className="h-10 shrink-0 rounded-full border-line bg-surface px-5 text-[0.82rem] font-semibold text-ink hover:bg-canvas">
-            <FileText className="mr-2 h-4 w-4"/>
-            Generate board report
-          </Button>)}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
@@ -325,9 +336,18 @@ function DashboardBody() {
 
       {/* --------------------------------------------------- operational timeline */}
       <Surface>
-        <SectionTitle title="This week in estate operations" hint="Telemetry milestones, automated tests and scheduled contractor attendance"/>
+        <SectionTitle title="Recent estate operations" hint="Authorized complaint and work-order records, newest first"/>
         <div className="mt-4">
-          <Timeline items={weekTimeline}/>
+          {complaints.loading || (isAdmin && workOrders.loading) ? <LoadingState label="Loading recent operations"/> : complaints.error ? <ErrorState message={complaints.error.message} requestId={complaints.error.requestId}/> : isAdmin && workOrders.error ? <ErrorState message={workOrders.error.message} requestId={workOrders.error.requestId}/> : operationalTimeline.length === 0 ? <EmptyState title="No recent operational activity" body="Logged complaints and work-order updates will appear here once the estate has records."/> : (<ul className="divide-y divide-line">
+              {operationalTimeline.map((item) => (<li key={item.id} className="py-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-3">
+                    <p className="text-[13px] font-medium">{item.title}</p>
+                    <span className="num text-[11.5px] text-ink-muted">{item.date}</span>
+                  </div>
+                  <p className="mt-1 text-[12.5px] text-ink-soft">{item.description}</p>
+                  <p className="mt-1 text-[11.5px] text-ink-muted">{item.meta}</p>
+                </li>))}
+            </ul>)}
         </div>
       </Surface>
 
@@ -374,8 +394,6 @@ function DashboardBody() {
         {stats.data ? `${stats.data.total} complaints on record` : 'estate metrics unavailable'}
       </p>
 
-      {/* Board Report Modal */}
-      <BoardReportDialog open={boardReportOpen} onOpenChange={setBoardReportOpen} summary={defaultBoardSummary} period="Rolling 90 Days" estateName={estate?.estate_name ?? 'Silverleaf Reserve'}/>
     </div>);
 }
 export function Dashboard() {

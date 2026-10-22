@@ -74,6 +74,10 @@ export function Login() {
               <Input type="password" name="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••"/>
             </Field>
 
+            <div className="text-right text-[13px]">
+              <Link to="/password-recovery" className="font-medium text-accent-ink hover:underline">Forgot password?</Link>
+            </div>
+
             <Button type="submit" variant="primary" className="w-full py-2.5" disabled={busy}>
               {busy ? 'Signing in…' : 'Sign in'}
             </Button>

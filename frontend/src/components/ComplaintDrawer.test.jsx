@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
     providers: vi.fn(),
     workOrder: vi.fn(),
     rate: vi.fn(),
+    reopen: vi.fn(),
     role: 'hoa_admin',
 }));
 vi.mock('../lib/api', () => ({
@@ -44,6 +45,7 @@ vi.mock('../lib/estateAdmin', () => ({
     listEstateProviders: mocks.providers,
     getComplaintWorkOrder: mocks.workOrder,
     rateWorkOrder: mocks.rate,
+    reopenComplaint: mocks.reopen,
 }));
 vi.mock('../lib/ai', () => ({
     readTriageSuggestion: vi.fn(async () => {
@@ -115,6 +117,7 @@ beforeEach(() => {
     mocks.providers.mockReset();
     mocks.workOrder.mockReset();
     mocks.rate.mockReset();
+    mocks.reopen.mockReset();
     mocks.get.mockImplementation(async (path) => {
         if (path === '/api/v1/complaints/11')
             return complaint();
@@ -203,5 +206,25 @@ describe('ComplaintDrawer — the resident’s repair', () => {
         await user.click(await screen.findByRole('button', { name: /rate the repair 5 out of 5/i }));
         expect(await screen.findByText('This work order has already been rated.')).toBeVisible();
         expect(screen.getByText(/req-409/)).toBeVisible();
+    });
+});
+describe('ComplaintDrawer — repeat repairs', () => {
+    it('lets the reporting resident reopen a resolved complaint with an evidence note', async () => {
+        mocks.role = 'resident';
+        mocks.get.mockImplementation(async (path) => {
+            if (path === '/api/v1/complaints/11')
+                return complaint({ user_id: 1, status: 'resolved', resolved_at: '2026-10-04T12:00:00Z' });
+            if (path === '/api/v1/complaints/11/events')
+                return [];
+            return { items: [], total: 0, page: 1, size: 10, pages: 0 };
+        });
+        mocks.workOrder.mockRejectedValue(new ApiError(404, 'No work order exists for this complaint.'));
+        mocks.reopen.mockResolvedValue(complaint({ user_id: 1, status: 'submitted' }));
+        const user = userEvent.setup();
+        renderDrawer();
+        await user.click(await screen.findByRole('button', { name: 'Reopen complaint' }));
+        await user.type(screen.getByLabelText('Reason for reopening'), 'The leak returned after the repair.');
+        await user.click(screen.getByRole('button', { name: 'Submit repeat repair' }));
+        expect(mocks.reopen).toHaveBeenCalledWith(4, 11, 'The leak returned after the repair.');
     });
 });

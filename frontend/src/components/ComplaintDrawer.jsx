@@ -3,7 +3,7 @@ import { useEstateScope } from '../context/EstateContext';
 import { useAuth } from '../context/AuthContext';
 import { api, ApiError } from '../lib/api';
 import { complaintStatus, priorityMeta, workOrderStatus } from '../lib/display';
-import { getComplaintWorkOrder, listEstateProviders, rateWorkOrder, } from '../lib/estateAdmin';
+import { getComplaintWorkOrder, listEstateProviders, rateWorkOrder, reopenComplaint, } from '../lib/estateAdmin';
 import { displayLabel, fullDate, money, relativeDays, titleCase } from '../lib/format';
 import { useAsync } from '../lib/useAsync';
 import { IconWrench } from './Icons';
@@ -223,6 +223,55 @@ function ReviewAction({ complaintId, onDone }) {
       </p>
     </div>);
 }
+function ReopenComplaint({ complaintId, onDone }) {
+    const { estateId } = useEstateScope();
+    const [open, setOpen] = useState(false);
+    const [note, setNote] = useState('');
+    const [error, setError] = useState(null);
+    const [busy, setBusy] = useState(false);
+    async function submit() {
+        if (estateId === null || note.trim().length < 5)
+            return;
+        setBusy(true);
+        setError(null);
+        try {
+            await reopenComplaint(estateId, complaintId, note.trim());
+            onDone();
+            setOpen(false);
+            setNote('');
+        }
+        catch (cause) {
+            setError(cause instanceof ApiError
+                ? cause
+                : new ApiError(0, 'Could not reopen the complaint.'));
+        }
+        finally {
+            setBusy(false);
+        }
+    }
+    if (!open) {
+        return (<Button variant="secondary" onClick={() => setOpen(true)}>
+        Reopen complaint
+      </Button>);
+    }
+    return (<div className="space-y-3">
+      {error ? <ErrorState message={error.message} requestId={error.requestId}/> : null}
+      <Field label="Reason for reopening" hint="At least 5 characters. This becomes evidence on the repeat repair.">
+        <Textarea aria-label="Reason for reopening" value={note} onChange={(event) => setNote(event.target.value)} placeholder="The fault returned after the repair was completed."/>
+      </Field>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="primary" onClick={submit} disabled={busy || note.trim().length < 5}>
+          {busy ? 'Reopening…' : 'Submit repeat repair'}
+        </Button>
+        <Button variant="secondary" onClick={() => { setOpen(false); setError(null); }} disabled={busy}>
+          Cancel
+        </Button>
+      </div>
+      <p className="text-[12px] text-ink-muted">
+        The original work order stays final. This starts a fresh review before another provider can be assigned.
+      </p>
+    </div>);
+}
 export function ComplaintDrawer({ complaintId, onClose, onChanged, }) {
     const { estateId } = useEstateScope();
     const { user } = useAuth();
@@ -238,6 +287,8 @@ export function ComplaintDrawer({ complaintId, onClose, onChanged, }) {
         : Promise.resolve(null), [estateId, complaintId, isAdmin]);
     const complaint = detail.data;
     const status = complaint?.status ?? null;
+    const canReopen = ['resolved', 'rated', 'closed'].includes(status ?? '') &&
+        (isAdmin || complaint?.user_id === user?.id);
     const activeOrder = (workOrders.data?.items ?? []).find((order) => order.status !== 'cancelled');
     const refresh = () => {
         detail.reload();
@@ -332,6 +383,15 @@ export function ComplaintDrawer({ complaintId, onClose, onChanged, }) {
               </h3>
               <div className="mt-2 hairline rounded-xs bg-surface p-4">
                 <ReviewAction complaintId={complaint.id} onDone={refresh}/>
+              </div>
+            </div>) : null}
+
+          {canReopen ? (<div>
+              <h3 className="text-[12px] font-medium tracking-wider text-ink-muted uppercase">
+                Repeat repair
+              </h3>
+              <div className="mt-2 hairline rounded-xs bg-surface p-4">
+                <ReopenComplaint complaintId={complaint.id} onDone={refresh}/>
               </div>
             </div>) : null}
 

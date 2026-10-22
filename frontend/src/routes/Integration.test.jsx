@@ -2,9 +2,6 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Contact } from './Contact';
-import { PropertyWorkflows } from './PropertyWorkflows';
-import { Settings } from './Settings';
-import { ProviderPortal } from './ProviderPortal';
 import { BoardReportDialog } from '../components/valora/BoardReportDialog';
 import { PreviewNotice } from '../components/valora/PreviewNotice';
 import { scoreMethodology } from '../lib/estateMockData';
@@ -45,14 +42,6 @@ describe('combined Vantage workspace', () => {
         expect(screen.getByRole('alert')).toHaveTextContent('Enter your name');
         expect(mocks.contact).not.toHaveBeenCalled();
     });
-    it('retains missing resident property journeys without pretending their APIs exist', () => {
-        render(<MemoryRouter><PropertyWorkflows /></MemoryRouter>);
-        expect(screen.getByRole('heading', { name: 'Valuation' })).toBeInTheDocument();
-        expect(screen.getByRole('heading', { name: 'Sale & rental requests' })).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: 'Open residential units' })).toHaveAttribute('href', '/app/properties');
-        expect(screen.getAllByText('Backend required').length).toBeGreaterThan(0);
-        expect(screen.queryByRole('button', { name: /submit request/i })).not.toBeInTheDocument();
-    });
     it('labels the Vantage prototype data and the lack of persistence explicitly', () => {
         render(<PreviewNotice detail="Financial figures and approvals are samples."/>);
         expect(screen.getByRole('note')).toHaveTextContent('Sample preview');
@@ -64,20 +53,6 @@ describe('combined Vantage workspace', () => {
             expect(text).toContain(pillar);
         }
         expect(text).not.toContain('Financial & Reserve Stewardship (20%)');
-    });
-    it('prevents a settings preview from reporting a successful save', () => {
-        render(<MemoryRouter><Settings /></MemoryRouter>);
-        expect(screen.getByRole('button', { name: /save preferences/i })).toBeDisabled();
-        expect(screen.queryByText(/configuration saved successfully/i)).not.toBeInTheDocument();
-        expect(screen.getByRole('note')).toHaveTextContent('Sample preview');
-    });
-    it('directs providers to real work and disables unsupported attendance and photo writes', () => {
-        render(<MemoryRouter><ProviderPortal /></MemoryRouter>);
-        expect(screen.getByRole('link', { name: 'Open My work' })).toHaveAttribute('href', '/provider/work');
-        expect(screen.getByRole('button', { name: /check in on site/i })).toBeDisabled();
-        for (const button of screen.getAllByRole('button', { name: /upload proof photo|add proof/i })) {
-            expect(button).toBeDisabled();
-        }
     });
     it('does not present sample reports as measured records of the selected estate', () => {
         render(<BoardReportDialog open onOpenChange={() => { }} summary={{ headline: 'Sample figures', points: [] }} period="90 days" estateName="Current estate"/>);

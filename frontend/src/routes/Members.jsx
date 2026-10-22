@@ -5,7 +5,7 @@ import { Button, Card, Chip, Drawer, EmptyState, ErrorState, Field, Input, Loadi
 import { useAuth } from '../context/AuthContext';
 import { useEstateScope } from '../context/EstateContext';
 import { ApiError } from '../lib/api';
-import { addProviderMember, listEstateMembers, removeEstateMember } from '../lib/estateAdmin';
+import { addProviderMember, listEstateMembers, listEstateProperties, removeEstateMember, transferEstateMemberUnit } from '../lib/estateAdmin';
 import { roleLabels } from '../lib/display';
 import { fullDate, relativeDays } from '../lib/format';
 import { useAsync } from '../lib/useAsync';
@@ -53,10 +53,10 @@ function AddProviderCard({ estateId, onAdded }) {
                 ? 'No registered provider with that email'
                 : 'Could not add that provider';
     return (<Card as="section" className="p-5">
-      <SectionTitle title="Add a service provider" hint="They register themselves; you link their account to this estate by email."/>
+      <SectionTitle title="Add a service provider" hint="An operator provisions their account; you link it to this estate by email."/>
       <form onSubmit={submit} className="space-y-3">
         {error ? (<ErrorState title={title} message={error.status === 404
-                ? `${error.message} A provider must first create their own VALORA account, and that account must carry a trade profile. Residents are not added here — they request access for approval, or join with a code.`
+                ? `${error.message} A provider must first be provisioned by an operator, with a trade profile. Residents are not added here — they request access for approval, or join with a code.`
                 : error.message} requestId={error.requestId}/>) : null}
         {added ? (<p className="text-[13px] text-accent-ink">
             {added} can now be assigned work in this estate.
@@ -64,7 +64,7 @@ function AddProviderCard({ estateId, onAdded }) {
 
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[16rem] flex-1">
-            <Field label="Provider email" hint="Only an account that registered as a service provider, with a trade profile, can be added.">
+            <Field label="Provider email" hint="Only an operator-provisioned provider account with a trade profile can be added.">
               <Input name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="plumber@example.co.za" autoComplete="off"/>
             </Field>
           </div>
@@ -78,9 +78,9 @@ function AddProviderCard({ estateId, onAdded }) {
 }
 /* --------------------------------------------------------------- removal */
 function RemoveMemberDrawer({ target, estateName, busy, error, onCancel, onConfirm, }) {
-    return (<Drawer open={target !== null} onClose={onCancel} title="Remove this member?" subtitle={target ? `${target.full_name ?? target.email ?? `membership #${target.membership_id}`} · ${roleName(target.role)}` : undefined} footer={<div className="flex flex-wrap items-center gap-2">
+    return (<Drawer open={target !== null} onClose={onCancel} title="Move this member out?" subtitle={target ? `${target.full_name ?? target.email ?? `membership #${target.membership_id}`} · ${roleName(target.role)}` : undefined} footer={<div className="flex flex-wrap items-center gap-2">
           <Button variant="danger" onClick={onConfirm} disabled={busy}>
-            {busy ? 'Removing…' : 'Remove from the estate'}
+            {busy ? 'Moving out…' : 'Move out of the estate'}
           </Button>
           <Button variant="ghost" onClick={onCancel} disabled={busy}>
             Keep the member
@@ -110,6 +110,37 @@ function RemoveMemberDrawer({ target, estateName, busy, error, onCancel, onConfi
       </div>
     </Drawer>);
 }
+function TransferUnitDrawer({ target, estateId, onCancel, onDone }) {
+    const [propertyId, setPropertyId] = useState('');
+    const [error, setError] = useState(null);
+    const [busy, setBusy] = useState(false);
+    const properties = useAsync(() => target
+        ? listEstateProperties(estateId)
+        : Promise.resolve(null), [estateId, target?.membership_id]);
+    async function submit() {
+        if (!target || !propertyId)
+            return;
+        setBusy(true);
+        setError(null);
+        try {
+            await transferEstateMemberUnit(estateId, target.membership_id, Number(propertyId));
+            onDone();
+        }
+        catch (cause) {
+            setError(cause instanceof ApiError ? cause : new ApiError(0, 'Could not move this resident.'));
+        }
+        finally {
+            setBusy(false);
+        }
+    }
+    return (<Drawer open={target !== null} onClose={onCancel} title="Move resident to another unit" subtitle={target?.full_name ?? target?.email ?? undefined} footer={<div className="flex gap-2"><Button variant="ghost" onClick={onCancel} disabled={busy}>Cancel</Button><Button variant="primary" onClick={submit} disabled={busy || !propertyId}>{busy ? 'Moving…' : 'Move resident'}</Button></div>}>
+      <div className="space-y-4">
+        {error ? <ErrorState message={error.message} requestId={error.requestId}/> : null}
+        <p className="text-sm leading-relaxed text-ink-muted">This changes the resident’s current unit access and preserves an audit trail of the move. It does not erase their maintenance history.</p>
+        {properties.loading ? <LoadingState label="Loading units"/> : properties.error ? <ErrorState message={properties.error.message} requestId={properties.error.requestId}/> : <Field label="New unit"><Select value={propertyId} onChange={(event) => setPropertyId(event.target.value)}><option value="">Select a unit</option>{properties.data?.items?.map((property) => <option key={property.id} value={property.id}>{property.unit_no}{property.street_address ? ` · ${property.street_address}` : ''}</option>)}</Select></Field>}
+      </div>
+    </Drawer>);
+}
 /* ----------------------------------------------------------------- screen */
 function MembersBody() {
     const { estateId, estate } = useEstateScope();
@@ -119,6 +150,7 @@ function MembersBody() {
     const [role, setRole] = useState('');
     const [page, setPage] = useState(1);
     const [target, setTarget] = useState(null);
+    const [transferTarget, setTransferTarget] = useState(null);
     const [busy, setBusy] = useState(false);
     const [removeError, setRemoveError] = useState(null);
     const members = useAsync(() => isAdmin && scope
@@ -153,9 +185,8 @@ function MembersBody() {
         </p>
         <h1 className="mt-2 text-[26px] leading-tight font-semibold">Members</h1>
         <p className="mt-1 max-w-2xl text-[13.5px] text-ink-muted">
-          Who may act inside this estate, and how they got in. A resident gets here either by being
-          approved on the Approvals screen or by redeeming a live join code against their unit; a
-          provider you add by email is added immediately. Removing someone here is the revocation.
+          Who may act inside this estate. Residents join through approval or a live join code;
+          operator-provisioned providers are linked here by email. Moving someone out revokes estate access.
         </p>
       </header>
 
@@ -214,7 +245,7 @@ function MembersBody() {
                   <Td className="text-right">
                     {member.role === 'hoa_admin' ? (<span className="text-[12px] text-ink-muted">
                         Administrator — remove from the estate profile
-                      </span>) : (<Button variant="secondary" onClick={() => {
+                      </span>) : (<div className="flex justify-end gap-2">{member.role === 'resident' ? <Button variant="secondary" onClick={() => setTransferTarget(member)}>Move unit</Button> : null}<Button variant="secondary" onClick={() => {
                         setRemoveError(null);
                         setTarget({
                             membership_id: member.membership_id,
@@ -223,8 +254,8 @@ function MembersBody() {
                             role: member.role,
                         });
                     }}>
-                        Remove
-                      </Button>)}
+                        Move out
+                      </Button></div>)}
                   </Td>
                 </tr>))}
             </tbody>
@@ -265,12 +296,12 @@ function MembersBody() {
                 instant. Both produce the same membership.
               </li>
               <li>
-                <span className="font-medium">Service providers</span> register themselves, then you
-                add their email here. Only then can they be assigned work.
+                <span className="font-medium">Service providers</span> are provisioned by an operator,
+                then you add their email here. Only then can they be assigned work.
               </li>
               <li>
-                <span className="font-medium">HOA administrators</span> come with the estate itself —
-                the account that registered the estate is its first administrator.
+                <span className="font-medium">Managers</span> are provisioned by an operator and hold
+                matching estate membership before they can manage this register.
               </li>
             </ul>
           </div>
@@ -278,6 +309,7 @@ function MembersBody() {
       </Card>
 
       <RemoveMemberDrawer target={target} estateName={estate?.estate_name ?? 'this estate'} busy={busy} error={removeError} onCancel={() => setTarget(null)} onConfirm={confirmRemove}/>
+      <TransferUnitDrawer target={transferTarget} estateId={scope} onCancel={() => setTransferTarget(null)} onDone={() => { setTransferTarget(null); members.reload(); }}/>
     </div>);
 }
 export function Members() {

@@ -64,12 +64,20 @@ function IntelligenceBody() {
     const [accepted, setAccepted] = useState([]);
     const [generating, setGenerating] = useState(false);
     const [generationError, setGenerationError] = useState(null);
+    const [historyBriefingId, setHistoryBriefingId] = useState(null);
     const intelligenceQuery = useAsync(() => estateId === null
         ? Promise.resolve(null)
         : api.get('/api/v1/analytics/intelligence', { estate_id: estateId }), [estateId]);
-    const activeBriefing = intelligenceQuery.data?.briefing;
-    const activeRecommendations = intelligenceQuery.data?.recommendations ?? [];
-    const signals = signalNodes(intelligenceQuery.data?.operational_signals);
+    const history = useAsync(() => estateId === null
+        ? Promise.resolve(null)
+        : api.get('/api/v1/analytics/intelligence/history', { estate_id: estateId, size: 10 }), [estateId]);
+    const historicalBriefing = useAsync(() => historyBriefingId === null || estateId === null
+        ? Promise.resolve(null)
+        : api.get(`/api/v1/analytics/intelligence/history/${historyBriefingId}`, { estate_id: estateId }), [estateId, historyBriefingId]);
+    const intelligence = historicalBriefing.data ?? intelligenceQuery.data;
+    const activeBriefing = intelligence?.briefing;
+    const activeRecommendations = intelligence?.recommendations ?? [];
+    const signals = signalNodes(intelligence?.operational_signals);
     function openWorkOrder(recommendation) {
         setReviewing(null);
         setWorkOrderDraft({
@@ -92,7 +100,7 @@ function IntelligenceBody() {
           <Badge variant="default" className="gap-2 bg-surface/80 px-3.5 py-1.5 tracking-[0.16em] backdrop-blur">
             <Sparkles className="h-3.5 w-3.5"/>
             VALORA Intelligence
-            {intelligenceQuery.data?.source === 'n8n' ? (<span className="ml-1 rounded-full bg-mint-wash px-2 py-0.5 text-[0.68rem] font-bold text-mint-ink">
+            {intelligence?.source === 'n8n' ? (<span className="ml-1 rounded-full bg-mint-wash px-2 py-0.5 text-[0.68rem] font-bold text-mint-ink">
                 Live n8n
               </span>) : null}
           </Badge>
@@ -104,9 +112,9 @@ function IntelligenceBody() {
             {activeBriefing.body}
           </p>
           <p className="mt-3 text-sm text-ink/55">
-            {intelligenceQuery.data?.briefing_id ? 'Saved briefing' : 'Current preview'} · {intelligenceQuery.data?.as_of ? new Date(intelligenceQuery.data.as_of).toLocaleString('en-ZA') : 'Date unavailable'}
+            {intelligence?.briefing_id ? 'Saved briefing' : 'Current briefing'} · {intelligence?.as_of ? new Date(intelligence.as_of).toLocaleString('en-ZA') : 'Date unavailable'}
           </p>
-          {intelligenceQuery.data?.briefing_id ? <p className="mt-1 text-xs text-ink/50">Counts are frozen at the briefing date. Ask VALORA reads current records.</p> : null}
+          {intelligence?.briefing_id ? <p className="mt-1 text-xs text-ink/50">Counts are frozen at the briefing date. Ask VALORA reads current records.</p> : null}
           {isAdmin ? <Button className="mt-3" disabled={generating} onClick={async () => {
               setGenerating(true);
               setGenerationError(null);
@@ -120,7 +128,7 @@ function IntelligenceBody() {
               }
           }}>{generating ? 'Saving…' : 'Save current briefing'}</Button> : null}
           {generationError ? <p role="alert">{generationError}</p> : null}
-          {intelligenceQuery.data?.limitations?.map((limitation) => <p key={limitation} className="mt-1 text-xs text-ink/50">{limitation}</p>)}
+          {intelligence?.limitations?.map((limitation) => <p key={limitation} className="mt-1 text-xs text-ink/50">{limitation}</p>)}
 
           <div className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-2.5">
             <span className="text-[0.78rem] font-medium text-ink/45">
@@ -137,6 +145,25 @@ function IntelligenceBody() {
           </div>
         </div>
       </div>
+
+      <Surface>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="font-heading text-[1rem] font-bold text-ink">Briefing history</h2>
+            <p className="mt-1 text-[0.82rem] text-ink-muted">Saved briefings are immutable snapshots of the authorized estate record.</p>
+          </div>
+          {historyBriefingId !== null ? <Button variant="outline" onClick={() => setHistoryBriefingId(null)}>View current briefing</Button> : null}
+        </div>
+        {history.loading ? <p className="mt-4 text-[13px] text-ink-muted">Loading saved briefings…</p> : history.error ? <div className="mt-4"><ErrorState title="Briefing history unavailable" message={history.error.message} requestId={history.error.requestId} action={<Button onClick={history.reload}>Try again</Button>}/></div> : (history.data?.items ?? []).length === 0 ? <p className="mt-4 text-[13px] text-ink-muted">No saved briefings yet. An estate administrator can save the current briefing when a record is needed.</p> : (<ul className="mt-4 divide-y divide-line-soft">
+          {history.data.items.map((entry) => (<li key={entry.briefing_id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+              <span className="text-[13px] text-ink-soft">Briefing #{entry.briefing_id} · {new Date(entry.as_of).toLocaleString('en-ZA')}</span>
+              <Button variant="secondary" disabled={historicalBriefing.loading && historyBriefingId === entry.briefing_id} onClick={() => setHistoryBriefingId(entry.briefing_id)} aria-label={`View saved briefing ${entry.briefing_id}`}>
+                {historicalBriefing.loading && historyBriefingId === entry.briefing_id ? 'Loading…' : 'View saved briefing'}
+              </Button>
+            </li>))}
+        </ul>)}
+        {historicalBriefing.error ? <div className="mt-3"><ErrorState title="Saved briefing unavailable" message={historicalBriefing.error.message} requestId={historicalBriefing.error.requestId}/></div> : null}
+      </Surface>
 
       {signals.length > 0 ? (<SignalField signals={signals} label="Operational counts at the briefing date"/>) : null}
 

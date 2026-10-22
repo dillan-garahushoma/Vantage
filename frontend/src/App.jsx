@@ -6,28 +6,23 @@ import { EstateProvider } from './context/EstateContext';
 import { AdminResidency } from './routes/AdminResidency';
 import { AdminSetup } from './routes/AdminSetup';
 import { Announcements } from './routes/Announcements';
-import { Assets } from './routes/Assets';
-import { Community } from './routes/Community';
 import { Complaints } from './routes/Complaints';
 import { Contact } from './routes/Contact';
 import { Dashboard } from './routes/Dashboard';
 import { EstateHealth } from './routes/EstateHealth';
-import { Financial } from './routes/Financial';
 import { Incidents } from './routes/Incidents';
 import { Intelligence } from './routes/Intelligence';
 import { Join } from './routes/Join';
 import { Landing } from './routes/Landing';
 import { Login } from './routes/Login';
 import { Members } from './routes/Members';
+import { Notifications } from './routes/Notifications';
 import { NotFound } from './routes/NotFound';
 import { Properties } from './routes/Properties';
-import { PropertyWorkflows } from './routes/PropertyWorkflows';
-import { ProviderPortal } from './routes/ProviderPortal';
+import { PasswordRecovery } from './routes/PasswordRecovery';
 import { ProviderWaiting } from './routes/ProviderWaiting';
 import { ProviderWork } from './routes/ProviderWork';
 import { Providers } from './routes/Providers';
-import { PublicEstateDetail } from './routes/PublicEstateDetail';
-import { PublicEstates } from './routes/PublicEstates';
 import { Register } from './routes/Register';
 import { RequestAccess } from './routes/RequestAccess';
 import { Settings } from './routes/Settings';
@@ -50,9 +45,8 @@ export function App() {
       <EstateProvider>
         <Routes>
           <Route path="/" element={<Landing />}/>
-          <Route path="/estates" element={<PublicEstates />}/>
-          <Route path="/estates/:id" element={<PublicEstateDetail />}/>
           <Route path="/login" element={<Login />}/>
+          <Route path="/password-recovery" element={<PasswordRecovery />}/>
           <Route path="/register" element={<Register />}/>
           <Route path="/contact" element={<Contact />}/>
 
@@ -79,16 +73,13 @@ export function App() {
               </Protected>}>
             <Route index element={<Dashboard />}/>
             <Route path="health" element={<EstateHealth />}/>
-            <Route path="assets" element={<Assets />}/>
             <Route path="complaints" element={<Complaints />}/>
             <Route path="work-orders" element={<WorkOrders />}/>
             <Route path="announcements" element={<Announcements />}/>
             <Route path="incidents" element={<Incidents />}/>
-            <Route path="financial" element={<Financial />}/>
-            <Route path="community" element={<Community />}/>
             <Route path="properties" element={<Properties />}/>
-            <Route path="property-workflows" element={<PropertyWorkflows />}/>
             <Route path="providers" element={<Providers />}/>
+            <Route path="notifications" element={<Notifications />}/>
           </Route>
 
           {/* VALORA Intelligence is a workspace of its own rather than a tab of
@@ -115,23 +106,13 @@ export function App() {
                 <AppShell />
               </Protected>}>
             <Route path="work" element={<ProviderWork />}/>
-            <Route path="portal" element={<ProviderPortal />}/>
           </Route>
 
           {/* Earlier Group8 bookmarks lead into the current Vantage workspace. */}
           <Route path="/dashboard" element={<Navigate to="/app" replace/>}/>
-          <Route path="/properties" element={<Navigate to="/estates" replace/>}/>
+          <Route path="/properties" element={<Navigate to="/app/properties" replace/>}/>
           <Route path="/property" element={<Navigate to="/app/properties" replace/>}/>
           <Route path="/property-management" element={<Navigate to="/app/properties" replace/>}/>
-          <Route path="/valuation" element={<Navigate to="/app/property-workflows#valuation" replace/>}/>
-          <Route path="/roi" element={<Navigate to="/app/property-workflows#roi" replace/>}/>
-          <Route path="/request-to-sell" element={<Navigate to="/app/property-workflows#requests" replace/>}/>
-          <Route path="/property-requests" element={<Navigate to="/app/property-workflows#requests" replace/>}/>
-          <Route path="/property-approvals" element={<Navigate to="/app/property-workflows#requests" replace/>}/>
-          <Route path="/agent-listings" element={<Navigate to="/app/property-workflows#listings" replace/>}/>
-          <Route path="/agent-edit-listings" element={<Navigate to="/app/property-workflows#listings" replace/>}/>
-          <Route path="/agent-inquiries" element={<Navigate to="/app/property-workflows#enquiries" replace/>}/>
-          <Route path="/sales" element={<Navigate to="/app/property-workflows#sales" replace/>}/>
           <Route path="/registration-requests" element={<Navigate to="/admin/residency" replace/>}/>
           <Route path="/user-management" element={<Navigate to="/admin/members" replace/>}/>
           <Route path="/resident-directory" element={<Navigate to="/admin/members" replace/>}/>

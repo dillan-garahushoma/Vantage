@@ -76,11 +76,9 @@ export function TopBar({ onOpenNav, onCreateWorkOrder, onLogComplaint }) {
               {quickAction.label}
             </Button>) : null}
 
-          <div className="relative hidden h-10 w-10 items-center justify-center rounded-xl text-ink/50 sm:flex">
+          <button type="button" onClick={() => navigate('/app/notifications')} aria-label="Open notifications" className="relative hidden h-10 w-10 items-center justify-center rounded-xl text-ink/50 transition-colors hover:bg-canvas sm:flex">
             <Bell className="h-[1.1rem] w-[1.1rem]" aria-hidden="true"/>
-            <span className="sr-only">Notifications</span>
-            <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-signal ring-2 ring-surface"/>
-          </div>
+          </button>
 
           <div className="flex items-center gap-2.5 rounded-full border border-line py-1 pr-3 pl-1">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-[0.68rem] font-bold text-white">

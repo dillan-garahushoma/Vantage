@@ -87,7 +87,30 @@ function CreatePropertyDrawer({ onClose, onDone }) {
       </div>
     </Drawer>);
 }
-function PropertyDrawer({ property, mine, onClose, }) {
+function EditPropertyDrawer({ property, onClose, onDone }) {
+    const { estateId } = useEstateScope();
+    const [form, setForm] = useState({ street_address: property.street_address ?? '', size_m2: property.size_m2 ?? '', bedrooms: property.bedrooms ?? '', bathrooms: property.bathrooms ?? '' });
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState(null);
+    function update(key, value) { setForm((previous) => ({ ...previous, [key]: value })); }
+    async function submit() {
+        setBusy(true);
+        setError(null);
+        try {
+            await api.patch(`/api/v1/properties/${property.id}`, {
+                street_address: form.street_address.trim(),
+                size_m2: form.size_m2 === '' ? null : String(form.size_m2),
+                bedrooms: form.bedrooms === '' ? null : Number(form.bedrooms),
+                bathrooms: form.bathrooms === '' ? null : Number(form.bathrooms),
+            }, { estate_id: estateId });
+            onDone();
+        }
+        catch (cause) { setError(cause instanceof ApiError ? cause : new ApiError(0, 'Could not update this unit.')); }
+        finally { setBusy(false); }
+    }
+    return <Drawer open onClose={onClose} title={`Edit ${property.unit_no}`} subtitle="Changes are recorded for this estate" footer={<div className="flex justify-end gap-2"><Button variant="ghost" onClick={onClose} disabled={busy}>Cancel</Button><Button variant="primary" onClick={submit} disabled={busy || !form.street_address.trim()}>{busy ? 'Saving…' : 'Save unit changes'}</Button></div>}><div className="space-y-4">{error ? <ErrorState message={error.message} requestId={error.requestId}/> : null}<Field label="Street address"><Input value={form.street_address} maxLength={255} onChange={(event) => update('street_address', event.target.value)}/></Field><div className="grid gap-4 sm:grid-cols-3"><Field label="Size m²"><Input inputMode="decimal" value={form.size_m2} onChange={(event) => update('size_m2', event.target.value)}/></Field><Field label="Bedrooms"><Input inputMode="numeric" value={form.bedrooms} onChange={(event) => update('bedrooms', event.target.value)}/></Field><Field label="Bathrooms"><Input inputMode="numeric" value={form.bathrooms} onChange={(event) => update('bathrooms', event.target.value)}/></Field></div></div></Drawer>;
+}
+function PropertyDrawer({ property, mine, isAdmin, onClose, onEdit, }) {
     return (<Drawer open onClose={onClose} title={property.unit_no} subtitle={`${property.complex_name} · unit #${property.id}`}>
       <div className="space-y-6">
         <div className="flex flex-wrap gap-2">
@@ -110,11 +133,11 @@ function PropertyDrawer({ property, mine, onClose, }) {
 
         <div className="border-l-2 border-l-ochre bg-ochre-wash px-3.5 py-3">
           <p className="text-[12.5px] text-ink-soft">
-            A property page will eventually carry the valuation and the “why it’s worth it” factor
-            list. Today VALORA shows the property record and the estate’s operational data — the
-            structural fields a listing already has are not the differentiator.
+            This unit is the operational anchor for resident access, maintenance issues and the
+            evidence that follows their resolution. VALORA does not use it as a market listing.
           </p>
         </div>
+        {isAdmin ? <Button variant="secondary" onClick={onEdit}>Edit unit</Button> : null}
       </div>
     </Drawer>);
 }
@@ -127,6 +150,7 @@ function PropertiesBody() {
     const [minSize, setMinSize] = useState('');
     const [selected, setSelected] = useState(null);
     const [creating, setCreating] = useState(false);
+    const [editing, setEditing] = useState(null);
     const properties = useAsync(() => api.get('/api/v1/properties', {
         estate_id: estateId,
         size: 100,
@@ -144,8 +168,7 @@ function PropertiesBody() {
           </p>
           <h1 className="mt-2 text-[26px] leading-tight font-semibold">Properties</h1>
           <p className="mt-1 text-[13.5px] text-ink-muted">
-            Every unit in this estate. Operational history attaches to these records — not to a
-            listing.
+            Every registered unit in this estate. Operational history attaches to these records.
           </p>
         </div>
         {isAdmin ? (<Button variant="primary" onClick={() => setCreating(true)}>
@@ -212,7 +235,9 @@ function PropertiesBody() {
           </tbody>
         </TableShell>)}
 
-      {selected ? (<PropertyDrawer property={selected} mine={myUnits.has(selected.id)} onClose={() => setSelected(null)}/>) : null}
+      {selected ? (<PropertyDrawer property={selected} mine={myUnits.has(selected.id)} isAdmin={isAdmin} onClose={() => setSelected(null)} onEdit={() => setEditing(selected)}/>) : null}
+
+      {editing ? <EditPropertyDrawer property={editing} onClose={() => setEditing(null)} onDone={() => { setEditing(null); setSelected(null); properties.reload(); }}/> : null}
 
       {creating ? (<CreatePropertyDrawer onClose={() => setCreating(false)} onDone={() => {
                 setCreating(false);

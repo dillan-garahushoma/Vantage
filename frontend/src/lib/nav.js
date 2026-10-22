@@ -1,4 +1,4 @@
-import { Activity, Boxes, Building2, HardHat, HeartHandshake, LayoutDashboard, Megaphone, Settings, ShieldAlert, Sparkles, UserCheck, Users, Wallet, Wrench, } from 'lucide-react';
+import { Activity, Building2, HardHat, LayoutDashboard, Megaphone, ShieldAlert, Sparkles, UserCheck, Users, Wrench, } from 'lucide-react';
 export const navGroups = [
     {
         label: 'Estate',
@@ -16,24 +16,11 @@ export const navGroups = [
                 hint: 'The stored Living Score and its five pillars',
             },
             {
-                to: '/app/assets',
-                label: 'Assets & infrastructure',
-                icon: Boxes,
-                hint: 'Plant equipment, spatial map & operational assets',
-            },
-            {
                 to: '/app/properties',
                 label: 'Residential units',
                 icon: Building2,
-                roles: ['resident', 'hoa_admin', 'investor', 'estate_agent'],
+                roles: ['resident', 'hoa_admin'],
                 hint: 'Registered homes and the estate property roll',
-            },
-            {
-                to: '/app/property-workflows',
-                label: 'Property & investment',
-                icon: Building2,
-                roles: ['resident', 'hoa_admin', 'investor', 'estate_agent'],
-                hint: 'Units, listings, sale requests and investment capabilities',
             },
             {
                 to: '/app/announcements',
@@ -68,37 +55,11 @@ export const navGroups = [
                 hint: 'Jobs assigned to your provider profile',
             },
             {
-                to: '/provider/portal',
-                label: 'Provider portal',
-                icon: HardHat,
-                roles: ['service_provider', 'hoa_admin'],
-                hint: 'Check-in, photo evidence and contractor jobs',
-            },
-            {
                 to: '/app/incidents',
                 label: 'Incidents & security',
                 icon: ShieldAlert,
-                roles: ['resident', 'hoa_admin', 'investor', 'estate_agent'],
-                hint: 'Security and safety incidents on record',
-            },
-        ],
-    },
-    {
-        label: 'Governance',
-        items: [
-            {
-                to: '/app/financial',
-                label: 'Financial & service',
-                icon: Wallet,
-                roles: ['hoa_admin', 'investor'],
-                hint: 'Budget variance, levy collection and capital reserves',
-            },
-            {
-                to: '/app/community',
-                label: 'Resident experience',
-                icon: HeartHandshake,
                 roles: ['resident', 'hoa_admin'],
-                hint: 'Satisfaction pulse, service themes and sentiment',
+                hint: 'Security and safety incidents on record',
             },
         ],
     },

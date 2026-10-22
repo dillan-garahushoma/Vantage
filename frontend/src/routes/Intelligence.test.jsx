@@ -113,6 +113,16 @@ beforeEach(() => {
         if (path === '/api/v1/analytics/intelligence')
             return { briefing: weeklyBriefing, recommendations: priorityRecommendations,
                 operational_signals: { open_complaints: 105, work_orders_in_flight: 2, unresolved_incidents: 1 } };
+        if (path === '/api/v1/analytics/intelligence/history')
+            return { items: [{ estate_id: 1, estate_name: 'Greenhaven Estate', briefing_id: 88,
+                        as_of: '2026-10-15T08:00:00Z', briefing: weeklyBriefing,
+                        recommendations: [], operational_signals: { open_complaints: 3, work_orders_in_flight: 1, unresolved_incidents: 0 },
+                        source: 'stored_records' }], total: 1, page: 1, size: 10, pages: 1 };
+        if (path === '/api/v1/analytics/intelligence/history/88')
+            return { estate_id: 1, estate_name: 'Greenhaven Estate', briefing_id: 88,
+                as_of: '2026-10-15T08:00:00Z', briefing: { ...weeklyBriefing, headline: 'Saved maintenance briefing' },
+                recommendations: [], operational_signals: { open_complaints: 3, work_orders_in_flight: 1, unresolved_incidents: 0 },
+                source: 'stored_records' };
         if (path === '/api/v1/complaints')
             return pageOf([openComplaint]);
         if (path === '/api/v1/providers') {
@@ -149,6 +159,14 @@ describe('VALORA Intelligence', () => {
         await user.click(screen.getByRole('button', { name: 'Save current briefing' }));
         await waitFor(() => expect(mocks.post).toHaveBeenCalledWith(
             '/api/v1/analytics/intelligence/briefing/generate', {}, { estate_id: 1 }));
+    });
+
+    it('loads a saved briefing only from the estate-scoped history endpoint', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await user.click(await screen.findByRole('button', { name: 'View saved briefing 88' }));
+        expect(await screen.findByText('Saved maintenance briefing')).toBeVisible();
+        expect(mocks.get).toHaveBeenCalledWith('/api/v1/analytics/intelligence/history/88', { estate_id: 1 });
     });
 
     it('renders an API denial without showing fictional recommendations', async () => {
