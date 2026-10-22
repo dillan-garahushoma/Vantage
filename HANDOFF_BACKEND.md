@@ -1,6 +1,6 @@
 # Backend handoff — property management
 
-VALORA manages residents, maintenance and building health for an apartment complex. The backend scope change is implemented locally; no commit or push was made. FastAPI, async SQLAlchemy, PostgreSQL and Alembic remain. Current migration head: `d14a5b9e7f23`.
+VALORA manages residents, maintenance and building health for an apartment complex. The backend scope change is implemented and published on `codex/valora-handoff`. FastAPI, async SQLAlchemy, PostgreSQL and Alembic remain. Current migration head: `d14a5b9e7f23`.
 
 ## Implemented
 
