@@ -11,6 +11,8 @@ from app.identity.models.user import User
 from app.identity.repositories.estate_membership_repository import EstateMembershipRepository
 from app.property.repositories.estate_repository import EstateRepository
 
+ACTIVE_MEMBERSHIP_ROLES = frozenset({'resident', 'hoa_admin', 'service_provider'})
+
 
 @dataclass(frozen=True)
 class EstateAccessSummary:
@@ -64,6 +66,9 @@ class EstateAuthorizationService:
         user_role = getattr(actor, "role", "")
 
         memberships = await self._memberships.list_for_user(user_id=user_id)
+        if user_role in ('investor', 'estate_agent', 'casual_visitor'):
+            return []
+        memberships = [m for m in memberships if m.membership_role in ACTIVE_MEMBERSHIP_ROLES]
         if not memberships:
             return []
 
@@ -133,6 +138,10 @@ class EstateAuthorizationService:
 
         if not memberships:
             raise ForbiddenException("You do not have access to this estate.")
+
+        memberships = [m for m in memberships if m.membership_role in ACTIVE_MEMBERSHIP_ROLES]
+        if not memberships or user_role in ('investor', 'estate_agent', 'casual_visitor'):
+            raise ForbiddenException('You do not have access to this estate.')
 
         roles = frozenset(
             m.membership_role for m in memberships if getattr(m, "membership_role", None) is not None

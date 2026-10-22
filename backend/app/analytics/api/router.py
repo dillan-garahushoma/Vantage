@@ -14,6 +14,6 @@ router.include_router(intelligence_router)
 async def analytics_status():
     return {
         "module": "analytics",
-        "status": "scaffolded",
-        "next": "Implement the deterministic Living Score engine before advanced ML.",
+        "status": "available",
+        "capabilities": ["living_score", "maintenance_intelligence", "briefing_history"],
     }

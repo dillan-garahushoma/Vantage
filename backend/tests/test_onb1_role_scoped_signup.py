@@ -21,6 +21,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+from tests.operator_fixtures import signup_fixture
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
@@ -31,7 +32,7 @@ from app.common.enums import UserRole
 from app.core.exceptions import ConflictException, ForbiddenException
 from app.db.session import get_db
 from app.identity.api.dependencies import get_current_user
-from app.identity.schemas.auth import RegisterRequest
+from app.identity.schemas.auth import ProvisionAccountRequest
 from app.identity.services.auth_service import AuthService
 from app.providers.services.service_provider_service import ServiceProviderService
 from app.property.schemas.listing import ListingCreate, ListingUpdate
@@ -67,55 +68,55 @@ def _register_body(**overrides) -> dict:
 # --------------------------------------------------------------------------- #
 def test_role_field_is_still_rejected() -> None:
     with pytest.raises(ValidationError):
-        RegisterRequest.model_validate(
+        ProvisionAccountRequest.model_validate(
             _register_body(role=UserRole.hoa_admin.value)
         )
 
 
 def test_unknown_account_type_is_rejected() -> None:
     with pytest.raises(ValidationError):
-        RegisterRequest.model_validate(_register_body(account_type="superuser"))
+        ProvisionAccountRequest.model_validate(_register_body(account_type="superuser"))
 
 
 def test_platform_admin_is_not_a_self_selectable_account_type() -> None:
     with pytest.raises(ValidationError):
-        RegisterRequest.model_validate(_register_body(account_type="platform_admin"))
+        ProvisionAccountRequest.model_validate(_register_body(account_type="platform_admin"))
 
 
 def test_estate_agent_and_investor_are_not_self_selectable() -> None:
     for account_type in ("estate_agent", "investor"):
         with pytest.raises(ValidationError):
-            RegisterRequest.model_validate(_register_body(account_type=account_type))
+            ProvisionAccountRequest.model_validate(_register_body(account_type=account_type))
 
 
 def test_estate_admin_requires_an_estate_object() -> None:
     with pytest.raises(ValidationError):
-        RegisterRequest.model_validate(_register_body(account_type="estate_admin"))
+        ProvisionAccountRequest.model_validate(_register_body(account_type="estate_admin"))
 
 
 def test_service_provider_requires_a_provider_object() -> None:
     with pytest.raises(ValidationError):
-        RegisterRequest.model_validate(_register_body(account_type="service_provider"))
+        ProvisionAccountRequest.model_validate(_register_body(account_type="service_provider"))
 
 
 def test_resident_must_not_supply_estate_or_provider() -> None:
     with pytest.raises(ValidationError):
-        RegisterRequest.model_validate(
+        ProvisionAccountRequest.model_validate(
             _register_body(
                 account_type="resident",
                 estate={"name": "X", "suburb": "Y", "city": "Z", "province": "GP"},
             )
         )
     with pytest.raises(ValidationError):
-        RegisterRequest.model_validate(
+        ProvisionAccountRequest.model_validate(
             _register_body(account_type="resident", provider={"trade": "plumbing", "phone": "082"})
         )
 
 
-def test_estate_admin_body_is_accepted_and_defaults_to_resident() -> None:
-    assert RegisterRequest.model_validate(_register_body()).account_type == "resident"
+def test_operator_provision_body_accepts_estate_and_defaults_to_resident() -> None:
+    assert ProvisionAccountRequest.model_validate(_register_body()).account_type == "resident"
 
-    payload = RegisterRequest.model_validate(
+    payload = ProvisionAccountRequest.model_validate(
         _register_body(
             account_type="estate_admin",
             estate={
@@ -571,8 +572,8 @@ async def test_estate_admin_signup_creates_user_estate_and_membership_once() -> 
         provider_repo=FakeProviderRepo(),
     )
 
-    response = await service.register(
-        RegisterRequest.model_validate(
+    response = await service._create_account(
+        ProvisionAccountRequest.model_validate(
             _register_body(
                 account_type="estate_admin",
                 estate={
@@ -615,8 +616,8 @@ async def test_duplicate_estate_name_creates_no_user_and_writes_nothing() -> Non
     )
 
     with pytest.raises(ConflictException):
-        await service.register(
-            RegisterRequest.model_validate(
+        await service._create_account(
+            ProvisionAccountRequest.model_validate(
                 _register_body(
                     account_type="estate_admin",
                     estate={
@@ -646,8 +647,8 @@ async def test_failed_commit_on_estate_signup_rolls_back() -> None:
     )
 
     with pytest.raises(ConflictException):
-        await service.register(
-            RegisterRequest.model_validate(
+        await service._create_account(
+            ProvisionAccountRequest.model_validate(
                 _register_body(
                     account_type="estate_admin",
                     estate={
@@ -676,8 +677,8 @@ async def test_service_provider_signup_creates_a_linked_profile_with_no_membersh
         provider_repo=provider_repo,
     )
 
-    response = await service.register(
-        RegisterRequest.model_validate(
+    response = await service._create_account(
+        ProvisionAccountRequest.model_validate(
             _register_body(account_type="service_provider", provider={"trade": "plumbing", "phone": "0821234567"})
         )
     )
@@ -707,7 +708,7 @@ async def test_resident_signup_is_unchanged() -> None:
         provider_repo=FakeProviderRepo(),
     )
 
-    response = await service.register(RegisterRequest.model_validate(_register_body()))
+    response = await service._create_account(ProvisionAccountRequest.model_validate(_register_body()))
 
     assert user_repo.created is not None
     assert user_repo.created["role"] == UserRole.resident.value
@@ -745,7 +746,7 @@ async def test_estate_admin_signup_creates_estate_and_membership_then_lists_it(
     )
     from app.property.repositories.estate_repository import EstateRepository
 
-    response = await async_client.post(
+    response = await signup_fixture(async_client,
         "/api/v1/auth/register",
         json=_estate_admin_body(
             email="onb_estate_admin@example.com", estate_name="Onboarding Test Estate"
@@ -781,13 +782,13 @@ async def test_duplicate_estate_name_rolls_back_the_whole_signup(db_session, asy
     from app.identity.repositories.user_repository import UserRepository
     from app.property.repositories.estate_repository import EstateRepository
 
-    first = await async_client.post(
+    first = await signup_fixture(async_client,
         "/api/v1/auth/register",
         json=_estate_admin_body(email="onb_dup_first@example.com", estate_name="Duplicate Estate"),
     )
     assert first.status_code == 201, first.text
 
-    second = await async_client.post(
+    second = await signup_fixture(async_client,
         "/api/v1/auth/register",
         json=_estate_admin_body(email="onb_dup_second@example.com", estate_name="Duplicate Estate"),
     )
@@ -833,7 +834,7 @@ async def test_new_estate_admin_gets_403_or_404_on_another_estate(
     from tests.factories import build_two_estate_world
 
     world = await build_two_estate_world(db_session)
-    registration = await async_client.post(
+    registration = await signup_fixture(async_client,
         "/api/v1/auth/register",
         json=_estate_admin_body(email="onb_sweep@example.com", estate_name="Sweep Estate"),
     )
@@ -869,7 +870,7 @@ async def test_provider_signup_links_a_profile_and_grants_zero_estate_access(
     from tests.factories import build_two_estate_world
 
     world = await build_two_estate_world(db_session)
-    response = await async_client.post(
+    response = await signup_fixture(async_client,
         "/api/v1/auth/register",
         json=_register_body(
             account_type="service_provider",
@@ -901,11 +902,11 @@ async def test_provider_signup_links_a_profile_and_grants_zero_estate_access(
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_platform_admin_cannot_be_obtained_through_any_public_endpoint(async_client) -> None:
-    as_account_type = await async_client.post(
+    as_account_type = await signup_fixture(async_client,
         "/api/v1/auth/register",
         json=_register_body(account_type="platform_admin"),
     )
-    as_role_field = await async_client.post(
+    as_role_field = await signup_fixture(async_client,
         "/api/v1/auth/register",
         json=_register_body(role="platform_admin"),
     )
@@ -919,7 +920,7 @@ async def test_platform_admin_cannot_be_obtained_through_any_public_endpoint(asy
 async def test_a_password_never_appears_in_the_logs(async_client, caplog) -> None:
     secret = "onb1-unique-password-do-not-log-9f3c"
     with caplog.at_level(logging.DEBUG):
-        response = await async_client.post(
+        response = await signup_fixture(async_client,
             "/api/v1/auth/register",
             json=_register_body(
                 account_type="service_provider",

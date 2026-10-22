@@ -14,6 +14,7 @@ from app.community.schemas.complaint import (
 )
 from app.core.exceptions import ConflictException, ForbiddenException, NotFoundException
 from app.identity.models.user import User
+from app.identity.repositories.account_support_repository import AccountSupportRepository
 from app.identity.services.estate_authorization_service import (
     EstateAccess,
     EstateAuthorizationService,
@@ -23,9 +24,30 @@ from app.property.repositories.property_repository import PropertyRepository
 
 class ComplaintService:
     def __init__(self, db: AsyncSession) -> None:
+        self._db = db
+        self._notifications = AccountSupportRepository(db)
         self._repo = ComplaintRepository(db)
         self._property_repo = PropertyRepository(db)
         self._estate_authorization = EstateAuthorizationService(db)
+
+    async def reopen(self, complaint_id: int, note: str, actor: User, *, estate_id: int):
+        access = await self._estate_authorization.resolve_access(actor, estate_id)
+        complaint = await self._repo.lock_in_estate(complaint_id=complaint_id, estate_id=estate_id)
+        if complaint is None:
+            raise NotFoundException('Complaint not found.')
+        if not access.is_estate_admin and complaint.user_id != actor.user_id:
+            raise ForbiddenException('Only the reporting resident or estate manager may reopen this complaint.')
+        if complaint.status not in ('resolved', 'rated', 'closed'):
+            raise ConflictException('Only a resolved complaint can be reopened.')
+        old_status = complaint.status
+        complaint.status = 'submitted'
+        complaint.reviewed_at = complaint.assigned_at = complaint.started_at = complaint.resolved_at = None
+        complaint.assigned_to = None
+        await self._repo.record_transition(complaint=complaint, actor_user_id=actor.user_id,
+            from_status=old_status, to_status='submitted', note=note, commit=False)
+        await self._db.commit()
+        await self._db.refresh(complaint)
+        return self._to_response(complaint, actor)
 
     # ---- helpers -------------------------------------------------------
 
@@ -68,7 +90,11 @@ class ComplaintService:
             description=payload.description.strip(),
             priority=payload.priority,
             is_anonymous=payload.is_anonymous,
+            commit=False,
         )
+        await self._notifications.notify_admins(estate_id=estate_id, kind='complaint_submitted',
+            resource_id=complaint.complaint_id)
+        await self._db.commit()
         return self._to_response(complaint, user)
 
     async def list_complaints(
@@ -139,7 +165,13 @@ class ComplaintService:
             from_status=old_status,
             to_status=new_status,
             note=payload.note.strip() if payload.note else None,
+            commit=False,
         )
+        if hasattr(self, '_notifications'):
+            await self._notifications.notify(estate_id=estate_id, user_ids={complaint.user_id},
+                kind='complaint_reviewed', resource_id=complaint.complaint_id)
+            await self._db.commit()
+            await self._db.refresh(complaint)
         return self._to_response(complaint, admin)
 
     async def list_events(

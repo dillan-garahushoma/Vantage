@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.enums import UserRole
 from app.identity.models.estate_membership import EstateMembership
+from app.identity.models.user import User
 from app.providers.models.service_provider import ServiceProvider
 
 
@@ -18,9 +19,11 @@ def _estate_member_statement(*, estate_id: int):
     return (
         select(ServiceProvider)
         .join(EstateMembership, EstateMembership.user_id == ServiceProvider.user_id)
+        .join(User, User.user_id == ServiceProvider.user_id)
         .where(
             EstateMembership.estate_id == estate_id,
             EstateMembership.membership_role == UserRole.service_provider.value,
+            User.role == UserRole.service_provider.value,
         )
         .distinct()
     )

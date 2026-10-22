@@ -20,6 +20,7 @@ from decimal import Decimal
 from types import SimpleNamespace
 
 import pytest
+from tests.operator_fixtures import signup_fixture
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
@@ -1265,7 +1266,7 @@ def _bearer(token: str) -> dict:
 
 async def _new_estate_world(client, *, name: str, email: str, unit_nos=("A-1",)):
     """Sign up an estate admin, add units, share a code. Returns (headers, code, estate_id, unit_ids)."""
-    registration = await client.post(
+    registration = await signup_fixture(client,
         f"{BASE}/auth/register",
         json={
             "full_name": "Estate Admin",
@@ -1322,7 +1323,7 @@ async def test_full_resident_journey_bulk_units_code_join_and_removal(db_session
     assert {item["role"] for item in listed.json()["items"]} == {"hoa_admin"}
 
     # 2. A resident registers and joins with the code and their unit number.
-    registered = await async_client.post(
+    registered = await signup_fixture(async_client,
         f"{BASE}/auth/register",
         json={
             "full_name": "Nandi Dlamini",
@@ -1407,7 +1408,7 @@ async def test_resident_can_report_only_for_their_own_unit_and_sees_no_one_else(
     )
 
     async def _join(email: str, unit_no: str) -> dict:
-        registered = await async_client.post(
+        registered = await signup_fixture(async_client,
             f"{BASE}/auth/register",
             json={"full_name": "Resident", "email": email, "password": PASSWORD},
         )
@@ -1489,7 +1490,7 @@ async def test_code_rotation_leaves_exactly_one_active_code(db_session, async_cl
     assert current.json()["code"] == second_code
 
     # The revoked code no longer joins anyone.
-    registered = await async_client.post(
+    registered = await signup_fixture(async_client,
         f"{BASE}/auth/register",
         json={"full_name": "Late", "email": "onb2_late@example.com", "password": PASSWORD},
     )
@@ -1511,7 +1512,7 @@ async def test_join_after_five_bad_codes_is_rate_limited(db_session, async_clien
     _, code, estate_id, _ = await _new_estate_world(
         async_client, name="Onb2 Limit Estate", email="onb2_limit_admin@example.com"
     )
-    registered = await async_client.post(
+    registered = await signup_fixture(async_client,
         f"{BASE}/auth/register",
         json={"full_name": "Limiter", "email": "onb2_limit@example.com", "password": PASSWORD},
     )
@@ -1545,7 +1546,7 @@ async def test_a_code_never_appears_in_logs_or_in_an_error_body(db_session, asyn
     _, code, estate_id, _ = await _new_estate_world(
         async_client, name="Onb2 Secrets Estate", email="onb2_secret_admin@example.com"
     )
-    registered = await async_client.post(
+    registered = await signup_fixture(async_client,
         f"{BASE}/auth/register",
         json={"full_name": "Secret", "email": "onb2_secret@example.com", "password": PASSWORD},
     )
@@ -1684,7 +1685,7 @@ async def test_concurrent_duplicate_joins_create_one_membership(db_session, asyn
     admin_headers, code, estate_id, unit_ids = await _new_estate_world(
         async_client, name="Onb2 Race Estate", email="onb2_race_admin@example.com"
     )
-    registered = await async_client.post(
+    registered = await signup_fixture(async_client,
         f"{BASE}/auth/register",
         json={"full_name": "Racer", "email": "onb2_race@example.com", "password": PASSWORD},
     )

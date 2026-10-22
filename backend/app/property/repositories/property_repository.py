@@ -162,3 +162,6 @@ class PropertyRepository:
         self._db.add(property_)
         await self._db.flush()
         return property_
+
+    async def flush(self) -> None:
+        await self._db.flush()

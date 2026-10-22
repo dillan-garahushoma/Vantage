@@ -11,6 +11,11 @@ class ComplaintRepository:
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
+    async def lock_in_estate(self, *, complaint_id: int, estate_id: int):
+        return (await self._db.execute(select(Complaint).where(
+            Complaint.complaint_id == complaint_id, Complaint.estate_id == estate_id)
+            .with_for_update())).scalar_one_or_none()
+
     async def get_stats_aggregates(self, *, estate_id: int) -> dict:
         total_res = await self._db.execute(
             select(func.count(Complaint.complaint_id)).where(Complaint.estate_id == estate_id)

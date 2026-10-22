@@ -11,7 +11,7 @@ class MaintenanceworkOrder(Base):
             "uq_active_work_order_per_complaint",
             "complaint_id",
             unique=True,
-            postgresql_where=text("status <> 'cancelled'"),
+            postgresql_where=text("status IN ('assigned', 'in_progress')"),
         ),
         CheckConstraint(
             "resident_rating IS NULL OR (resident_rating >= 1 AND resident_rating <= 5)",

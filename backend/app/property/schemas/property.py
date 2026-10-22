@@ -43,6 +43,14 @@ class BulkUnitItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class PropertyUpdate(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    street_address: str | None = Field(default=None, min_length=1, max_length=255)
+    size_m2: Decimal | None = Field(default=None, gt=0, max_digits=8, decimal_places=2)
+    bedrooms: int | None = Field(default=None, ge=0, le=100)
+    bathrooms: int | None = Field(default=None, ge=0, le=100)
+
+
 class BulkUnitsRequest(BaseModel):
     """Create many units in one all-or-nothing request (1 to 500)."""
 

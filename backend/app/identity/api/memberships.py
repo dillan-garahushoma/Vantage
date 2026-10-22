@@ -24,6 +24,7 @@ from app.identity.schemas.membership import (
     MembershipJoinResponse,
     MembershipProviderAddRequest,
     MembershipResponse,
+    MembershipUnitUpdate,
 )
 from app.identity.services.membership_service import MembershipService
 
@@ -31,6 +32,18 @@ router = APIRouter(prefix="/memberships", tags=["identity"])
 
 ResidentOnly = Annotated[User, require_roles(UserRole.resident.value)]
 AdminOnly = Annotated[User, require_roles(UserRole.hoa_admin.value)]
+
+
+@router.patch('/{membership_id}/unit', response_model=MembershipResponse)
+async def transfer_unit(
+    membership_id: int,
+    payload: MembershipUnitUpdate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    admin: AdminOnly,
+    estate_id: Annotated[int, Query(gt=0)],
+) -> MembershipResponse:
+    return await MembershipService(db).transfer_unit(admin, estate_id=estate_id,
+        membership_id=membership_id, property_id=payload.property_id)
 
 
 @router.get("", response_model=Page[MembershipResponse])

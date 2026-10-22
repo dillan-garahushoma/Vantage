@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.enums import ResidencyRequestStatus, UserRole
 from app.identity.models.estate_residency_request import EstateResidencyRequest
 from app.identity.repositories.estate_membership_repository import EstateMembershipRepository
-from app.notifications.email import EmailMessage, EmailSender
+from app.notifications.email import EmailMessage, EmailSender, NullEmailSender
 
 logger = logging.getLogger(__name__)
 
@@ -169,10 +169,12 @@ class ResidencyNotifier:
         caller stamps ``notified_at`` / ``decision_notified_at``. A False result is
         logged loudly and leaves the request untouched.
         """
+        if isinstance(self._sender, NullEmailSender):
+            return False
         try:
             await self._sender.send(message)
         except Exception:  # noqa: BLE001 - a relay failure must never fail the request
-            logger.exception("could not send residency email (%s)", context)
+            logger.warning("could not send residency email (%s)", context)
             return False
         return True
 

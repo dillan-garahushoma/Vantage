@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 from types import SimpleNamespace
 
 import pytest
+from tests.operator_fixtures import signup_fixture
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
@@ -963,7 +964,7 @@ def _bearer(token: str) -> dict:
 
 
 async def _estate_with_unit(client, *, name: str, email: str, unit_no: str) -> tuple[dict, int, int]:
-    registration = await client.post(
+    registration = await signup_fixture(client,
         f"{BASE}/auth/register",
         json={
             "full_name": "Estate Admin",
@@ -992,7 +993,7 @@ async def _estate_with_unit(client, *, name: str, email: str, unit_no: str) -> t
 
 
 async def _resident_headers(client, *, email: str) -> dict:
-    registered = await client.post(
+    registered = await signup_fixture(client,
         f"{BASE}/auth/register",
         json={"full_name": "Nandi Dlamini", "email": email, "password": PASSWORD},
     )

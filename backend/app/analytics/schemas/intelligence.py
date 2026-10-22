@@ -2,9 +2,9 @@
 
 Defines the exact contracts for:
 - Weekly executive briefings
-- Priority recommendations (ordered by expected cost avoidance)
+- Evidence-based maintenance priorities (overdue jobs, then urgent complaints)
 - Ask VALORA structured Q&A
-- Operational signals export for n8n workflow ingestion
+- Estate-authorized operational metadata export
 """
 from __future__ import annotations
 
@@ -58,9 +58,9 @@ class PriorityRecommendation(BaseModel):
     summary: str
     evidence: list[RecommendationEvidence] = Field(default_factory=list)
     confidence: RecommendationConfidence
-    confidence_value: int = Field(..., serialization_alias="confidenceValue")
+    confidence_value: int | None = Field(default=None, serialization_alias="confidenceValue")
     impact: str
-    savings_zar: float = Field(..., serialization_alias="savingsZar")
+    savings_zar: float | None = Field(default=None, serialization_alias="savingsZar")
     suggested_action: str = Field(..., serialization_alias="suggestedAction")
     work_order_defaults: WorkOrderDefaults = Field(..., serialization_alias="workOrderDefaults")
 
@@ -73,7 +73,7 @@ class WeeklyBriefing(BaseModel):
     window_label: str = Field(..., serialization_alias="windowLabel")
     signals_reviewed: int = Field(..., serialization_alias="signalsReviewed")
     sources: int
-    avoidable_zar: float = Field(..., serialization_alias="avoidableZar")
+    avoidable_zar: float | None = Field(default=None, serialization_alias="avoidableZar")
 
 
 class OperationalSignalCounts(BaseModel):

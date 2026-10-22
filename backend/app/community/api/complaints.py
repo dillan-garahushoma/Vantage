@@ -12,6 +12,7 @@ from app.community.schemas.complaint import (
     ComplaintResponse,
     ComplaintStatsResponse,
     ComplaintStatusUpdate,
+    ComplaintReopen,
 )
 from app.community.schemas.complaint_ai import (
     TriageDecisionRequest,
@@ -31,6 +32,17 @@ AdminOnly = Annotated[User, require_roles(UserRole.hoa_admin.value)]
 ResidentOrAdmin = Annotated[
     User, require_roles(UserRole.resident.value, UserRole.hoa_admin.value)
 ]
+
+
+@router.post('/{complaint_id}/reopen', response_model=ComplaintResponse)
+async def reopen_complaint(
+    complaint_id: int,
+    payload: ComplaintReopen,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    actor: ResidentOrAdmin,
+    estate_id: Annotated[int, Query(gt=0)],
+) -> ComplaintResponse:
+    return await ComplaintService(db).reopen(complaint_id, payload.note, actor, estate_id=estate_id)
 
 
 @router.get("", response_model=Page[ComplaintResponse])

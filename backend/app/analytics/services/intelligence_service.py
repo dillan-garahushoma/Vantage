@@ -7,6 +7,7 @@ from app.analytics.repositories.intelligence_repository import IntelligenceRepos
 from app.analytics.schemas.intelligence import (
     AskValoraResponse, EstateIntelligenceResponse, EstateSignalsExport,
     IngestIntelligencePayload, OperationalSignalCounts, WeeklyBriefing,
+    PriorityRecommendation, RecommendationEvidence, WorkOrderDefaults,
 )
 from app.common.pagination import Page
 from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
@@ -14,7 +15,7 @@ from app.identity.models.user import User
 from app.identity.services.estate_authorization_service import EstateAuthorizationService
 from app.property.repositories.estate_repository import EstateRepository
 
-VERSION = 'operational-v1'
+VERSION = 'maintenance-v2'
 LIMITATIONS = [
     'Counts describe current stored records, not a weekly activity total.',
     'No telemetry, failure prediction, verified savings or valuation evidence is available in this briefing.',
@@ -48,7 +49,7 @@ def _briefing(estate_name: str, facts: dict) -> WeeklyBriefing:
               f"{counts['unresolved_incidents']} unresolved security incidents. "
               'Review the source records before deciding on maintenance. Forecasts and savings are unavailable.'),
         window_label='Current stored records', signals_reviewed=sum(counts.values()),
-        sources=3, avoidable_zar=0,
+        sources=3, avoidable_zar=None,
     )
 
 
@@ -67,20 +68,49 @@ class IntelligenceService:
             raise ForbiddenException('Your estate membership does not permit this action.')
 
     async def _require_member(self, actor: User, estate_id: int):
-        await self._auth.resolve_access(actor, estate_id)
+        return await self._auth.resolve_access(actor, estate_id)
 
-    async def _current(self, estate_id: int) -> EstateIntelligenceResponse:
+    async def _current(self, estate_id: int, *, include_priorities: bool = False) -> EstateIntelligenceResponse:
         estate = await self._estates.get_by_id(estate_id)
         if estate is None:
             raise NotFoundException('Estate not found.')
         facts = await self._records.facts(estate_id)
+        now = datetime.now(timezone.utc)
+        priorities = []
+        if include_priorities:
+            records = await self._records.maintenance_priorities(estate_id, now)
+            facts['maintenance_priorities'] = records
+            for record in records:
+                overdue = record['kind'] == 'overdue_work_order'
+                ident = record['id']
+                title = f'Overdue work order #{ident}' if overdue else f"Unassigned {record['priority']} complaint #{ident}"
+                source = f"maintenance_work_orders #{ident}" if overdue else f"complaints #{ident}"
+                detail = (f"Expected completion: {record['due_at']}; status: {record['status']}"
+                          if overdue else f"Recorded priority: {record['priority']}; created: {record['created_at']}")
+                action = ('Review the existing work order and agree a revised completion date with the assigned provider.'
+                          if overdue else 'Review this complaint, then select an authorized provider before creating a work order.')
+                priorities.append(PriorityRecommendation(id=f"{record['kind']}-{ident}",
+                    kind='EMERGING SERVICE RISK', title=title,
+                    summary=detail, evidence=[RecommendationEvidence(label=source, detail=detail,
+                        source=f'{source} [estate_id={estate_id}; measured_at={now.isoformat()}]')],
+                    confidence='High', confidence_value=None, impact='Requires manager review; no financial estimate.',
+                    savings_zar=None, suggested_action=action,
+                    work_order_defaults=WorkOrderDefaults(title=title,
+                        priority='high' if overdue else record['priority'], description=action)))
         return EstateIntelligenceResponse(
-            estate_id=estate_id, estate_name=estate.name, as_of=datetime.now(timezone.utc),
-            briefing=_briefing(estate.name, facts), recommendations=[],
+            estate_id=estate_id, estate_name=estate.name, as_of=now,
+            briefing=_briefing(estate.name, facts), recommendations=priorities, template_version=VERSION,
             operational_signals=OperationalSignalCounts(**facts['counts']), source='stored_records',
             data_origin='demo' if bool(getattr(estate, 'is_demo', False)) else 'live',
             facts=facts, evidence=_evidence(estate_id, facts), limitations=LIMITATIONS,
         )
+
+    @staticmethod
+    def _for_viewer(output: EstateIntelligenceResponse, access) -> EstateIntelligenceResponse:
+        if access.is_estate_admin:
+            return output
+        return output.model_copy(update={'recommendations': [],
+            'facts': {key: value for key, value in output.facts.items() if key != 'maintenance_priorities'}})
 
     @staticmethod
     def _stored(row) -> EstateIntelligenceResponse:
@@ -90,14 +120,16 @@ class IntelligenceService:
         })
 
     async def get_intelligence(self, estate_id: int, actor: User) -> EstateIntelligenceResponse:
-        await self._require_member(actor, estate_id)
+        access = await self._require_member(actor, estate_id)
         # Original measurement time stays with saved output; GET never writes.
         rows, _ = await self._records.history(estate_id, offset=0, limit=1)
-        return self._stored(rows[0]) if rows else await self._current(estate_id)
+        output = self._stored(rows[0]) if rows else await self._current(estate_id, include_priorities=access.is_estate_admin)
+        return self._for_viewer(output, access)
 
     async def ask_valora(self, estate_id: int, question: str, actor: User) -> AskValoraResponse:
-        await self._require_member(actor, estate_id)
-        current = await self._current(estate_id)
+        access = await self._require_member(actor, estate_id)
+        current = await self._current(estate_id, include_priorities=access.is_estate_admin and any(
+            word in question.casefold() for word in ('priority', 'priorities', 'overdue', 'maintenance')))
         facts = current.facts
         q = question.casefold()
         summary = current.briefing.body
@@ -114,10 +146,12 @@ class IntelligenceService:
                 summary = f"The stored score is {latest['overall_score']}/100. No comparable preceding numeric snapshot is available."
         elif any(word in q for word in ('next month', 'predict', 'failure', 'saving', 'roi', 'yield', 'price')):
             summary = 'Stored operational records cannot establish this forecast, saving or property return. ' + summary
+        elif current.recommendations:
+            summary = ' '.join(item.title + ': ' + item.summary for item in current.recommendations[:5])
         else:
             summary = 'I can summarize counts and stored Living Scores; asset-specific causes require additional evidence. ' + summary
         return AskValoraResponse(
-            summary=summary, evidence=current.evidence,
+            summary=summary, evidence=current.evidence + [ev.source for item in current.recommendations for ev in item.evidence],
             recommendation='Review the cited records; an estate administrator must verify any proposed action.',
             related=['Complaints', 'Work orders', 'Security incidents'], source='estate-domain',
             as_of=current.as_of, estate_id=estate_id, limitations=current.limitations,
@@ -144,7 +178,7 @@ class IntelligenceService:
 
     async def generate(self, estate_id: int, actor: User) -> EstateIntelligenceResponse:
         await self._require_admin(actor, estate_id)
-        return await self._save(await self._current(estate_id), actor)
+        return await self._save(await self._current(estate_id, include_priorities=True), actor)
 
     async def ingest_intelligence(self, estate_id: int, payload: IngestIntelligencePayload,
                                   actor: User | None = None, internal_key: str | None = None) -> bool:
@@ -158,13 +192,13 @@ class IntelligenceService:
         return True
 
     async def history(self, estate_id: int, actor: User, *, page: int = 1, size: int = 20) -> Page[EstateIntelligenceResponse]:
-        await self._require_member(actor, estate_id)
+        access = await self._require_member(actor, estate_id)
         rows, total = await self._records.history(estate_id, offset=(page - 1) * size, limit=size)
-        return Page(items=[self._stored(row) for row in rows], total=total, page=page, size=size)
+        return Page(items=[self._for_viewer(self._stored(row), access) for row in rows], total=total, page=page, size=size)
 
     async def get_history(self, estate_id: int, briefing_id: int, actor: User) -> EstateIntelligenceResponse:
-        await self._require_member(actor, estate_id)
+        access = await self._require_member(actor, estate_id)
         row = await self._records.get(estate_id, briefing_id)
         if row is None:
             raise NotFoundException('Intelligence briefing not found.')
-        return self._stored(row)
+        return self._for_viewer(self._stored(row), access)

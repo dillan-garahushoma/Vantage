@@ -15,6 +15,7 @@ from app.property.schemas.property import (
     BulkUnitsRequest,
     PropertyCreate,
     PropertyResponse,
+    PropertyUpdate,
 )
 
 
@@ -24,6 +25,22 @@ class PropertyService:
         self._repo = PropertyRepository(db)
         self._estate_repo = EstateRepository(db)
         self._estate_authorization = EstateAuthorizationService(db)
+
+    async def update_property(self, unit_id: int, payload: PropertyUpdate, actor: User,
+                              *, estate_id: int) -> PropertyResponse:
+        await self._estate_authorization.require_role(actor=actor, estate_id=estate_id,
+            allowed_roles=('hoa_admin',))
+        unit = await self._get_or_404_in_estate(unit_id=unit_id, estate_id=estate_id)
+        changes = payload.model_dump(exclude_unset=True)
+        if 'street_address' in changes:
+            if not changes['street_address'] or not changes['street_address'].strip():
+                raise ConflictException('A street address is required.')
+            changes['street_address'] = changes['street_address'].strip()
+        for key, value in changes.items():
+            setattr(unit, key, value)
+        await self._repo.flush()
+        await self._db.commit()
+        return PropertyResponse.model_validate(unit)
 
     async def search_properties(
         self,
@@ -38,7 +55,7 @@ class PropertyService:
         actor: User,
     ) -> Page[PropertyResponse]:
         await self._estate_authorization.require_membership(
-            user_id=actor.user_id, estate_id=estate_id
+            actor=actor, estate_id=estate_id
         )
         offset = (page - 1) * size
         properties = await self._repo.search(
@@ -68,7 +85,7 @@ class PropertyService:
         self, *, unit_id: int, estate_id: int, actor: User
     ) -> PropertyResponse:
         await self._estate_authorization.require_membership(
-            user_id=actor.user_id, estate_id=estate_id
+            actor=actor, estate_id=estate_id
         )
         property_ = await self._get_or_404_in_estate(unit_id=unit_id, estate_id=estate_id)
         return PropertyResponse.model_validate(property_)

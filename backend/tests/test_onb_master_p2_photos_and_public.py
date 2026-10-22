@@ -21,6 +21,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+from tests.operator_fixtures import signup_fixture
 from PIL import Image
 from pydantic import ValidationError
 from sqlalchemy.dialects import postgresql
@@ -378,7 +379,7 @@ def _bearer(token: str) -> dict:
 
 
 async def _estate_world(client, *, name: str, email: str, units=("A-1",)):
-    registration = await client.post(
+    registration = await signup_fixture(client,
         f"{BASE}/auth/register",
         json={
             "full_name": "Estate Admin",
@@ -764,7 +765,7 @@ async def test_the_profile_is_readable_by_members_and_writable_only_by_admins(
     code = (
         await async_client.post(f"{BASE}/join-codes?estate_id={estate_id}", json={}, headers=admin)
     ).json()["code"]
-    resident_registration = await async_client.post(
+    resident_registration = await signup_fixture(async_client,
         f"{BASE}/auth/register",
         json={"full_name": "Resident", "email": "p2_resident@example.com", "password": PASSWORD},
     )

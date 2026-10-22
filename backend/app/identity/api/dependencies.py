@@ -39,6 +39,10 @@ async def get_current_user(
     user = await repo.get_by_id(user_id)
     if user is None:
         raise CredentialsException()
+    if payload.get('version', 0) != (getattr(user, 'auth_version', 0) or 0):
+        raise CredentialsException('Your session has expired. Sign in again.')
+    if user.role in ('investor', 'estate_agent', 'casual_visitor'):
+        raise ForbiddenException('This account role has been retired. Contact the estate office.')
     return user
 
 

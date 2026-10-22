@@ -13,6 +13,8 @@ class User(Base):
     phoneno = Column(String(20))
     full_name = Column(String(100), nullable=False)
     role = Column(String(20), nullable=False)
+    auth_version = Column(Integer, nullable=False, server_default='0')
+    password_changed_at = Column(TIMESTAMP(timezone=True), nullable=True)
     unit_no = Column(String(10))
     verification_token = Column(String(255))
     email_verified = Column(Boolean, default=False)

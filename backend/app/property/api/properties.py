@@ -13,10 +13,22 @@ from app.property.schemas.property import (
     BulkUnitsRequest,
     PropertyCreate,
     PropertyResponse,
+    PropertyUpdate,
 )
 from app.property.services.property_service import PropertyService
 
 router = APIRouter(prefix="/properties", tags=["property"])
+
+
+@router.patch('/{unit_id}', response_model=PropertyResponse)
+async def update_property(
+    unit_id: int,
+    payload: PropertyUpdate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: CurrentUser,
+    estate_id: Annotated[int, Query(gt=0)],
+) -> PropertyResponse:
+    return await PropertyService(db).update_property(unit_id, payload, current_user, estate_id=estate_id)
 
 
 @router.get("", response_model=Page[PropertyResponse])

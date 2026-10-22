@@ -8,13 +8,13 @@ from app.common.datetime_utils import utcnow
 from app.common.enums import UserRole
 from app.common.validators import normalise_email
 from app.core.config import get_settings
-from app.core.exceptions import ConflictException, CredentialsException, RateLimitException
+from app.core.exceptions import ConflictException, CredentialsException, RateLimitException, ForbiddenException
 from app.core.security import create_access_token, hash_password, verify_password
 from app.identity.models.user import User
 from app.identity.repositories.estate_membership_repository import EstateMembershipRepository
 from app.identity.repositories.login_attempt_repository import LoginAttemptRepository
 from app.identity.repositories.user_repository import UserRepository
-from app.identity.schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserResponse
+from app.identity.schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserResponse, ProvisionAccountRequest
 from app.property.repositories.estate_repository import EstateRepository
 from app.providers.repositories.service_provider_repository import ServiceProviderRepository
 
@@ -34,6 +34,16 @@ class AuthService:
         self._settings = get_settings()
 
     async def register(self, payload: RegisterRequest) -> AuthResponse:
+        if payload.account_type != 'resident':
+            raise ForbiddenException('Public registration creates residents only.')
+        return await self._create_account(payload)
+
+    async def provision(self, payload: ProvisionAccountRequest, operator: User) -> UserResponse:
+        if operator.role != UserRole.platform_admin.value:
+            raise ForbiddenException('Only an operator may provision trusted accounts.')
+        return (await self._create_account(payload)).user
+
+    async def _create_account(self, payload: ProvisionAccountRequest) -> AuthResponse:
         email = normalise_email(payload.email)
 
         existing = await self._repo.get_by_email(email)
@@ -175,6 +185,9 @@ class AuthService:
             await self._record_attempt(email=email, ip_address=ip_address, successful=False)
             raise CredentialsException("Invalid email or password.")
 
+        if user.role in ('investor', 'estate_agent', 'casual_visitor'):
+            raise ForbiddenException('This account role has been retired. Contact the estate office.')
+
         await self._record_attempt(email=email, ip_address=ip_address, successful=True)
         return self._build_auth_response(user)
 
@@ -194,7 +207,8 @@ class AuthService:
 
     @staticmethod
     def _build_auth_response(user: User) -> AuthResponse:
-        token = create_access_token({"sub": str(user.user_id), "role": user.role})
+        token = create_access_token({"sub": str(user.user_id), "role": user.role,
+                                     "version": getattr(user, 'auth_version', 0) or 0})
         return AuthResponse(
             access_token=token,
             token_type="bearer",

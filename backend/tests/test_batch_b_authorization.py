@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 import pytest
 
 from app.common.enums import ComplaintStatus, UserRole
@@ -104,6 +105,8 @@ async def test_b3_resident_with_multiple_properties_can_report_for_both_not_thir
     service._estate_authorization = auth_service
     service._property_repo = FakePropertyRepo()
     service._repo = FakeComplaintRepo()
+    service._notifications = SimpleNamespace(notify_admins=AsyncMock())
+    service._db = SimpleNamespace(commit=AsyncMock())
 
     resident = SimpleNamespace(user_id=5, role="resident")
 

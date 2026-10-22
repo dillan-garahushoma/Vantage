@@ -67,3 +67,8 @@ class MembershipResponse(BaseModel):
     email: str | None = None
     unit_no: str | None = None
     joined_at: datetime | None = None
+
+
+class MembershipUnitUpdate(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    property_id: int = Field(gt=0, le=2147483647)

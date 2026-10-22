@@ -113,12 +113,13 @@ class WorkOrderRepository:
         return result.scalar_one_or_none()
 
     async def get_active_for_complaint(
-        self, *, complaint_id: int
+        self, *, complaint_id: int, estate_id: int
     ) -> MaintenanceworkOrder | None:
         result = await self._db.execute(
             select(MaintenanceworkOrder).where(
                 MaintenanceworkOrder.complaint_id == complaint_id,
-                MaintenanceworkOrder.status != "cancelled",
+                MaintenanceworkOrder.status.in_(['assigned', 'in_progress']),
+                MaintenanceworkOrder.estate_id == estate_id,
             )
         )
         return result.scalars().first()

@@ -3,9 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
-# The only account types a person may choose for themselves. ``platform_admin``
-# is assigned only by an operator CLI, and ``investor``/``estate_agent`` are not
-# self-service today.
+# Trusted provisioning choices. Public RegisterRequest narrows this to resident.
+# Platform operators themselves are provisioned only through the operator CLI.
 AccountType = Literal["resident", "estate_admin", "service_provider"]
 
 
@@ -36,13 +35,8 @@ class ProviderSignup(BaseModel):
 
 # --- Auth schemas ---
 
-class RegisterRequest(BaseModel):
-    """Public registration contract.
-
-    A person may register as a resident, as an estate admin (registering their
-    estate in the same step) or as a service provider. A ``role`` field is still
-    rejected: the role always follows from ``account_type``, never the request.
-    """
+class ProvisionAccountRequest(BaseModel):
+    """Operator-only account provisioning; clients cannot supply arbitrary roles."""
 
     full_name: str = Field(..., min_length=2, max_length=100)
     email: EmailStr
@@ -78,6 +72,14 @@ class RegisterRequest(BaseModel):
             if self.estate is not None or self.provider is not None:
                 raise ValueError("A resident signup must not carry an estate or provider object.")
         return self
+
+
+class RegisterRequest(ProvisionAccountRequest):
+    """Public registration creates residents; trusted roles are operator provisioned."""
+
+    account_type: Literal['resident'] = 'resident'
+    estate: None = None
+    provider: None = None
 
 
 class LoginRequest(BaseModel):

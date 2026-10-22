@@ -162,6 +162,7 @@ async def test_c3_rate_work_order_recomputes_provider_aggregates() -> None:
     service._repo = SimpleNamespace(
         get_by_id_in_estate_for_update=AsyncMock(return_value=completed_wo),
         get_provider_rating_aggregate=AsyncMock(return_value=(Decimal("4.50"), 2)),
+        get_latest_for_complaint=AsyncMock(return_value=completed_wo),
         save=AsyncMock(return_value=completed_wo),
     )
     service._complaint_repo = SimpleNamespace(
@@ -201,6 +202,7 @@ async def test_c5_atomicity_injected_failure_rolls_back() -> None:
     service._repo = SimpleNamespace(
         get_by_id_in_estate_for_update=AsyncMock(return_value=completed_wo),
         save=AsyncMock(return_value=completed_wo),
+        get_latest_for_complaint=AsyncMock(return_value=completed_wo),
     )
     service._complaint_repo = SimpleNamespace(
         get_by_id_in_estate=AsyncMock(return_value=complaint),

@@ -173,6 +173,9 @@ async def run(args: argparse.Namespace, session_factory: Callable) -> int:
 
         password = generate_password()
         user.password_hash = hash_password(password)
+        from app.common.datetime_utils import utcnow
+        user.auth_version = (getattr(user, 'auth_version', 0) or 0) + 1
+        user.password_changed_at = utcnow()
         await session.commit()
 
         print("")

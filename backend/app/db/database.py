@@ -13,6 +13,7 @@ from app.identity.models.estate_join_code import EstateJoinCode  # noqa: F401
 from app.identity.models.estate_membership_event import EstateMembershipEvent  # noqa: F401
 from app.identity.models.estate_residency_request import EstateResidencyRequest  # noqa: F401
 from app.identity.models.user import User  # noqa: F401
+from app.identity.models.account_support import AccountPreference, OperationalNotification, RecoveryGrant  # noqa: F401
 from app.identity.models.session import Session  # noqa: F401
 from app.identity.models.login_attempt import LoginAttempts  # noqa: F401
 

@@ -1,5 +1,5 @@
 """Estate-scoped signal reads and append-only briefing persistence. Flush only."""
-from sqlalchemy import func, select
+from sqlalchemy import func, select, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analytics.models.intelligence_briefing import IntelligenceBriefing
@@ -12,6 +12,25 @@ from app.community.models.security_incident import SecurityIncident
 class IntelligenceRepository:
     def __init__(self, db: AsyncSession):
         self._db = db
+
+    async def maintenance_priorities(self, estate_id: int, as_of) -> list[dict]:
+        """Bounded metadata only; overdue jobs first, then unassigned urgent issues."""
+        wo = MaintenanceworkOrder
+        rows = (await self._db.execute(select(wo.work_order_id, wo.estimated_completion_date,
+            wo.status).where(wo.estate_id == estate_id, wo.status.in_(['assigned', 'in_progress']),
+                wo.estimated_completion_date < as_of).order_by(
+                    wo.estimated_completion_date, wo.work_order_id).limit(20))).all()
+        results = [dict(kind='overdue_work_order', id=row[0], due_at=row[1].isoformat(),
+                        status=row[2]) for row in rows]
+        rows = (await self._db.execute(select(Complaint.complaint_id, Complaint.priority,
+            Complaint.created_at).where(Complaint.estate_id == estate_id,
+                Complaint.status.in_(['submitted', 'reviewed']),
+                Complaint.priority.in_(['urgent', 'high'])).order_by(
+                    case((Complaint.priority == 'urgent', 0), else_=1),
+                    Complaint.created_at, Complaint.complaint_id).limit(20))).all()
+        results.extend(dict(kind='unassigned_complaint', id=row[0], priority=row[1],
+                            created_at=row[2].isoformat()) for row in rows)
+        return results
 
     async def facts(self, estate_id: int) -> dict:
         # Scalar subqueries keep all counts and score comparisons in ONE PostgreSQL

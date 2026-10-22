@@ -14,13 +14,23 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.identity.api.dependencies import CurrentUser
-from app.identity.schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserResponse
+from app.identity.api.dependencies import CurrentUser, require_roles
+from app.identity.models.user import User
+from app.identity.schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserResponse, ProvisionAccountRequest
 from app.identity.schemas.estate_access import EstateAccessListResponse, EstateAccessResponse
 from app.identity.services.auth_service import AuthService
 from app.identity.services.estate_authorization_service import EstateAuthorizationService
 
 router = APIRouter(prefix="/auth", tags=["identity"])
+
+
+@router.post('/provision', response_model=UserResponse, status_code=201)
+async def provision_account(
+    payload: ProvisionAccountRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    operator: Annotated[User, require_roles('platform_admin')],
+) -> UserResponse:
+    return await AuthService(db).provision(payload, operator)
 
 
 @router.post("/register", response_model=AuthResponse, status_code=201)

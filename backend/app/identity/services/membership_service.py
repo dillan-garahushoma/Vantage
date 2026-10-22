@@ -229,6 +229,37 @@ class MembershipService:
 
     # ---- admin member management ----------------------------------------
 
+    async def transfer_unit(self, actor: User, *, estate_id: int, membership_id: int,
+                            property_id: int) -> MembershipResponse:
+        await self._require_estate_admin(actor, estate_id)
+        member = await self._memberships.lock_in_estate(
+            membership_id=membership_id, estate_id=estate_id)
+        if member is None:
+            raise NotFoundException('Membership not found.')
+        if member.membership_role != UserRole.resident.value:
+            raise ConflictException('Only a resident unit membership can be transferred.')
+        unit = await self._properties.get_by_id_in_estate(unit_id=property_id, estate_id=estate_id)
+        if unit is None:
+            raise NotFoundException('Unit not found.')
+        if member.property_id != property_id:
+            try:
+                await self._events.record(estate_id=estate_id, user_id=member.user_id,
+                    membership_role='resident', property_id=member.property_id,
+                    event_type='removed', actor_user_id=actor.user_id)
+                member.property_id = property_id
+                await self._memberships.flush()
+                await self._events.record(estate_id=estate_id, user_id=member.user_id,
+                    membership_role='resident', property_id=property_id,
+                    event_type='joined', actor_user_id=actor.user_id)
+                await self._db.commit()
+            except IntegrityError:
+                await self._db.rollback()
+                raise ConflictException('The resident already has access to that unit.')
+        user = await self._users.get_by_id(member.user_id)
+        return MembershipResponse(membership_id=member.membership_id, role='resident',
+            full_name=user.full_name if user else None, email=user.email if user else None,
+            unit_no=unit.unit_no, joined_at=member.created_at)
+
     async def _require_estate_admin(self, actor: User, estate_id: int) -> None:
         await self._estate_authorization.require_role(
             actor=actor,

@@ -1,29 +1,35 @@
-# Backend — remaining work
+# Backend handoff — property management
 
-FastAPI, async SQLAlchemy, PostgreSQL and Alembic. Tenant boundary: **estate**. Current migration head: `c03f4a8d6e12`.
+VALORA manages residents, maintenance and building health for an apartment complex. The backend scope change is implemented locally; no commit or push was made. FastAPI, async SQLAlchemy, PostgreSQL and Alembic remain. Current migration head: `d14a5b9e7f23`.
 
-## Already implemented
+## Implemented
 
-- Estate membership/authorization, complaints, work orders, incidents, photos, announcements and stored Living Scores.
-- Deterministic ROI/yield calculations and private immutable investment scenarios: `/api/v1/investment-scenarios`.
-- Grounded Intelligence summaries/Ask and durable briefing history: `/api/v1/analytics/intelligence`.
-- Verified marketing authority, sale/rental requests, HOA decisions/agent assignment, listings, asking-price history and confirmed sale/rental outcomes: `/api/v1/property-market`.
+- Retired investment/ROI/yield and property-market APIs. Enabling legacy routes cannot restore listings or sales. Historical data and applied migrations remain intact.
+- Retired investor/estate-agent login and estate access. Existing accounts are preserved without automatic promotion or role conversion.
+- Public registration creates residents only. `POST /api/v1/auth/provision` is operator-only and provisions managers/estates or providers. It returns the new user, not their login token.
+- Manager unit editing and audited resident unit transfers; membership removal revokes access while preserving history.
+- Complaint → review → provider assignment → progress → completion → resident rating, plus reopening and repeat repair orders. Completed/cancelled jobs cannot be edited; historical ratings cannot close a newer repair cycle.
+- Living Score calculation, five pillars, snapshots and history retained. Recalculation remains an explicit manager operation; reads return stored dates/values.
+- Grounded maintenance priorities from overdue jobs and urgent/high unassigned complaints. Manager-only record details; safe member summaries and immutable briefing history remain.
+- Persistent, recipient-scoped in-app maintenance notifications, read acknowledgements and saved notification preferences.
+- Expiring, single-use password recovery via configured SMTP; password changes revoke earlier sessions. Disabled/failed mail is not treated as delivery.
+- Regenerated OpenAPI, real local HTTP/browser acceptance helper and native PostgreSQL integration setup in the existing CI workflow.
 
-Legacy `/listings` and `/sales` remain disabled. Use the current namespace. API schemas are in `docs/openapi.json` and running `/docs`.
+## Frontend work remains
 
-## Build next
+Remove investor/agent and investment/marketplace UI. Public signup must offer resident accounts only; manager/provider accounts are provisioned by an operator. Connect unit transfer/editing, repair reopening, notification/preferences and recovery forms, and Intelligence history. Preserve `null` savings/confidence values as unavailable; do not convert them to R0 or 0%. Route overdue-job recommendations to the existing job, not a duplicate job creation form.
 
-1. **Agent administration:** trusted account/estate-role provisioning, eligible-agent discovery and reassignment. Public registration must continue creating residents only.
-2. **Calculated valuation:** agree a transparent method, appropriate comparable/property evidence, calculation date/version, limitations and immutable history. An asking price or Living Score alone is not a valuation. No valuation model has been trained.
-3. **Enquiries:** persistent conversations/replies with participant and estate authorization.
-4. **Remaining operations:** actual budgets/levies/arrears, equipment/service history, surveys, provider attendance/proof uploads and supported settings/notifications. Current previews are not operational data.
-5. **Acceptance:** broader privacy/security review, reliable email/recovery, production backup/restore and real-backend browser journeys. Review aggregate counts outside Intelligence. CI needs a disposable PostgreSQL service so integration tests do not skip.
+The Vantage JavaScript layout is retained. See [frontend plan](HANDOFF_FRONTEND.md) and the published `docs/openapi.json` contract.
 
-Keep prices, valuations and saved ROI assumptions separate. Recorded sale/rental outcomes do not process payments, transfer title or administer leases. External AI/workflow integrations need proper estate principals and validated evidence.
+## Verification and limits
+
+Migration upgrade/downgrade/re-upgrade passed. A downgrade that conflicts with repeat repair history is safely refused. Real TCP HTTP checks passed for manager/resident/provider logins, retirement, repairs/rating/reopening, score calculation, Intelligence and notifications. Real browser sign-in and complaint viewing passed against the backend. Backup/restore into a separate test database matched the head and key row counts. Compile, fatal lint and API drift checks passed.
+
+Full PostgreSQL suite: **908 passed, no skips**. Final focused checks after the repeat-repair rating corrections: **41 passed, no skips**, including real database journeys and the local SMTP transport test. These runs overlap; do not add their counts together. CI configuration is written, not run on GitHub. External inbox delivery requires relay configuration. No new frontend forms or complete browser journey for those forms is claimed.
 
 ## Local setup — Windows, no Docker
 
-Install Python, Node.js and npm, then run from the repo root:
+From the repository root:
 
 ```powershell
 py -m venv backend/venv
@@ -35,10 +41,12 @@ npm --prefix frontend ci
 ./Start-Local.ps1 -Migrate
 ```
 
-This creates fresh local databases/credentials; no account data or existing estate is included. Provision the estate, units and authorized users before using workflows. The development database starts empty. API: port 8000; UI: 5173.
+Fresh development databases contain no accounts/estate. An operator bootstraps trusted accounts; public signup cannot create managers/providers. API: port 8000; UI: 5173. Restart an already-running API to load changed routes.
 
-Run all backend tests against the separate disposable test database: `./Local-Database.ps1 -Action Test`. The latest local run passed **982 tests with no skips**. Real authenticated HTTP and migration checks also passed; rerun on your machine.
+Backend tests: `./Local-Database.ps1 -Action Test`, against its separate disposable test database. Never use the development database for tests. Role/archive inventory: after selecting Development, `Invoke-LocalPython -Arguments @('scripts/management_inventory.py')`; output contains counts only.
 
-## Working rules
+## Retained boundaries
 
-Router → service → estate-scoped repository. Resolve persisted estate access before queries; privileged actions need both global role and matching membership. Services commit once; repositories flush. Add migrations instead of editing applied ones. Do not add ML/LLM infrastructure without an agreed scope. Keep secrets and private resident data out of Git and responses.
+Every estate-scoped use case resolves persisted estate access; manager/provider privilege needs matching global role and membership. Nonmembers receive 403; foreign-estate objects receive 404. Services own transactions; repositories used in multi-step operations flush. No Docker, ML training, queues or additional cloud infrastructure was added.
+
+Full accounting/levies, rent collection, leases, surveys, telemetry, GPS attendance, asset inventory and scheduled preventive maintenance remain outside the agreed initial backend scope. Historical investment/market records are retained pending an explicit archive/retention decision.

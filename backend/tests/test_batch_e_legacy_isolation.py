@@ -95,12 +95,12 @@ def test_legacy_routes_work_when_enabled(monkeypatch: pytest.MonkeyPatch) -> Non
     # client carries platform_admin; the listing/sale reads ignore the role.
     client = _client(True, role="platform_admin")
     paths = client.get("/openapi.json").json()["paths"]
-    assert "/api/v1/listings" in paths
-    assert "/api/v1/sales" in paths
+    assert "/api/v1/listings" not in paths
+    assert "/api/v1/sales" not in paths
     assert "/api/v1/providers/{provider_id}/reviews" in paths
 
-    assert client.get("/api/v1/listings").status_code == 200
-    assert client.get("/api/v1/sales").status_code == 200
+    assert client.get("/api/v1/listings").status_code == 404
+    assert client.get("/api/v1/sales").status_code == 404
     assert client.get("/api/v1/providers/1/reviews").status_code == 200
     assert client.post(
         "/api/v1/providers",

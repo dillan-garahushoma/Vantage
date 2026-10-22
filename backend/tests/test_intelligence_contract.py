@@ -24,7 +24,7 @@ def test_grounded_briefing_contains_only_measured_counts():
     facts = {'counts': {'open_complaints': 101, 'work_orders_in_flight': 2, 'unresolved_incidents': 1}}
     briefing = _briefing('Fictional Musgrave', facts)
     assert briefing.signals_reviewed == 104
-    assert briefing.avoidable_zar == 0
+    assert briefing.avoidable_zar is None
     assert '101 open complaints' in briefing.body
 
 

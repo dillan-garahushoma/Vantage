@@ -24,6 +24,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from tests.operator_fixtures import signup_fixture
 from pydantic import ValidationError
 
 from app.core.exceptions import RateLimitException
@@ -61,7 +62,7 @@ def _bearer(token: str) -> dict:
 
 
 async def _signup_estate_admin(client, *, name: str, email: str):
-    registration = await client.post(
+    registration = await signup_fixture(client,
         f"{BASE}/auth/register",
         json={
             "full_name": "Estate Admin",
@@ -107,7 +108,7 @@ async def _issue_join_code(client, headers, estate_id: int) -> str:
 
 
 async def _signup_resident(client, *, email: str) -> dict:
-    response = await client.post(
+    response = await signup_fixture(client,
         f"{BASE}/auth/register",
         json={"full_name": "Resident One", "email": email, "password": PASSWORD},
     )
@@ -116,7 +117,7 @@ async def _signup_resident(client, *, email: str) -> dict:
 
 
 async def _signup_provider(client, *, email: str, trade: str = "plumber") -> dict:
-    response = await client.post(
+    response = await signup_fixture(client,
         f"{BASE}/auth/register",
         json={
             "full_name": "Provider One",

@@ -10,6 +10,14 @@ class EstateMembershipRepository:
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
+    async def lock_in_estate(self, *, membership_id: int, estate_id: int):
+        return (await self._db.execute(select(EstateMembership).where(
+            EstateMembership.membership_id == membership_id,
+            EstateMembership.estate_id == estate_id).with_for_update())).scalar_one_or_none()
+
+    async def flush(self) -> None:
+        await self._db.flush()
+
     async def has_estate_access(self, *, user_id: int, estate_id: int) -> bool:
         result = await self._db.execute(
             select(EstateMembership.membership_id).where(

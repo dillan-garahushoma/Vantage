@@ -1,7 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict, StringConstraints
+from typing import Annotated
 
 from app.common.enums import ComplaintStatus
 from app.community.domain.triage_vocabulary import Category, Priority
@@ -34,6 +35,11 @@ class ComplaintCreate(BaseModel):
 class ComplaintStatusUpdate(BaseModel):
     status: ComplaintStatus
     note: str | None = Field(default=None, max_length=2000)
+
+
+class ComplaintReopen(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    note: Annotated[str, StringConstraints(strip_whitespace=True, min_length=5, max_length=2000)]
 
 
 class ComplaintEventResponse(BaseModel):

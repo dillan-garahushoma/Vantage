@@ -16,6 +16,7 @@ from app.community.schemas.work_order import (
 )
 from app.core.exceptions import ConflictException, ForbiddenException, NotFoundException
 from app.identity.models.user import User
+from app.identity.repositories.account_support_repository import AccountSupportRepository
 from app.identity.services.estate_authorization_service import EstateAuthorizationService
 from app.providers.repositories.service_provider_repository import ServiceProviderRepository
 
@@ -23,6 +24,7 @@ from app.providers.repositories.service_provider_repository import ServiceProvid
 class WorkOrderService:
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
+        self._notifications = AccountSupportRepository(db)
         self._repo = WorkOrderRepository(db)
         self._complaint_repo = ComplaintRepository(db)
         self._provider_repo = ServiceProviderRepository(db)
@@ -181,11 +183,13 @@ class WorkOrderService:
 
         # C1: reject second active work order for the same complaint
         if hasattr(self._repo, "get_active_for_complaint"):
-            active_wo = await self._repo.get_active_for_complaint(complaint_id=payload.complaint_id)
+            active_wo = await self._repo.get_active_for_complaint(
+                complaint_id=payload.complaint_id, estate_id=estate_id)
             if active_wo is not None:
                 raise ConflictException("An active work order already exists for this complaint.")
 
-        provider = await self._provider_repo.get_by_id(payload.provider_id)
+        provider = await self._provider_repo.get_by_id_in_estate(
+            provider_id=payload.provider_id, estate_id=estate_id)
         if provider is None:
             raise NotFoundException(
                 f"Service provider with id {payload.provider_id} was not found."
@@ -226,6 +230,9 @@ class WorkOrderService:
                 commit=commit_repo,
             )
             if not commit_repo:
+                await self._notifications.notify(estate_id=estate_id,
+                    user_ids={complaint.user_id, provider.user_id}, kind='work_order_assigned',
+                    resource_id=work_order.work_order_id)
                 await self._db.commit()
                 await self._db.refresh(work_order)
             return WorkOrderResponse.model_validate(work_order)
@@ -248,6 +255,8 @@ class WorkOrderService:
             raise ForbiddenException("You can only update work assigned to your provider profile.")
 
         changes = payload.model_dump(exclude_unset=True)
+        if work_order.status in ('completed', 'cancelled'):
+            raise ConflictException('A completed work order cannot be re-opened or modified; cancelled work is also terminal.')
         new_status = changes.pop("status", None)
 
         if new_status is not None:
@@ -309,6 +318,10 @@ class WorkOrderService:
                     setattr(work_order, field, value)
                 await self._repo.save(work_order, commit=commit_repo)
                 if not commit_repo:
+                    await self._notifications.notify(estate_id=estate_id, user_ids={complaint.user_id},
+                        kind='work_order_' + work_order.status, resource_id=work_order.work_order_id)
+                    await self._notifications.notify_admins(estate_id=estate_id,
+                        kind='work_order_' + work_order.status, resource_id=work_order.work_order_id)
                     await self._db.commit()
                     await self._db.refresh(work_order)
                 return WorkOrderResponse.model_validate(work_order)
@@ -351,6 +364,12 @@ class WorkOrderService:
                 raise ConflictException("A work order can only be rated once it is completed.")
             if work_order.resident_rating is not None:
                 raise ConflictException("This work order has already been rated.")
+            if complaint.status != 'resolved':
+                raise ConflictException('A prior repair cannot close a reopened complaint.')
+            latest = await self._repo.get_latest_for_complaint(
+                complaint_id=work_order.complaint_id, estate_id=estate_id)
+            if latest is None or latest.work_order_id != work_order_id:
+                raise ConflictException('Only the latest repair can rate the current resolution.')
 
             commit_repo = not hasattr(self, "_db") or self._db is None
             work_order.resident_rating = payload.rating
