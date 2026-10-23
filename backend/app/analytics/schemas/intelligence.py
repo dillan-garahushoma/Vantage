@@ -5,6 +5,7 @@ Defines the exact contracts for:
 - Evidence-based maintenance priorities (overdue jobs, then urgent complaints)
 - Ask VALORA structured Q&A
 - Estate-authorized operational metadata export
+- Role-adaptive briefings (Resident, Service Provider, HOA Admin)
 """
 from __future__ import annotations
 
@@ -84,6 +85,45 @@ class OperationalSignalCounts(BaseModel):
     unresolved_incidents: int = 0
 
 
+class ResidentUnitIssue(BaseModel):
+    model_config = _DTO_CONFIG
+
+    id: int | str
+    title: str
+    status: str
+    logged_date: str
+    category: str
+
+
+class ResidentIntelligenceView(BaseModel):
+    model_config = _DTO_CONFIG
+
+    unit_issues: list[ResidentUnitIssue] = Field(default_factory=list)
+    living_score_label: str = "Good"
+    living_score_summary: str = ""
+    community_notices: list[str] = Field(default_factory=list)
+
+
+class ProviderWorkOrderSummary(BaseModel):
+    model_config = _DTO_CONFIG
+
+    id: int | str
+    title: str
+    priority: str
+    status: str
+    location: str
+    due_date: str | None = None
+
+
+class ProviderIntelligenceView(BaseModel):
+    model_config = _DTO_CONFIG
+
+    assigned_work_orders: list[ProviderWorkOrderSummary] = Field(default_factory=list)
+    pending_count: int = 0
+    urgent_count: int = 0
+    instructions: str = ""
+
+
 class EstateIntelligenceResponse(BaseModel):
     model_config = _DTO_CONFIG
 
@@ -100,6 +140,9 @@ class EstateIntelligenceResponse(BaseModel):
     facts: dict = Field(default_factory=dict)
     evidence: list[str] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
+    role: str = "hoa_admin"
+    resident_view: ResidentIntelligenceView | None = None
+    provider_view: ProviderIntelligenceView | None = None
 
 
 class AskValoraRequest(BaseModel):

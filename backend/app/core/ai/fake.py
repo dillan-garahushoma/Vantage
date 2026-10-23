@@ -86,3 +86,15 @@ class FakeLLMClient:
             latency_ms=0,
             input_chars=len(system) + len(user),
         )
+
+    async def stream_text(
+        self,
+        *,
+        system: str,
+        user: str,
+    ):
+        if self._delay_seconds:
+            await asyncio.sleep(self._delay_seconds)
+        words = ["VALORA", " AI", " response", " for: ", user[:40]]
+        for word in words:
+            yield word

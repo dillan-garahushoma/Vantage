@@ -25,7 +25,9 @@ response returns: provider output is always treated as untrusted.
 """
 from __future__ import annotations
 
+import json
 import time
+from collections.abc import AsyncIterator
 from typing import Any, Mapping
 
 import httpx
@@ -138,6 +140,62 @@ class OpenAICompatLLMClient:
             latency_ms=latency_ms,
             input_chars=len(system) + len(user),
         )
+
+    async def stream_text(
+        self,
+        *,
+        system: str,
+        user: str,
+    ) -> AsyncIterator[str]:
+        body: dict[str, Any] = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "stream": True,
+            "max_tokens": self.max_output_tokens,
+        }
+
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://valora.estate",
+            "X-Title": "VALORA Estate Health",
+        }
+
+        try:
+            async with httpx.AsyncClient(
+                timeout=self._timeout, transport=self._transport
+            ) as client:
+                async with client.stream(
+                    "POST", self._url, json=body, headers=headers
+                ) as response:
+                    if response.status_code == 429:
+                        raise AIUnavailableError("rate_limited")
+                    if response.status_code >= 400:
+                        raise AIUnavailableError("provider_error")
+
+                    async for line in response.aiter_lines():
+                        if not line:
+                            continue
+                        line_str = line.strip()
+                        if line_str.startswith("data: "):
+                            data_chunk = line_str[6:].strip()
+                            if data_chunk == "[DONE]":
+                                break
+                            try:
+                                payload = json.loads(data_chunk)
+                                choices = payload.get("choices")
+                                if choices and isinstance(choices, list):
+                                    delta = choices[0].get("delta", {})
+                                    content = delta.get("content")
+                                    if content:
+                                        yield content
+                            except (ValueError, TypeError, KeyError):
+                                continue
+        except httpx.HTTPError as exc:
+            raise AIUnavailableError(http_error_reason(exc)) from None
 
 
 def _stopped_at_the_token_limit(data: Any) -> bool:

@@ -1,4 +1,5 @@
 """Estate-scoped signal reads and append-only briefing persistence. Flush only."""
+from datetime import datetime, timezone
 from sqlalchemy import func, select, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -55,6 +56,62 @@ class IntelligenceRepository:
         row = (await self._db.execute(select(*counts, *snapshots))).one()
         return {'counts': dict(zip(('open_complaints', 'work_orders_in_flight', 'unresolved_incidents'), row[:3])),
                 'latest_score': row[3], 'previous_score': row[4]}
+
+    async def resident_signals(self, estate_id: int, user_id: int) -> list[dict]:
+        """Fetch recent complaints logged by this user for this estate."""
+        rows = (await self._db.execute(select(
+            Complaint.complaint_id, Complaint.category, Complaint.description,
+            Complaint.status, Complaint.created_at,
+        ).where(
+            Complaint.estate_id == estate_id,
+            Complaint.user_id == user_id,
+        ).order_by(Complaint.created_at.desc()).limit(15))).all()
+        return [
+            {
+                "id": row[0],
+                "category": row[1] or "General",
+                "title": (row[2][:60] + "...") if len(row[2]) > 60 else row[2],
+                "status": row[3] or "submitted",
+                "logged_date": row[4].isoformat() if row[4] else "",
+            }
+            for row in rows
+        ]
+
+    async def provider_signals(self, estate_id: int, user_id: int) -> list[dict]:
+        """Fetch active work orders assigned to this provider for this estate."""
+        from app.providers.models.service_provider import ServiceProvider
+        p_row = (await self._db.execute(
+            select(ServiceProvider.provider_id).where(ServiceProvider.user_id == user_id)
+        )).scalar_one_or_none()
+
+        wo = MaintenanceworkOrder
+        query = select(
+            wo.work_order_id,
+            wo.status,
+            wo.estimated_completion_date,
+            wo.assigned_at,
+        ).where(
+            wo.estate_id == estate_id,
+            wo.status.in_(["assigned", "in_progress", "pending"]),
+        )
+        if p_row is not None:
+            query = query.where(wo.provider_id == p_row)
+
+        now = datetime.now(timezone.utc)
+        rows = (await self._db.execute(
+            query.order_by(wo.estimated_completion_date.asc().nulls_last(), wo.work_order_id.desc()).limit(20)
+        )).all()
+        return [
+            {
+                "id": row[0],
+                "title": f"Work Order #{row[0]}",
+                "priority": "high" if row[2] and row[2] < now else "medium",
+                "status": row[1] or "assigned",
+                "location": "Estate maintenance zone",
+                "due_date": row[2].isoformat() if row[2] else None,
+            }
+            for row in rows
+        ]
 
     async def recent_signals(self, estate_id: int, limit: int = 50) -> list[dict]:
         items = []

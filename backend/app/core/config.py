@@ -73,8 +73,9 @@ class Settings(BaseSettings):
     # append-only ai_call_events ledger (see docs/ADR-004-AI-Assist-Layer.md).
     AI_DAILY_CALL_CAP_PER_ESTATE: int = 200
     GEMINI_API_KEY: SecretStr | None = None
-    AI_COMPAT_BASE_URL: str | None = None
+    AI_COMPAT_BASE_URL: str | None = "https://openrouter.ai/api/v1"
     AI_COMPAT_API_KEY: SecretStr | None = None
+    OPENROUTER_API_KEY: SecretStr | None = None
     # External n8n intelligence webhook orchestrator
     N8N_INTELLIGENCE_URL: str | None = None
     N8N_SERVICE_KEY: SecretStr | None = None
@@ -133,9 +134,11 @@ class Settings(BaseSettings):
                     raise ValueError(
                         "AI_COMPAT_BASE_URL is required when AI_PROVIDER=openai_compatible."
                     )
+                if self.AI_COMPAT_API_KEY is None and self.OPENROUTER_API_KEY is not None:
+                    self.AI_COMPAT_API_KEY = self.OPENROUTER_API_KEY
                 if self.AI_COMPAT_API_KEY is None:
                     raise ValueError(
-                        "AI_COMPAT_API_KEY is required when AI_PROVIDER=openai_compatible."
+                        "AI_COMPAT_API_KEY or OPENROUTER_API_KEY is required when AI_PROVIDER=openai_compatible."
                     )
 
         return self

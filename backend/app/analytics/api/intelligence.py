@@ -2,6 +2,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Path, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analytics.schemas.intelligence import (
@@ -68,6 +69,21 @@ async def ask_valora_endpoint(
         question=payload.question,
         actor=current_user,
     )
+
+
+@router.post("/ask/stream")
+async def ask_valora_stream_endpoint(
+    payload: AskValoraRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: CurrentUser,
+) -> StreamingResponse:
+    """Stream real-time answers to natural language questions scoped to the estate and role."""
+    generator = await IntelligenceService(db).stream_ask_valora(
+        estate_id=payload.estate_id,
+        question=payload.question,
+        actor=current_user,
+    )
+    return StreamingResponse(generator, media_type="text/event-stream")
 
 
 @router.get("/signals", response_model=EstateSignalsExport)

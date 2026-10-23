@@ -1,7 +1,10 @@
 """Tests for the VALORA Intelligence schemas, domain logic, and API contract."""
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 from pydantic import ValidationError
@@ -12,11 +15,15 @@ from app.analytics.schemas.intelligence import (
     EstateIntelligenceResponse,
     OperationalSignalCounts,
     PriorityRecommendation,
+    ProviderIntelligenceView,
+    ProviderWorkOrderSummary,
     RecommendationEvidence,
+    ResidentIntelligenceView,
+    ResidentUnitIssue,
     WeeklyBriefing,
     WorkOrderDefaults,
 )
-from app.analytics.services.intelligence_service import _briefing
+from app.analytics.services.intelligence_service import IntelligenceService, _briefing
 from app.main import app
 
 
@@ -69,6 +76,9 @@ def test_openapi_routes_registered() -> None:
     assert "/api/v1/analytics/intelligence/ask" in paths
     assert "post" in paths["/api/v1/analytics/intelligence/ask"]
 
+    assert "/api/v1/analytics/intelligence/ask/stream" in paths
+    assert "post" in paths["/api/v1/analytics/intelligence/ask/stream"]
+
     assert "/api/v1/analytics/intelligence/signals" in paths
     assert "get" in paths["/api/v1/analytics/intelligence/signals"]
 
@@ -79,8 +89,6 @@ def test_openapi_routes_registered() -> None:
 def test_estate_signal_items_mapping() -> None:
     from app.analytics.models.living_score_snapshot import LivingScoreSnapshot
     from app.community.models.security_incident import SecurityIncident
-    from app.community.models.maintenance_work_order import MaintenanceworkOrder
-    from app.community.models.complaint import Complaint
     from app.analytics.schemas.intelligence import EstateSignalItem
 
     # Mock snapshot
@@ -131,3 +139,131 @@ def test_estate_signal_items_mapping() -> None:
     )
     assert inc_item.detail == "Patrol dispatched"
 
+
+@pytest.mark.asyncio
+async def test_resident_receives_resident_view_without_recommendations():
+    service = IntelligenceService(AsyncMock())
+    service._auth = SimpleNamespace(
+        resolve_access=AsyncMock(
+            return_value=SimpleNamespace(
+                is_estate_admin=False,
+                is_estate_provider=False,
+                membership_roles=frozenset({"resident"}),
+            )
+        )
+    )
+    service._estates = SimpleNamespace(
+        get_by_id=AsyncMock(return_value=SimpleNamespace(estate_id=1, name="Silverleaf Reserve"))
+    )
+    service._records = SimpleNamespace(
+        facts=AsyncMock(
+            return_value={
+                "counts": {"open_complaints": 0, "work_orders_in_flight": 0, "unresolved_incidents": 0},
+                "latest_score": {"overall_score": 88},
+            }
+        ),
+        resident_signals=AsyncMock(
+            return_value=[
+                {"id": 42, "category": "Plumbing", "title": "Kitchen faucet leaking", "status": "reviewed", "logged_date": "2026-10-20"}
+            ]
+        ),
+    )
+    actor = SimpleNamespace(user_id=10, role="resident")
+    res = await service.get_intelligence(1, actor)
+
+    assert res.role == "resident"
+    assert res.recommendations == []
+    assert res.resident_view is not None
+    assert len(res.resident_view.unit_issues) == 1
+    assert res.resident_view.unit_issues[0].title == "Kitchen faucet leaking"
+    assert res.resident_view.living_score_label == "Optimal"
+    assert "88/100" in res.resident_view.living_score_summary
+
+
+@pytest.mark.asyncio
+async def test_provider_receives_provider_view_with_work_orders():
+    service = IntelligenceService(AsyncMock())
+    service._auth = SimpleNamespace(
+        resolve_access=AsyncMock(
+            return_value=SimpleNamespace(
+                is_estate_admin=False,
+                is_estate_provider=True,
+                membership_roles=frozenset({"service_provider"}),
+            )
+        )
+    )
+    service._estates = SimpleNamespace(
+        get_by_id=AsyncMock(return_value=SimpleNamespace(estate_id=1, name="Silverleaf Reserve"))
+    )
+    service._records = SimpleNamespace(
+        facts=AsyncMock(
+            return_value={
+                "counts": {"open_complaints": 2, "work_orders_in_flight": 1, "unresolved_incidents": 0},
+                "latest_score": None,
+            }
+        ),
+        provider_signals=AsyncMock(
+            return_value=[
+                {
+                    "id": 99,
+                    "title": "Work Order #99",
+                    "priority": "high",
+                    "status": "assigned",
+                    "location": "Gatehouse generator",
+                    "due_date": "2026-10-25T12:00:00Z",
+                }
+            ]
+        ),
+    )
+    actor = SimpleNamespace(user_id=20, role="service_provider")
+    res = await service.get_intelligence(1, actor)
+
+    assert res.role == "service_provider"
+    assert res.recommendations == []
+    assert res.provider_view is not None
+    assert len(res.provider_view.assigned_work_orders) == 1
+    assert res.provider_view.assigned_work_orders[0].id == 99
+    assert res.provider_view.urgent_count == 1
+    assert "Contractor site access" in res.provider_view.instructions
+
+
+@pytest.mark.asyncio
+async def test_stream_ask_valora_yields_sse_chunks():
+    service = IntelligenceService(AsyncMock())
+    service._auth = SimpleNamespace(
+        resolve_access=AsyncMock(
+            return_value=SimpleNamespace(
+                is_estate_admin=False,
+                is_estate_provider=False,
+                membership_roles=frozenset({"resident"}),
+            )
+        )
+    )
+    service._estates = SimpleNamespace(
+        get_by_id=AsyncMock(return_value=SimpleNamespace(estate_id=1, name="Silverleaf Reserve"))
+    )
+    service._records = SimpleNamespace(
+        facts=AsyncMock(
+            return_value={
+                "counts": {"open_complaints": 0, "work_orders_in_flight": 0, "unresolved_incidents": 0},
+                "latest_score": None,
+                "previous_score": None,
+            }
+        ),
+        resident_signals=AsyncMock(return_value=[]),
+    )
+    actor = SimpleNamespace(user_id=10, role="resident")
+    generator = await service.stream_ask_valora(1, "What are the quiet hours?", actor)
+
+    chunks = []
+    async for chunk in generator:
+        chunks.append(chunk)
+
+    assert len(chunks) > 0
+    # Every chunk should start with data:
+    assert all(c.startswith("data: ") for c in chunks)
+    # The last chunk should be [DONE]
+    assert chunks[-1] == "data: [DONE]\n\n"
+    # Content chunk must parse JSON with delta
+    first_data = json.loads(chunks[0].replace("data: ", "").strip())
+    assert "delta" in first_data

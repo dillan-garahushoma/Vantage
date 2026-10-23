@@ -6,6 +6,8 @@ import { LogComplaintDrawer } from '../routes/Complaints';
 import { MobileNav, MobileNavSheet } from './layout/MobileNav';
 import { Sidebar } from './layout/Sidebar';
 import { TopBar } from './layout/TopBar';
+import { AskValoraSpotlight } from './valora/AskValoraSpotlight';
+
 /**
  * The signed-in workspace.
  *
@@ -20,27 +22,47 @@ export function AppShell() {
     const [navOpen, setNavOpen] = useState(false);
     const [creatingWorkOrder, setCreatingWorkOrder] = useState(false);
     const [loggingComplaint, setLoggingComplaint] = useState(false);
+    const [spotlightOpen, setSpotlightOpen] = useState(false);
+
     if (!user)
         return null;
-    return (<div className="min-h-screen bg-paper">
-      <Sidebar />
 
-      <div className="lg:pl-[272px]">
-        <TopBar onOpenNav={() => setNavOpen(true)} onCreateWorkOrder={user.role === 'hoa_admin' ? () => setCreatingWorkOrder(true) : undefined} onLogComplaint={user.role === 'resident' ? () => setLoggingComplaint(true) : undefined}/>
+    return (
+      <div className="min-h-screen bg-paper">
+        <Sidebar />
 
-        <main className="mx-auto max-w-[1440px] px-4 pt-5 pb-28 sm:px-6 lg:px-8 lg:pb-12">
-          <Outlet />
-        </main>
+        <div className="lg:pl-[272px]">
+          <TopBar
+            onOpenNav={() => setNavOpen(true)}
+            onCreateWorkOrder={user.role === 'hoa_admin' ? () => setCreatingWorkOrder(true) : undefined}
+            onLogComplaint={user.role === 'resident' ? () => setLoggingComplaint(true) : undefined}
+            onOpenSpotlight={() => setSpotlightOpen(true)}
+          />
+
+          <main className="mx-auto max-w-[1440px] px-4 pt-5 pb-28 sm:px-6 lg:px-8 lg:pb-12">
+            <Outlet />
+          </main>
+        </div>
+
+        <MobileNav
+          onOpenNav={() => setNavOpen(true)}
+          onCreate={
+            user.role === 'hoa_admin'
+              ? () => setCreatingWorkOrder(true)
+              : user.role === 'resident'
+              ? () => setLoggingComplaint(true)
+              : undefined
+          }
+          createLabel={user.role === 'resident' ? 'Log issue' : 'Work order'}
+        />
+        <MobileNavSheet open={navOpen} onOpenChange={setNavOpen} />
+
+        <CreateWorkOrderDialog open={creatingWorkOrder} onOpenChange={setCreatingWorkOrder} />
+        {loggingComplaint ? (
+          <LogComplaintDrawer onClose={() => setLoggingComplaint(false)} onDone={() => setLoggingComplaint(false)} />
+        ) : null}
+
+        <AskValoraSpotlight open={spotlightOpen} onOpenChange={setSpotlightOpen} />
       </div>
-
-      <MobileNav onOpenNav={() => setNavOpen(true)} onCreate={user.role === 'hoa_admin'
-            ? () => setCreatingWorkOrder(true)
-            : user.role === 'resident'
-                ? () => setLoggingComplaint(true)
-                : undefined} createLabel={user.role === 'resident' ? 'Log issue' : 'Work order'}/>
-      <MobileNavSheet open={navOpen} onOpenChange={setNavOpen}/>
-
-      <CreateWorkOrderDialog open={creatingWorkOrder} onOpenChange={setCreatingWorkOrder}/>
-      {loggingComplaint ? (<LogComplaintDrawer onClose={() => setLoggingComplaint(false)} onDone={() => setLoggingComplaint(false)}/>) : null}
-    </div>);
+    );
 }

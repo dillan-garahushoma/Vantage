@@ -8,6 +8,7 @@ and a hard timeout with no retry.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Mapping, Protocol
@@ -52,11 +53,19 @@ class LLMClient(Protocol):
         feature: Feature,
     ) -> LLMResult: ...
 
+    async def stream_text(
+        self,
+        *,
+        system: str,
+        user: str,
+    ) -> AsyncIterator[str]: ...
+
 
 # Feature name -> the settings flag that must be true for it to run.
 _FEATURE_FLAGS: dict[str, str] = {
     "insights": "AI_INSIGHTS_ENABLED",
     "triage": "AI_TRIAGE_ENABLED",
+    "ask": "AI_ENABLED",
 }
 
 
@@ -132,6 +141,23 @@ class GatedLLMClient:
             )
         except asyncio.TimeoutError:
             raise AIUnavailableError("timeout") from None
+
+    async def stream_text(
+        self,
+        *,
+        system: str,
+        user: str,
+    ) -> AsyncIterator[str]:
+        settings = self._settings
+        if not settings.AI_ENABLED:
+            raise AIUnavailableError("disabled")
+        if len(system) + len(user) > settings.AI_MAX_INPUT_CHARS:
+            raise AIUnavailableError("policy")
+        if self.inner is None or not hasattr(self.inner, "stream_text"):
+            raise AIUnavailableError("disabled")
+
+        async for chunk in self.inner.stream_text(system=system, user=user):
+            yield chunk
 
 
 def http_error_reason(exc: httpx.HTTPError) -> str:
