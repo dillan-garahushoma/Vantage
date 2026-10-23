@@ -146,7 +146,7 @@ export function SidebarHeader() {
   return (
     <div className="px-4 pb-4 pt-5">
       <NavLink to="/app" className="inline-flex rounded-sm px-1 py-1" aria-label="VALORA workspace home">
-        <Logo size={28} />
+        <Logo size={34} />
       </NavLink>
       <div className="mt-5">
         <EstateSwitcher />
