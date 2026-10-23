@@ -18,7 +18,7 @@ import { Logo } from '../valora/Logo';
  * The quick action follows the same role rules as the navigation, so it never
  * offers an action the API would refuse.
  */
-export function TopBar({ onOpenNav, onCreateWorkOrder, onLogComplaint, onOpenSpotlight }) {
+export function TopBar({ onOpenNav, onCreateWorkOrder, onLogComplaint }) {
     const { user } = useAuth();
     const { pathname } = useLocation();
     const navigate = useNavigate();
@@ -63,21 +63,7 @@ export function TopBar({ onOpenNav, onCreateWorkOrder, onLogComplaint, onOpenSpo
             </h1>
           </div>
 
-          {/* Ask VALORA Spotlight launcher */}
           <div className="relative ml-auto hidden md:flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={onOpenSpotlight}
-              className="flex items-center gap-2 rounded-xl border border-line bg-canvas/80 px-3 py-2 text-xs font-medium text-ink/65 hover:border-brand-soft hover:bg-surface hover:text-ink transition-all shadow-sm"
-              aria-label="Ask VALORA Spotlight"
-            >
-              <Sparkles className="h-3.5 w-3.5 text-brand" />
-              <span>Ask VALORA</span>
-              <kbd className="inline-flex items-center gap-0.5 rounded border border-line bg-surface px-1.5 py-0.5 text-[10px] font-semibold text-ink/40">
-                ⌘K
-              </kbd>
-            </button>
-
             <div className="relative">
               <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-ink/30" />
               <Input

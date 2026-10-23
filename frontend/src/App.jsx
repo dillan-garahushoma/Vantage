@@ -94,6 +94,7 @@ export function App() {
             <Route path="properties" element={<Properties />}/>
             <Route path="providers" element={<Providers />}/>
             <Route path="notifications" element={<Notifications />}/>
+            <Route path="intelligence" element={<Navigate to="/intelligence" replace/>}/>
           </Route>
 
           {/* VALORA Intelligence is a workspace of its own rather than a tab of

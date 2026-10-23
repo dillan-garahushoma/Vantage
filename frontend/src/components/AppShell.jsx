@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ValoraChatProvider, useValoraChat } from '../context/ValoraChatContext';
 import { CreateWorkOrderDialog } from './valora/CreateWorkOrderDialog';
 import { LogComplaintDrawer } from '../routes/Complaints';
 import { MobileNav, MobileNavSheet } from './layout/MobileNav';
 import { Sidebar } from './layout/Sidebar';
 import { TopBar } from './layout/TopBar';
-import { AskValoraSpotlight } from './valora/AskValoraSpotlight';
 
 /**
  * The signed-in workspace.
@@ -18,12 +16,11 @@ import { AskValoraSpotlight } from './valora/AskValoraSpotlight';
  * they are reachable from every screen — a work order for an administrator, a
  * complaint for a resident — and both post to the real API.
  */
-function AppShellInner() {
+export function AppShell() {
   const { user } = useAuth();
   const [navOpen, setNavOpen] = useState(false);
   const [creatingWorkOrder, setCreatingWorkOrder] = useState(false);
   const [loggingComplaint, setLoggingComplaint] = useState(false);
-  const { setSpotlightOpen } = useValoraChat();
 
   if (!user) return null;
 
@@ -36,7 +33,6 @@ function AppShellInner() {
           onOpenNav={() => setNavOpen(true)}
           onCreateWorkOrder={user.role === 'hoa_admin' ? () => setCreatingWorkOrder(true) : undefined}
           onLogComplaint={user.role === 'resident' ? () => setLoggingComplaint(true) : undefined}
-          onOpenSpotlight={() => setSpotlightOpen(true)}
         />
 
         <main className="mx-auto max-w-[1440px] px-4 pt-5 pb-28 sm:px-6 lg:px-8 lg:pb-12">
@@ -61,16 +57,6 @@ function AppShellInner() {
       {loggingComplaint ? (
         <LogComplaintDrawer onClose={() => setLoggingComplaint(false)} onDone={() => setLoggingComplaint(false)} />
       ) : null}
-
-      <AskValoraSpotlight />
     </div>
-  );
-}
-
-export function AppShell() {
-  return (
-    <ValoraChatProvider>
-      <AppShellInner />
-    </ValoraChatProvider>
   );
 }

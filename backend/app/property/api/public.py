@@ -40,7 +40,7 @@ async def list_public_estates(
     db: Annotated[AsyncSession, Depends(get_db)],
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=50)] = 20,
-    q: Annotated[str | None, Query(max_length=80, description="name, suburb or city")] = None,
+    q: Annotated[str | None, Query(max_length=80, description="name, suburb, city or province")] = None,
 ) -> Page[PublicEstateListItem]:
     """Published estates, with a cover photo and a unit count each."""
     items, total = await PublicDirectoryService(db).list_estates(

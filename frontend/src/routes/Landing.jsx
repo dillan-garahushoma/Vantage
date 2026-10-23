@@ -58,13 +58,12 @@ function Section({ id, eyebrow, title, intro, children }) {
 function FeaturedEstates() {
   const [selectedRegion, setSelectedRegion] = useState('All Estates');
   const [savedIds, setSavedIds] = useState(new Set());
-  const directory = useAsync(() => listPublicEstates({ page: 1, page_size: 6 }), []);
-  const allEstates = directory.data?.items ?? [];
-
-  const estates = allEstates.filter((item) => {
-    if (selectedRegion === 'All Estates') return true;
-    return item.province?.toLowerCase().includes(selectedRegion.toLowerCase());
-  });
+  const queryParam = selectedRegion === 'All Estates' ? undefined : selectedRegion;
+  const directory = useAsync(
+    () => listPublicEstates({ page: 1, page_size: 6, q: queryParam }),
+    [selectedRegion]
+  );
+  const estates = directory.data?.items ?? [];
 
   const toggleSave = (id, e) => {
     e.preventDefault();
@@ -98,7 +97,7 @@ function FeaturedEstates() {
           </div>
 
           <Link
-            to="/estates"
+            to={selectedRegion === 'All Estates' ? '/estates' : `/estates?q=${encodeURIComponent(selectedRegion)}`}
             className="inline-flex items-center gap-1.5 text-[13.5px] font-medium text-accent-ink hover:underline"
           >
             Explore full directory <IconArrowRight size={15} />

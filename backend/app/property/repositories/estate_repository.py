@@ -52,6 +52,7 @@ class EstateRepository:
                 Estate.name.ilike(pattern)
                 | Estate.suburb.ilike(pattern)
                 | Estate.city.ilike(pattern)
+                | Estate.province.ilike(pattern)
             )
         return stmt.order_by(Estate.name.asc(), Estate.estate_id.asc())
 

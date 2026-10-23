@@ -123,7 +123,7 @@ export function AskValoraSpotlight({ open, onOpenChange }) {
       className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-[10vh] sm:p-6 sm:pt-[12vh] animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
-      aria-label="Ask VALORA Spotlight"
+      aria-label="Ask VALORA Intelligence"
     >
       {/* Backdrop */}
       <div
