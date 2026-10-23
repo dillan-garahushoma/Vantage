@@ -3,8 +3,9 @@
 This is the only service in VALORA that deliberately runs with **no actor**. That
 is why it is written the way it is:
 
-* every query is filtered by ``is_public`` in SQL (``EstateRepository.public_statement``),
-  so a private estate cannot be returned even by a bug in the mapping layer;
+* every directory query is filtered by ``is_public`` and ``is_demo = false`` in SQL
+  (``EstateRepository.public_statement``), so a private or demonstration estate
+  cannot be returned even by a bug in the mapping layer;
 * the DTOs live in :mod:`app.property.schemas.public_directory` and are an
   allow-list, so a new column cannot leak into a public response by accident;
 * the Living Score is published only when the estate set ``show_living_score``
@@ -89,7 +90,7 @@ class PublicDirectoryService:
         estate = await self._estates.get_by_id(estate_id)
         # A private estate and an unknown estate are the same 404: the directory
         # never confirms that a private estate exists.
-        if estate is None or not estate.is_public:
+        if estate is None or not estate.is_public or estate.is_demo:
             raise NotFoundException(NOT_PUBLIC_MESSAGE)
 
         photos = await self._photos.list_for_estate(estate_id=estate_id)

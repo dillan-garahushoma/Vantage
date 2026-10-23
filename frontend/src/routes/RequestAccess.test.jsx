@@ -62,6 +62,7 @@ beforeEach(() => {
     mocks.reloadEstates.mockReset();
     mocks.listPublic.mockResolvedValue(ESTATES);
     mocks.mine.mockResolvedValue([]);
+    window.sessionStorage.clear();
 });
 describe('RequestAccess', () => {
     it('promises that no access is granted until an administrator approves', () => {
@@ -77,6 +78,19 @@ describe('RequestAccess', () => {
         await user.click(screen.getByRole('button', { name: /send request for approval/i }));
         expect(await screen.findByText(/choose your complex first/i)).toBeVisible();
         expect(mocks.submit).not.toHaveBeenCalled();
+    });
+    it('uses a complex selected from the public directory as form context only', async () => {
+        window.sessionStorage.setItem('valora.public-estate-selection', JSON.stringify({
+            estate_id: 4,
+            name: 'Zambezi Country Estate',
+            location: 'Montana, Pretoria, Gauteng',
+        }));
+        const user = userEvent.setup();
+        renderScreen();
+        expect(await screen.findByText('Zambezi Country Estate')).toBeVisible();
+        await user.type(screen.getByLabelText(/unit number/i), 'A-101');
+        await user.click(screen.getByRole('button', { name: /send request for approval/i }));
+        expect(mocks.submit).toHaveBeenCalledWith({ estate_id: 4, unit_no: 'A-101', note: null });
     });
     it('submits the chosen complex, the trimmed unit and the note', async () => {
         mocks.submit.mockResolvedValue({

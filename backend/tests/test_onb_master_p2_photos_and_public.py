@@ -302,13 +302,14 @@ def test_estate_profile_update_rejects_the_name_and_unknown_fields() -> None:
     assert parsed.description is None
 
 
-def test_public_statement_selects_only_published_estates() -> None:
+def test_public_statement_selects_only_published_non_demo_estates() -> None:
     sql = str(
         EstateRepository.public_statement(q="centurion").compile(
             dialect=postgresql.dialect()
         )
     )
     assert "estates.is_public IS true" in sql
+    assert "estates.is_demo IS false" in sql
     # PostgreSQL keeps ILIKE native rather than lowering both sides.
     assert "estates.name ILIKE" in sql
     assert "estates.suburb ILIKE" in sql and "estates.city ILIKE" in sql

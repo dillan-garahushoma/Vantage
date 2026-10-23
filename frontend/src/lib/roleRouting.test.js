@@ -52,8 +52,8 @@ describe('homeRouteFor', () => {
     it('sends a provider with no estate to the waiting screen', () => {
         expect(homeRouteFor(user('service_provider'), [])).toBe('/provider/waiting');
     });
-    it('still puts a provider with an estate on the dashboard, not the waiting screen', () => {
-        expect(homeRouteFor(user('service_provider'), [estate({ is_estate_provider: true })])).toBe('/app');
+    it('sends a provider with an estate to their assigned work, not a resident dashboard', () => {
+        expect(homeRouteFor(user('service_provider'), [estate({ is_estate_provider: true })])).toBe('/provider/work');
     });
     it('prefers the administrator view when the person is an admin of one estate among several', () => {
         const estates = [

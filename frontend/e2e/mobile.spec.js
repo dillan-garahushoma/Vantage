@@ -467,6 +467,19 @@ async function measure(page, path, options = {}) {
     await page.waitForLoadState('networkidle');
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(150);
+    // Measuring a 404 proves only that the 404 has no overflow. The route under
+    // test must render its own expected landmark first.
+    const expectedHeadings = {
+        '/': /understand how your complex is being cared for/i,
+        '/estates': /find a complex/i,
+        '/estates/1': /ridge close estate/i,
+        '/estates/2': /ridge close estate/i,
+        '/estates/3': /ridge close estate/i,
+        '/provider/work': /my work/i,
+    };
+    if (expectedHeadings[path]) {
+        await expect(page.getByRole('heading', { name: expectedHeadings[path] })).toBeVisible();
+    }
     const offenders = await overflowing(page);
     const widths = await page.evaluate(() => ({
         scroll: document.documentElement.scrollWidth,

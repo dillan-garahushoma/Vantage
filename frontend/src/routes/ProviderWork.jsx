@@ -136,6 +136,8 @@ function ProviderWorkBody() {
     }
     const items = (workOrders.data?.items ?? []).filter((order) => status ? order.status === status : true);
     const pages = workOrders.data?.pages ?? 0;
+    const active = (workOrders.data?.items ?? []).filter((order) => order.status === 'in_progress').length;
+    const awaitingStart = (workOrders.data?.items ?? []).filter((order) => order.status === 'assigned').length;
     return (<div className="space-y-5">
       <header>
         <p className="num text-[11px] tracking-[0.18em] text-accent-ink uppercase">
@@ -149,7 +151,22 @@ function ProviderWorkBody() {
         </p>
       </header>
 
-      <Card className="flex flex-wrap items-end gap-4 p-4">
+      <dl className="grid divide-y divide-line border-y border-line sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <div className="px-4 py-3 first:pl-0">
+          <dt className="text-[0.7rem] font-semibold tracking-[0.12em] text-ink-muted uppercase">Assigned</dt>
+          <dd className="num mt-1 text-[1.45rem] font-semibold text-ink">{workOrders.data?.total ?? 0}</dd>
+        </div>
+        <div className="px-4 py-3">
+          <dt className="text-[0.7rem] font-semibold tracking-[0.12em] text-ink-muted uppercase">Ready to start</dt>
+          <dd className="num mt-1 text-[1.45rem] font-semibold text-ink">{awaitingStart}</dd>
+        </div>
+        <div className="px-4 py-3 last:pr-0">
+          <dt className="text-[0.7rem] font-semibold tracking-[0.12em] text-ink-muted uppercase">In progress</dt>
+          <dd className="num mt-1 text-[1.45rem] font-semibold text-ink">{active}</dd>
+        </div>
+      </dl>
+
+      <div className="flex flex-wrap items-end gap-4 border-b border-line pb-4">
         <label className="min-w-[12rem] flex-1">
           <span className="mb-1.5 block text-[11px] font-medium tracking-wider text-ink-muted uppercase">
             Status
@@ -167,7 +184,7 @@ function ProviderWorkBody() {
         <p className="num pb-2 text-[12.5px] text-ink-muted">
           {workOrders.data?.total ?? 0} assigned
         </p>
-      </Card>
+      </div>
 
       {workOrders.loading ? (<LoadingState label="Loading your work"/>) : workOrders.error ? (<ErrorState title="Could not load your work" message={workOrders.error.message} requestId={workOrders.error.requestId} action={<Button variant="secondary" onClick={workOrders.reload}>
               Try again

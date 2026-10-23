@@ -10,5 +10,7 @@ export function homeRouteFor(user, estates) {
     }
     if (estates.some((estate) => estate.is_estate_admin))
         return '/admin/setup';
+    if (user.role === 'service_provider' && estates.some((estate) => estate.is_estate_provider))
+        return '/provider/work';
     return '/app';
 }

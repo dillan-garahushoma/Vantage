@@ -1,12 +1,9 @@
-import { Area, AreaChart, ResponsiveContainer, Tooltip as ChartTooltip, XAxis, YAxis } from 'recharts';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { IconAlert, IconArrowRight, IconClock, IconMegaphone, IconReport, IconWrench } from '../components/Icons';
-import { HealthBrief } from '../components/HealthBrief';
+import { IconArrowRight, IconClock, IconMegaphone, IconReport, IconWrench } from '../components/Icons';
 import { RequireEstate } from '../components/RequireEstate';
-import { Chip, EmptyState, ErrorState, LoadingState, SectionTitle, cx } from '../components/ui';
+import { Chip, EmptyState, ErrorState, LoadingState, SectionTitle } from '../components/ui';
 import { Button } from '../components/ui/button';
-import { HealthPillars } from '../components/valora/HealthPillars';
 import { MetricCard } from '../components/valora/MetricCard';
 import { ScoreCard } from '../components/valora/ScoreCard';
 import { SectionHeading } from '../components/valora/SectionHeading';
@@ -349,37 +346,49 @@ export function AdminDashboard() {
         ) : stats.error ? (
           <ErrorState message={stats.error.message} requestId={stats.error.requestId} />
         ) : stats.data ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard
-              label="Complaints logged"
-              value={String(stats.data.total)}
-              hint={`${stats.data.total - (stats.data.by_status.resolved ?? 0) - (stats.data.by_status.rated ?? 0) - (stats.data.by_status.closed ?? 0)} still open`}
-              icon={<IconReport size={17} />}
-            />
-            <MetricCard
-              label="Resolution rate"
-              value={`${Number(stats.data.resolution_rate_pct).toFixed(0)}%`}
-              deltaTone="positive"
-              hint="Share of complaints that reached resolved"
-              icon={<IconClock size={17} />}
-            />
-            <MetricCard
-              label="Average resolution"
-              value={durationHours(averageResolution)}
-              deltaTone={
-                averageResolution && Number(averageResolution) > 24 * 5 ? 'attention' : 'positive'
-              }
-              hint="Benchmark: 5 business days"
-              icon={<IconWrench size={17} />}
-            />
-            <MetricCard
-              label="Work orders in flight"
-              value={String(workOrdersInFlight)}
-              hint="Assigned or in progress right now"
-              icon={<IconWrench size={17} />}
-              deltaTone={workOrdersInFlight > 0 ? 'brand' : 'positive'}
-            />
-          </div>
+          <section aria-label="Estate operations at a glance" className="border-y border-line bg-surface">
+            <dl className="grid divide-y divide-line sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
+              {[
+                {
+                  label: 'Complaints logged',
+                  value: String(stats.data.total),
+                  detail: `${stats.data.total - (stats.data.by_status.resolved ?? 0) - (stats.data.by_status.rated ?? 0) - (stats.data.by_status.closed ?? 0)} still open`,
+                  icon: <IconReport size={16} />,
+                  tone: 'text-signal-ink',
+                },
+                {
+                  label: 'Resolution rate',
+                  value: `${Number(stats.data.resolution_rate_pct).toFixed(0)}%`,
+                  detail: 'Reached resolved',
+                  icon: <IconClock size={16} />,
+                  tone: 'text-mint-ink',
+                },
+                {
+                  label: 'Average resolution',
+                  value: durationHours(averageResolution),
+                  detail: 'Benchmark: 5 business days',
+                  icon: <IconWrench size={16} />,
+                  tone: averageResolution && Number(averageResolution) > 24 * 5 ? 'text-ochre-ink' : 'text-mint-ink',
+                },
+                {
+                  label: 'Work orders in flight',
+                  value: String(workOrdersInFlight),
+                  detail: 'Assigned or in progress',
+                  icon: <IconWrench size={16} />,
+                  tone: workOrdersInFlight > 0 ? 'text-brand-ink' : 'text-mint-ink',
+                },
+              ].map((metric) => (
+                <div key={metric.label} className="px-5 py-4 sm:px-6">
+                  <dt className="flex items-center gap-2 text-[0.68rem] font-semibold tracking-[0.12em] text-ink/45 uppercase">
+                    <span className={metric.tone}>{metric.icon}</span>
+                    {metric.label}
+                  </dt>
+                  <dd className="num mt-3 text-[1.8rem] leading-none font-semibold tracking-[-0.03em] text-ink">{metric.value}</dd>
+                  <p className="mt-2 text-[0.75rem] text-ink/50">{metric.detail}</p>
+                </div>
+              ))}
+            </dl>
+          </section>
         ) : null
       ) : (
         <div className="grid gap-4 sm:grid-cols-3">
@@ -404,79 +413,6 @@ export function AdminDashboard() {
           />
         </div>
       )}
-
-      {/* ----------------------------------------------- pillars + trajectory */}
-      <div className="grid gap-5 lg:grid-cols-[1.2fr_1fr]">
-        <Surface>
-          <SectionTitle
-            title="Health pillars"
-            hint="The engine’s five weighted components, exactly as stored"
-          />
-          {livingScoreSnapshot.loading ? (
-            <LoadingState label="Loading the pillar breakdown" />
-          ) : (
-            <HealthPillars pillars={pillars} expandedDefault={false} showWeights />
-          )}
-        </Surface>
-
-        <Surface>
-          <SectionTitle
-            title="Stored trajectory"
-            hint="Each point is a snapshot the engine wrote"
-          />
-          {trajectory.length > 1 ? (
-            <div className="h-[220px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={trajectory}
-                  margin={{ top: 8, right: 8, bottom: 0, left: -20 }}
-                >
-                  <defs>
-                    <linearGradient id="dashboardHealthFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#7C3AED" stopOpacity={0.28} />
-                      <stop offset="100%" stopColor="#7C3AED" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis
-                    dataKey="date"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fontSize: 11, fill: '#6B6480' }}
-                  />
-                  <YAxis
-                    domain={[0, 100]}
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fontSize: 11, fill: '#6B6480' }}
-                  />
-                  <ChartTooltip
-                    contentStyle={{
-                      borderRadius: 12,
-                      border: '1px solid #E9E3FF',
-                      fontSize: 12,
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="score"
-                    stroke="#7C3AED"
-                    strokeWidth={2}
-                    fill="url(#dashboardHealthFill)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <p className="py-3 text-[0.83rem] text-ink-muted">
-              A trajectory appears once there are at least two stored snapshots. Until then there is
-              nothing honest to plot.
-            </p>
-          )}
-        </Surface>
-      </div>
-
-      {/* ------------------------------------------------ estate health brief */}
-      {estateId !== null ? <HealthBrief estateId={estateId} canGenerate={isAdmin} /> : null}
 
       {/* ------------------------------------------------ lower grid */}
       <div className="grid gap-5 lg:grid-cols-[1.35fr_1fr]">
@@ -666,54 +602,6 @@ export function AdminDashboard() {
           )}
         </div>
       </Surface>
-
-      {/* --------------------------------------------------- next steps */}
-      {!livingScoreSnapshot.loading && livingScoreSnapshot.data === null ? (
-        <Surface className="bg-ink text-white">
-          <div className="flex flex-wrap items-start gap-4">
-            <IconAlert size={20} className="mt-0.5 shrink-0 text-white/70" />
-            <div className="min-w-0 flex-1">
-              <h2 className="font-heading text-[1rem] font-semibold text-white">
-                What the Living Score needs
-              </h2>
-              <p className="mt-1.5 max-w-2xl text-[0.83rem] text-white/75">
-                Every figure above is a signal. The engine normalises, weights and combines them
-                into a 0–100 Living Score over a rolling 90-day window — and the score is always
-                shown next to the factors that produced it.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <span className="rounded-full bg-white/10 px-3 py-1.5 text-[0.72rem] font-semibold text-white">
-                ◷ Awaiting data
-              </span>
-            </div>
-          </div>
-        </Surface>
-      ) : null}
-
-      <div className={cx('grid gap-4 sm:grid-cols-3')}>
-        {[
-          { icon: <IconReport size={17} />, label: 'Log an issue', to: '/app/complaints' },
-          {
-            icon: <IconMegaphone size={17} />,
-            label: 'Read announcements',
-            to: '/app/announcements',
-          },
-          { icon: <IconClock size={17} />, label: 'Estate health', to: '/app/health' },
-        ]
-          .filter((shortcut) => user?.role !== 'service_provider' || shortcut.to !== '/app/complaints')
-          .map((shortcut) => (
-            <Link
-              key={shortcut.to}
-              to={shortcut.to}
-              className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 text-[0.86rem] font-medium transition-colors duration-200 hover:border-brand-soft hover:bg-canvas"
-            >
-              <span className="text-brand">{shortcut.icon}</span>
-              {shortcut.label}
-              <IconArrowRight size={15} className="ml-auto text-ink-muted" />
-            </Link>
-          ))}
-      </div>
 
       <p className="text-[0.72rem] text-ink/35">
         Scope: {estate?.estate_name ?? 'no estate selected'} ·{' '}

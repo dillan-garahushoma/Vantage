@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { Activity, Award, Heart, MapPin, Share2, ShieldCheck, Trees } from 'lucide-react';
 import { Keyline } from '../components/Brand';
 import { PublicShell } from '../components/PublicShell';
 import { PhotoGallery } from '../components/PhotoGallery';
 import { IconArrowRight, IconCheck, IconClose, IconImages, IconPin } from '../components/Icons';
-import { Button, Card, ErrorState, LinkButton, Skeleton, SkeletonText, cx, } from '../components/ui';
+import { Button, Card, ErrorState, LinkButton, Skeleton, SkeletonText, cx } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { getPublicEstate } from '../lib/publicDirectory';
+import { rememberPublicEstate } from '../lib/publicEstateSelection';
 import { scoreBand } from '../lib/display';
 import { displayLabel } from '../lib/format';
 import { useAsync } from '../lib/useAsync';
@@ -83,13 +86,13 @@ function DetailSkeleton() {
       <Skeleton className="h-3 w-40"/>
       <Skeleton className="mt-5 h-9 w-2/3"/>
       <Skeleton className="mt-3 h-3 w-1/2"/>
-      <Skeleton className="mt-6 aspect-[3/2] max-h-[560px] w-full"/>
+      <Skeleton className="mt-6 aspect-[3/2] max-h-[560px] w-full rounded-2xl"/>
       <div className="mt-8 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
         <div>
           <Skeleton className="h-4 w-28"/>
           <SkeletonText lines={4} className="mt-4"/>
         </div>
-        <Skeleton className="h-72 w-full"/>
+        <Skeleton className="h-72 w-full rounded-2xl"/>
       </div>
     </div>);
 }
@@ -104,15 +107,16 @@ function DetailSkeleton() {
 function SectionNav({ hasScore }) {
     const items = [
         { href: '#photos', label: 'Photographs' },
+        { href: '#highlights', label: 'Highlights' },
         { href: '#about', label: 'About' },
-        { href: '#location', label: 'Location' },
         ...(hasScore ? [{ href: '#living-score', label: 'Living Score' }] : []),
+        { href: '#location', label: 'Location' },
         { href: '#joining', label: 'Joining' },
     ];
-    return (<nav aria-label="Sections of this complex" className="sticky top-[63px] z-20 -mx-5 mt-5 border-y border-ink/15 bg-paper/95 backdrop-blur-sm">
-      <ul className="flex gap-1 overflow-x-auto px-5 py-2">
+    return (<nav aria-label="Sections of this complex" className="sticky top-[63px] z-20 -mx-5 mt-6 border-y border-ink/15 bg-paper/95 backdrop-blur-md">
+      <ul className="flex items-center gap-1 sm:gap-2 overflow-x-auto px-5 py-2.5">
         {items.map((item) => (<li key={item.href}>
-            <a href={item.href} className="inline-block rounded-xs px-3 py-1.5 text-[13px] font-medium whitespace-nowrap text-ink-soft hover:bg-ink/5 hover:text-ink">
+            <a href={item.href} className="inline-block rounded-full px-3.5 py-1.5 text-[13px] font-medium whitespace-nowrap text-ink-soft hover:bg-ink/5 hover:text-ink transition-colors">
               {item.label}
             </a>
           </li>))}
@@ -190,6 +194,39 @@ function PublicationPanel() {
 function DetailBody({ estateId }) {
     const { user } = useAuth();
     const estate = useAsync(() => getPublicEstate(estateId), [estateId]);
+    const [copied, setCopied] = useState(false);
+    const [isSaved, setIsSaved] = useState(() => {
+        try {
+            const saved = JSON.parse(window.localStorage.getItem('valora.saved-estates') || '[]');
+            return Array.isArray(saved) && saved.includes(estateId);
+        } catch {
+            return false;
+        }
+    });
+
+    function handleShare() {
+        if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(window.location.href);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2500);
+        }
+    }
+
+    function toggleSave() {
+        setIsSaved((prev) => {
+            const next = !prev;
+            try {
+                const saved = JSON.parse(window.localStorage.getItem('valora.saved-estates') || '[]');
+                const current = Array.isArray(saved) ? saved : [];
+                const updated = next ? [...new Set([...current, estateId])] : current.filter((id) => id !== estateId);
+                window.localStorage.setItem('valora.saved-estates', JSON.stringify(updated));
+            } catch {
+                // ignore storage error
+            }
+            return next;
+        });
+    }
+
     if (estate.loading)
         return <DetailSkeleton />;
     if (estate.error) {
@@ -207,17 +244,53 @@ function DetailBody({ estateId }) {
     const detail = estate.data;
     if (!detail)
         return null;
-    // The contract marks the nested list optional, so a missing gallery is treated
-    // exactly like an empty one rather than rendering nothing.
     const photos = detail.photos ?? [];
+    const rawScore = detail.living_score?.overall_score;
+    const hasScore = rawScore !== null && rawScore !== undefined;
+    const band = hasScore ? scoreBand(Number(rawScore)) : null;
+
     return (<div className="mx-auto max-w-[1200px] px-5 py-8">
-      <nav className="text-[12.5px] text-ink-muted">
-        <Link to="/estates" className="hover:underline">
-          Find a complex
-        </Link>
-        <span aria-hidden="true"> / </span>
-        <span className="text-ink-soft">{detail.name}</span>
-      </nav>
+      {/* Top action bar: breadcrumbs + share/save buttons */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <nav className="text-[12.5px] text-ink-muted">
+          <Link to="/estates" className="hover:underline">
+            Find a complex
+          </Link>
+          <span aria-hidden="true"> / </span>
+          <span className="text-ink-soft">{detail.name}</span>
+        </nav>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleShare}
+            aria-label={copied ? 'Link copied to clipboard' : 'Share complex link'}
+            className="inline-flex items-center gap-1.5 rounded-full border border-ink/15 bg-surface px-3.5 py-1.5 text-[13px] font-medium text-ink shadow-2xs transition-colors hover:border-ink/30 hover:bg-ink/5"
+          >
+            {copied ? (
+              <>
+                <IconCheck size={14} className="text-accent-ink" />
+                <span className="text-accent-ink font-semibold">Link copied</span>
+              </>
+            ) : (
+              <>
+                <Share2 size={14} className="text-ink-soft" />
+                <span>Share</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleSave}
+            aria-label={isSaved ? 'Remove from saved complexes' : 'Save this complex'}
+            className="inline-flex items-center gap-1.5 rounded-full border border-ink/15 bg-surface px-3.5 py-1.5 text-[13px] font-medium text-ink shadow-2xs transition-colors hover:border-ink/30 hover:bg-ink/5"
+          >
+            <Heart size={14} className={isSaved ? 'fill-red-500 text-red-500' : 'text-ink-soft'} />
+            <span>{isSaved ? 'Saved' : 'Save'}</span>
+          </button>
+        </div>
+      </div>
 
       <header className="mt-4">
         <h1 className="text-[30px] leading-tight font-semibold sm:text-[34px]">{detail.name}</h1>
@@ -232,9 +305,6 @@ function DetailBody({ estateId }) {
 
       <Keyline className="mt-5"/>
 
-      {/* The gallery gets the whole content width rather than a column of it.
-            Inside a two-column layout a 1 + 4 mosaic is four thumbnails smaller
-            than one photograph, which defeats the point of an image-first page. */}
       <section id="photos" className="mt-5 scroll-mt-[122px]">
         <h2 className="mb-3 flex items-center gap-2 text-[15px] font-semibold">
           Photographs
@@ -247,11 +317,91 @@ function DetailBody({ estateId }) {
 
       <SectionNav hasScore={Boolean(detail.living_score)}/>
 
-      {/* `min-w-0` on both tracks: a grid item's automatic minimum is its
-            min-content, and a published photograph's intrinsic width is much wider
-            than a phone — without this the column, and the page, grew with it. */}
       <div className="mt-8 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
         <div className="min-w-0 space-y-8">
+          {/* Estate Management row */}
+          <div className="flex items-center justify-between gap-4 rounded-2xl border border-ink/15 bg-surface p-5 shadow-2xs">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-wash text-accent-ink font-bold text-[16px] tracking-wider border border-accent-ink/20">
+                {detail.name.slice(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-[15.5px] font-semibold text-ink">
+                    Managed by {detail.name} HOA
+                  </h3>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-accent-wash px-2 py-0.5 text-[11px] font-medium text-accent-ink border border-accent-ink/20">
+                    <ShieldCheck size={12} className="text-accent-ink" />
+                    Operational Oversight
+                  </span>
+                </div>
+                <p className="mt-0.5 text-[13px] text-ink-muted">
+                  {detail.unit_count} residential units · Homeowners Association Administration
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Highlights section */}
+          <section id="highlights" className="scroll-mt-[122px]">
+            <Card as="div" className="p-5 rounded-2xl">
+              <h2 className="text-[15px] font-semibold text-ink">Estate Highlights</h2>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ink/5 text-accent-ink">
+                    <MapPin size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-[13.5px] font-semibold text-ink">{detail.suburb}, {detail.city}</h3>
+                    <p className="mt-0.5 text-[12px] text-ink-muted leading-relaxed">
+                      Secure residential estate in {detail.province} with defined geographic bounds.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ink/5 text-accent-ink">
+                    <ShieldCheck size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-[13.5px] font-semibold text-ink">Monitored Estate Security</h3>
+                    <p className="mt-0.5 text-[12px] text-ink-muted leading-relaxed">
+                      24/7 controlled resident access, gated entry, and verified visitor logging.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ink/5 text-accent-ink">
+                    <Award size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-[13.5px] font-semibold text-ink">
+                      {detail.living_score ? `Living Score ${Number(detail.living_score.overall_score).toFixed(1)} / 100` : 'Operational Governance'}
+                    </h3>
+                    <p className="mt-0.5 text-[12px] text-ink-muted leading-relaxed">
+                      {detail.living_score
+                        ? `Operational performance evaluated by VALORA engine (${displayLabel(detail.living_score.status)}).`
+                        : 'Active estate administration and operational health monitoring.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ink/5 text-accent-ink">
+                    <Trees size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-[13.5px] font-semibold text-ink">Communal Living & Property</h3>
+                    <p className="mt-0.5 text-[12px] text-ink-muted leading-relaxed">
+                      {detail.unit_count} individual residential units sharing communal infrastructure.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </section>
+
           <section id="about" className="scroll-mt-[122px]">
             <Card as="div" className="p-5">
               <h2 className="text-[15px] font-semibold">About this complex</h2>
@@ -291,41 +441,84 @@ function DetailBody({ estateId }) {
             </section>) : null}
         </div>
 
-        {/* Only the action is pinned. A rail taller than the viewport would strand
-            its own bottom half off-screen, so the reading column keeps scrolling. */}
+        {/* Right column: Sticky Action Card */}
         <div className="min-w-0">
           <section id="joining" className="scroll-mt-[122px] lg:sticky lg:top-[122px] lg:self-start">
-            <Card as="div" className="p-5">
-              <h2 className="text-[15px] font-semibold">Join this estate</h2>
-              <p className="mt-2 text-[13px] text-ink-soft">
+            <Card as="div" className="p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-2 border-b border-ink/10 pb-3">
+                <div>
+                  <p className="num text-[11px] font-semibold tracking-wider text-accent-ink uppercase">
+                    Resident Portal
+                  </p>
+                  <h2 className="mt-1 text-[17px] font-semibold text-ink">Verified Estate Membership</h2>
+                </div>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-wash text-accent-ink">
+                  <ShieldCheck size={18} />
+                </div>
+              </div>
+
+              {/* Clear assurance banner */}
+              <div className="mt-3.5 flex items-start gap-2 rounded-lg bg-accent-wash/60 p-3 text-[12px] text-ink-soft border border-accent-ink/15">
+                <IconCheck size={14} className="mt-0.5 shrink-0 text-accent-ink" />
+                <span className="leading-snug">
+                  Requests reviewed by HOA office · Instant access with official unit code
+                </span>
+              </div>
+
+              {/* Stored Living Score summary if published */}
+              {detail.living_score && hasScore && band ? (
+                <div className="mt-3.5 rounded-lg border border-ink/10 bg-ink/5 p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11.5px] font-medium text-ink-soft">Living Score Status</span>
+                    <span className={cx('rounded-xs px-2 py-0.5 text-[10.5px] font-semibold uppercase', band.chipClass)}>
+                      {band.label}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 flex items-baseline gap-1.5">
+                    <span className="num text-[22px] font-bold text-ink">{Number(rawScore).toFixed(1)}</span>
+                    <span className="text-[12px] text-ink-muted">/ 100</span>
+                  </div>
+                  <a href="#living-score" className="mt-1.5 inline-flex items-center gap-1 text-[11.5px] font-medium text-accent-ink hover:underline">
+                    View score breakdown
+                    <IconArrowRight size={12} />
+                  </a>
+                </div>
+              ) : null}
+
+              <p className="mt-4 text-[12.5px] text-ink-soft">
                 Membership is by invitation: your estate office gives you a one-time code, and you
                 redeem it against your unit number. A code is the proof of the right to join — and
                 an estate is never listed here until its administrator publishes it.
               </p>
-              <ul className="mt-4 space-y-2">
+
+              <ul className="mt-3.5 space-y-2">
                 {[
-            'Ask your estate office for the join code.',
-            'Create an account (residents register themselves).',
-            'Redeem the code against your unit number.',
-        ].map((step, index) => (<li key={step} className="flex gap-2.5 text-[13px] text-ink-soft">
+                  'Ask your estate office for the join code.',
+                  'Create an account (residents register themselves).',
+                  'Redeem the code against your unit number.',
+                ].map((step, index) => (<li key={step} className="flex gap-2.5 text-[12.5px] text-ink-soft">
                     <span className="num mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-xs border border-ink/20 text-[11px] font-semibold text-accent-ink">
                       {index + 1}
                     </span>
                     {step}
                   </li>))}
               </ul>
-              <div className="mt-5 flex flex-wrap gap-2">
-                {user ? (<LinkButton to="/join" variant="primary">
-                    I have a code
-                    <IconArrowRight size={16}/>
-                  </LinkButton>) : (<LinkButton to="/register" variant="primary">
-                    Create an account
-                    <IconArrowRight size={16}/>
-                  </LinkButton>)}
-                <LinkButton to="/estates" variant="secondary">
-                  Other complexes
+
+              <div className="mt-5 flex flex-col gap-2">
+                <LinkButton to="/request-access" variant="primary" className="w-full justify-center text-[13px] font-medium py-2" onClick={() => rememberPublicEstate(detail)} aria-label="Request access">
+                  Request Resident Access
+                  <IconArrowRight size={15}/>
+                </LinkButton>
+
+                <LinkButton to={user ? "/join" : "/join"} variant="secondary" className="w-full justify-center text-[13px] font-medium py-2" onClick={() => rememberPublicEstate(detail)} aria-label="Redeem Join Code">
+                  Redeem Join Code
+                </LinkButton>
+
+                <LinkButton to="/estates" variant="secondary" className="w-full justify-center text-[12.5px] py-1.5 text-ink-muted">
+                  Explore other complexes
                 </LinkButton>
               </div>
+
               <p className="mt-4 flex items-start gap-2 border-t border-ink/15 pt-3 text-[12px] text-ink-muted">
                 <IconCheck size={14} className="mt-0.5 shrink-0 text-accent-ink"/>
                 VALORA never publishes unit numbers, addresses, resident names or complaint records.

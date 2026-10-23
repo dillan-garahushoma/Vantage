@@ -104,19 +104,19 @@ function EstateHealthBody() {
                     <AreaChart data={trajectory} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
                       <defs>
                         <linearGradient id="healthFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#7C3AED" stopOpacity={0.28}/>
-                          <stop offset="100%" stopColor="#7C3AED" stopOpacity={0}/>
+                          <stop offset="0%" stopColor="#5B3E78" stopOpacity={0.28}/>
+                          <stop offset="100%" stopColor="#5B3E78" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
-                      <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#6B6480' }}/>
-                      <YAxis domain={[0, 100]} tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#6B6480' }}/>
+                      <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#687078' }}/>
+                      <YAxis domain={[0, 100]} tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#687078' }}/>
                       <ChartTooltip contentStyle={{
                     borderRadius: 12,
-                    border: '1px solid #E9E3FF',
+                    border: '1px solid #DFDDD6',
                     fontSize: 12,
                     boxShadow: '0 10px 28px -14px rgba(31,23,51,0.12)',
                 }}/>
-                      <Area type="monotone" dataKey="score" stroke="#7C3AED" strokeWidth={2} fill="url(#healthFill)"/>
+                      <Area type="monotone" dataKey="score" stroke="#5B3E78" strokeWidth={2} fill="url(#healthFill)"/>
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>) : (<p className="py-3 text-[0.85rem] text-ink-muted">

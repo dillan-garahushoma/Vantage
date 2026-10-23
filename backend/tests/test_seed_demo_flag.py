@@ -45,7 +45,9 @@ async def test_seeded_estate_is_operational_data_not_demo_data(db_session, tmp_p
     estate = (
         await db_session.execute(select(Estate).where(Estate.name == DEMO_ESTATE_NAME))
     ).scalar_one()
-    assert estate.is_demo is False
+    assert estate.is_demo is True
+    assert estate.is_public is False
+    assert estate.show_living_score is False
 
 
 @pytest.mark.asyncio

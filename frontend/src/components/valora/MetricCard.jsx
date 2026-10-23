@@ -21,7 +21,7 @@ export function MetricCard({ icon, label, value, suffix, delta, deltaTone = 'pos
     const TrendIcon = direction === 'down' ? TrendingDown : direction === 'flat' ? Minus : TrendingUp;
     return (<Surface hover className={cn('flex flex-col justify-between', className)}>
       <div className="flex items-start justify-between gap-3">
-        {icon ? (<span className="flex h-9 w-9 items-center justify-center rounded-xl bg-canvas text-brand">
+        {icon ? (<span className="flex h-9 w-9 items-center justify-center rounded-xs bg-canvas text-brand">
             {icon}
           </span>) : null}
         {delta ? (<span className={cn('num inline-flex items-center gap-1 rounded-full bg-canvas px-2 py-1 text-[0.7rem] font-bold', toneText[deltaTone])}>

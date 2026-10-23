@@ -30,8 +30,8 @@ const buttonBase = 'inline-flex items-center justify-center gap-2 rounded-xs bor
 export function Button({ variant = 'secondary', className, ...rest }) {
     return <button className={cx(buttonBase, buttonVariants[variant], className)} {...rest}/>;
 }
-export function LinkButton({ to, variant = 'secondary', className, children, }) {
-    return (<Link to={to} className={cx(buttonBase, buttonVariants[variant], className)}>
+export function LinkButton({ to, variant = 'secondary', className, children, ...rest }) {
+    return (<Link to={to} className={cx(buttonBase, buttonVariants[variant], className)} {...rest}>
       {children}
     </Link>);
 }
