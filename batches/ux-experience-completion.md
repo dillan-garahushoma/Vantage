@@ -114,3 +114,38 @@ The batch is complete only when:
 - [ ] Directory data flow is traced; Musgrave is not hidden through an arbitrary UI hack; no unsafe production data mutation.
 - [ ] Focused validation is performed once after implementation, with results reported honestly.
 - [ ] A final progress report names implemented changes, validation actually run, external blockers, and remaining work. Stop after this batch; do not start unrelated tasks.
+
+
+## Owner follow-up — account selection, session switching, and portal composition
+
+This supplement is part of the same approved batch and takes precedence where it adds clarity.
+
+### Registration role paths and sign-in switching
+
+- The owner reported that Create account seems to force Resident and that moving to Sign in does not close/leave the registration experience.
+- Source inspection confirmed that the backend public registration contract intentionally creates residents only. Do not weaken this boundary or expose a dropdown that lets anyone grant themselves HOA/provider privileges.
+- The UI must still visibly explain the three user paths: **Resident**, **HOA / estate manager**, and **Service provider**. Resident opens the actual public registration form. HOA/provider choices show a clear, designed explanation of the required administrator/VALORA provisioning and a useful next action (Contact VALORA or Sign in), without pretending to create those privileged accounts. Preserve actual approved provider/HOA membership rules.
+- A signed-in visitor who opens Register or Login must not be silently bounced away, trapped in a loop, or shown a broken close control. Show the current account and clear actions to continue to the workspace or explicitly sign out and switch accounts. After sign-out, allow the sign-in form to render in the same route; preserve loading/error feedback.
+- Registration and sign-in must remain usable with keyboard and screen readers; role options are radios in a fieldset with accessible labels, descriptions, and focus indication.
+- Regression tests in `frontend/src/routes/Register.test.jsx` should validate the visible role paths and prove selected HOA/provider paths cannot cause a privileged registration payload. Add a focused Login existing-session/switch-account test if the test setup makes this straightforward.
+
+### Visual reference and portal composition
+
+The owner supplied live screenshots of the current `/intelligence` and `/app` screens. These reveal the actual defect: the portal feels like flat boxes containing text, with oversized briefing copy and too many panels vying for attention. The owner also requested a paired resident + HOA dashboard concept. A generated concept image is attached in the current conversation; if it is not available in the coding workspace, follow this written direction rather than inventing another reference palette.
+
+- Maintain VALORA's **light-purple/violet** brand language. Do not substitute the earlier green/black concept or reinterpret the palette without a concrete design-system reason.
+- Keep estate photographs purposeful: one substantial photo can establish place/context; thumbnails belong in a real gallery; never decorate every section with stock images. Prefer existing estate images and live uploaded estate photos, with safe fallback states.
+- Use an editorial content composition rather than a page of white bordered cards. Mix open canvas sections, fine rules, visual grouping, horizontal timelines, compact tables/work queues, strong typography, occasional photo-led context, and progressive-disclosure drawers. Cards may be used when they express a meaningful independent object, not as the default wrapper for every paragraph/list.
+- HOA desktop: compact estate context and primary action; a visually clear prioritized action list/table; at most a concise health summary (no global sidebar score duplicate); operational activity/trend context; details/evidence opened on demand in a side drawer. The first viewport should prioritise the next decision and actual work, not an oversized editorial briefing occupying most of the screen.
+- Resident desktop: photo-led estate context, a clear "Report an issue" action, active requests rendered as a readable status timeline/list, important notices with strong but restrained visual hierarchy, and a compact Estate Health link/score when real and published. The resident's own tasks come first; HOA-only content stays hidden.
+- Shared shell: keep navigation stable and scannable, but allow secondary panels/drawers to be called and dismissed gracefully. Preserve focus, Escape behavior, reduced-motion preference and responsive behaviour. Do not make a fixed 620px Ask VALORA panel consume the full-height sidebar space on every Intelligence role view; integrate the assistant into the main Intelligence experience with a sensible initial state and an optional expanded conversation.
+- Make the HOA and resident portals recognisably related yet task-specific. Avoid unnecessary decorative charts, invented status/cost/score data, nested rounded containers, three-column KPI blocks without decisions attached, and excessive empty whitespace created by arbitrary fixed heights.
+- Before claiming composition is improved, inspect the actual source-level component hierarchy and use the available browser workflow only after the implementation is complete. The current live screenshots are evidence of the starting state, not acceptance screenshots of the new implementation.
+
+### Updated priority sequence
+
+1. Account selection and signed-in account switching (the owner is blocked by this now).
+2. Remove the redundant sidebar Living Score and resolve the Ask VALORA single-entry/working-service issue.
+3. Trace actual API/backend/data configuration and publication/pagination issues without unsafe database mutations.
+4. Replace the HOA/resident composition with the role-specific open-layout direction above; preserve the violet identity and purposeful imagery.
+5. Finish focused implementation and perform one small validation pass only after code changes. Do not burn session tokens on repeated broad test runs.
