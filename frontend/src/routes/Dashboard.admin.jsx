@@ -1,15 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, Bell, CalendarDays, CheckCircle2, CircleAlert, Clock3, FileText, HeartPulse, ShieldAlert, Wrench } from 'lucide-react';
+import { ArrowRight, Bell, CalendarDays, CheckCircle2, CircleAlert, Clock3, FileText, HeartPulse, ShieldAlert, Wrench } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Chip, ErrorState, LoadingState } from '../components/ui';
 import { ComplaintDrawer } from '../components/ComplaintDrawer';
-import { Button } from '../components/ui/button';
 import { useAuth } from '../context/AuthContext';
 import { useEstateScope } from '../context/EstateContext';
 import { api, ApiError } from '../lib/api';
 import { getLivingScore, getLivingScoreHistory, recalculateLivingScore } from '../lib/analytics';
 import { complaintStatus, pillarBand, workOrderStatus } from '../lib/display';
-import { displayLabel, durationHours, relativeDays, shortDate } from '../lib/format';
+import { displayLabel, relativeDays, shortDate } from '../lib/format';
 import { useAsync } from '../lib/useAsync';
 
 const OPEN_STATUSES = new Set(['submitted', 'reviewed', 'assigned', 'in_progress']);
@@ -231,7 +230,6 @@ export function AdminDashboard() {
   );
   const workOrderItems = workOrders.data?.items ?? [];
   const workOrdersInFlight = workOrderItems.filter((item) => ['assigned', 'in_progress'].includes(item.status ?? ''));
-  const averageResolution = stats.data?.avg_resolution_hours;
   const resolutionRate = stats.data?.resolution_rate_pct;
   const notices = announcements.data?.items ?? [];
 
