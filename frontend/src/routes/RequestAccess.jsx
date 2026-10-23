@@ -167,7 +167,18 @@ export function RequestAccess() {
                   </Button>
                 </div>) : (<>
                   <div className="flex gap-2">
-                    <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by name, suburb or city" aria-label="Search the published complexes"/>
+                    <Input
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          setCommitted(query.trim());
+                        }
+                      }}
+                      placeholder="Search by name, suburb or city"
+                      aria-label="Search the published complexes"
+                    />
                     <Button type="button" variant="secondary" onClick={search}>
                       Search
                     </Button>
