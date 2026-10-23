@@ -145,7 +145,7 @@ describe('Dashboard — Living Score', () => {
       </MemoryRouter>);
         expect(await screen.findByText(/not enough data yet/i)).toBeVisible();
         expect(screen.queryByText('86,4')).toBeNull();
-        expect(screen.getByText(/Not enough data for a published Living Score yet/i)).toBeVisible();
+        expect(screen.getByText(/Not enough data yet for a published Living Score/i)).toBeVisible();
     });
     it('lets an HOA administrator recalculate, and re-reads the stored score afterwards', async () => {
         mocks.role = 'hoa_admin';
@@ -153,7 +153,7 @@ describe('Dashboard — Living Score', () => {
         render(<MemoryRouter initialEntries={['/app']}>
         <Dashboard />
       </MemoryRouter>);
-        await user.click(await screen.findByRole('button', { name: /recalculate score/i }));
+        await user.click(await screen.findByRole('button', { name: /recalculate/i }));
         expect(mocks.post).toHaveBeenCalledWith('/api/v1/analytics/living-score/recalculate', {}, { estate_id: 1 });
         // A fresh read, never a locally adjusted number.
         await waitFor(() => expect(mocks.get.mock.calls.filter(([path]) => path === '/api/v1/analytics/living-score')
@@ -174,7 +174,7 @@ describe('Dashboard — Living Score', () => {
         render(<MemoryRouter initialEntries={['/app']}>
         <Dashboard />
       </MemoryRouter>);
-        await user.click(await screen.findByRole('button', { name: /recalculate score/i }));
+        await user.click(await screen.findByRole('button', { name: /recalculate/i }));
         expect(await screen.findByText(/The recalculation was refused/)).toBeVisible();
         expect(screen.getByText('This account is not an administrator of this estate.')).toBeVisible();
         expect(screen.getByText(/req-403/)).toBeVisible();
