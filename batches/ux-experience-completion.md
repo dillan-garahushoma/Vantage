@@ -149,3 +149,6 @@ The owner supplied live screenshots of the current `/intelligence` and `/app` sc
 3. Trace actual API/backend/data configuration and publication/pagination issues without unsafe database mutations.
 4. Replace the HOA/resident composition with the role-specific open-layout direction above; preserve the violet identity and purposeful imagery.
 5. Finish focused implementation and perform one small validation pass only after code changes. Do not burn session tokens on repeated broad test runs.
+
+
+**Current source note:** On this branch, `frontend/src/components/layout/Sidebar.jsx` was inspected after this supplement was drafted and contains no `LivingScoreWidget` or score panel. Verify the exact component visible in the running app; preserve the detailed `EstateHealth.jsx` destination and avoid removing any legitimate score presentation elsewhere unless it is truly duplicative.
