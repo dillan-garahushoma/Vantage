@@ -1,6 +1,6 @@
 # VALORA — agent instructions
 
-VALORA is a South African private-estate property-health platform: FastAPI modular monolith, async SQLAlchemy, PostgreSQL, Alembic. A React frontend comes later. Backend root: `backend/`. The tenant boundary is the **estate**.
+VALORA is a South African private-estate property-health platform: FastAPI modular monolith, async SQLAlchemy, PostgreSQL, Alembic. The React frontend lives in `frontend/`; the backend root is `backend/`. The tenant boundary is the **estate**.
 
 Read these first, in order: `CLAUDE_README.md`, `ARCHITECTURE_AND_DOMAIN.md`, `EXECUTION_ROADMAP.md`, `DEVELOPMENT_AND_VALIDATION.md`, then every file in `docs/progress/`.
 
