@@ -12,7 +12,6 @@ import { displayLabel, durationHours, relativeDays, shortDate } from '../lib/for
 import { useAsync } from '../lib/useAsync';
 
 const OPEN_STATUSES = new Set(['submitted', 'reviewed', 'assigned', 'in_progress']);
-const CLOSED_STATUSES = new Set(['resolved', 'rated', 'closed']);
 
 function EstateContextHero({ estate }) {
   return (
