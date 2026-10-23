@@ -141,7 +141,7 @@ export function ResidentDashboard() {
     [estateId],
   );
 
-  const firstName = user?.full_name?.trim().split(/\\s+/)[0] || 'there';
+  const firstName = user?.full_name?.trim().split(/\s+/)[0] || 'there';
   const openRequests = (complaints.data?.items ?? []).filter((item) => !TERMINAL_STATUSES.has(item.status ?? ''));
   const notices = announcements.data?.items ?? [];
 
