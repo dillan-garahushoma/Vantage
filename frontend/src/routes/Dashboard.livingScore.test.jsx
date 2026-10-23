@@ -126,7 +126,7 @@ describe('Dashboard — Living Score', () => {
       </MemoryRouter>);
         expect(await screen.findByText('86,4')).toBeVisible();
         expect(screen.queryByText('Demo data')).toBeNull();
-        expect(screen.getByRole('heading', { name: 'How your estate is doing' })).toBeVisible();
+        expect(screen.getByRole('heading', { name: 'Estate health' })).toBeVisible();
         expect(screen.queryByText('Resolution speed')).toBeNull();
         expect(mocks.get).toHaveBeenCalledWith('/api/v1/analytics/living-score', {
             estate_id: 1,
@@ -145,7 +145,7 @@ describe('Dashboard — Living Score', () => {
       </MemoryRouter>);
         expect(await screen.findByText(/not enough data yet/i)).toBeVisible();
         expect(screen.queryByText('86,4')).toBeNull();
-        expect(screen.getByText(/Not enough data yet for a published Living Score/i)).toBeVisible();
+        expect(screen.getByText(/Not enough data for a published Living Score yet/i)).toBeVisible();
     });
     it('lets an HOA administrator recalculate, and re-reads the stored score afterwards', async () => {
         mocks.role = 'hoa_admin';
