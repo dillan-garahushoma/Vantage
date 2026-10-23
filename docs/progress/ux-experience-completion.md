@@ -99,3 +99,35 @@ All checks were executed locally against the codebase:
 8. `frontend/src/routes/Landing.jsx` — server-side province filtering for published catalogue
 9. `frontend/src/App.jsx` — added `/app/intelligence` alias route to `/intelligence`
 10. `docs/progress/ux-experience-completion.md` — this completion report
+
+
+---
+
+## 6. Follow-up implementation — portal composition and account switching
+
+**Follow-up session:** 2026-10-23  
+**Scope:** The supplied current-state screenshots and dashboard concept.
+
+### Changes in this follow-up
+
+- `frontend/src/routes/Register.jsx`: Added three visible role paths (Resident, HOA / estate manager, Service provider). Public self-registration remains resident-only; selecting a trusted role displays the real provisioning path and never submits a privileged role.
+- `frontend/src/routes/Login.jsx`: Added a current-session choice to continue or explicitly sign out and use another account. This avoids silent redirects that can trap the user outside the sign-in form.
+- `frontend/src/routes/Register.test.jsx`: Added coverage for the role options, provisioning notices, and resident-only registration payload. The accessible-name selector was corrected after CI showed that the role descriptions are included in a radio's computed accessible name.
+- `frontend/src/routes/Dashboard.resident.jsx`: Rebuilt the resident overview with the existing estate photo asset, personalised greeting, open-request list, notices, and compact Estate Health summary. Uses actual estate-scoped API responses; a missing score is shown as insufficient data, not zero.
+- `frontend/src/routes/Dashboard.admin.jsx`: Rebuilt the HOA overview around estate context, priority issues, a restrained operational metric strip, work orders, notices and recent activity. Complaint details use the existing Radix drawer primitive for focus trapping and Escape/dismiss behaviour. The open-complaint metric uses backend aggregate status counts instead of treating the latest loaded page as the entire estate.
+- `frontend/src/routes/Dashboard.livingScore.test.jsx`: Updated assertions for the new compact score summary and action label.
+- `.github/workflows/ci.yml`: Added a frontend job that runs `npm ci`, `npm run build`, and `npx vitest run` on PRs.
+
+### Validation for the dashboard/account follow-up
+
+- GitHub Actions run **40026245541** (head `ef6aa1fc05251b5c347ff3a5ad63a3287f731fd2`):
+  - Frontend production build: **passed**.
+  - Frontend Vitest suite: **passed**.
+  - At the time this addendum was written, the backend job was still running; no backend-suite conclusion is claimed.
+- The local container could not resolve `github.com`, so no local `npm` command was run. The CI result above is from GitHub Actions.
+- No authenticated live-browser screenshot review, live backend/API session, production AI check, or production database mutation was performed.
+- The existing `/estate-hero.jpg` is being reused as a temporary architectural asset and can be replaced later.
+
+### Delivery state
+
+The changes are pushed to `codex/valora-experience-completion` and available in draft pull request #2. They are **not merged to `main` and not deployed**. Browser/production acceptance is still required before a release.
