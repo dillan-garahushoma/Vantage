@@ -1,25 +1,44 @@
-import { LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, ChevronRight, LogOut, MoreHorizontal } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { roleLabels } from '../../lib/display';
 import { initials } from '../../lib/format';
-import { navGroupsForRole } from '../../lib/nav';
+import { navItemsForRole, navGroupsForRole } from '../../lib/nav';
 import { cn } from '../../lib/utils';
 import { Logo } from '../valora/Logo';
 import { EstateSwitcher } from './EstateSwitcher';
+
+const PRIMARY_PATHS = {
+  resident: ['/app', '/app/complaints', '/app/announcements', '/app/health'],
+  hoa_admin: ['/app', '/app/complaints', '/app/work-orders', '/app/incidents', '/app/health', '/intelligence', '/admin/members'],
+  service_provider: ['/provider/work', '/app/work-orders', '/intelligence'],
+};
+
+const PRIMARY_LABELS = {
+  '/app': { resident: 'Home', hoa_admin: 'Overview' },
+  '/app/complaints': { resident: 'My requests', hoa_admin: 'Complaints' },
+  '/app/announcements': { resident: 'Notices' },
+  '/app/work-orders': { hoa_admin: 'Work orders', service_provider: 'Assigned work' },
+  '/app/incidents': { hoa_admin: 'Incidents' },
+  '/app/health': { resident: 'Estate health', hoa_admin: 'Estate health' },
+  '/intelligence': { resident: 'VALORA Intelligence', hoa_admin: 'VALORA Intelligence', service_provider: 'VALORA Intelligence' },
+  '/admin/members': { hoa_admin: 'Residents' },
+  '/provider/work': { service_provider: 'My work' },
+};
 
 function UserPill() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   if (!user) return null;
   return (
-    <div className="mt-3 flex items-center gap-2.5">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-[0.72rem] font-bold text-white">
+    <div className="flex min-w-0 items-center gap-2.5 border-t border-brand/10 px-4 py-4">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-wash text-[0.72rem] font-bold text-brand-ink">
         {initials(user.full_name)}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[0.82rem] font-semibold text-ink">{user.full_name}</span>
-        <span className="block truncate text-[0.7rem] text-ink/45">
+        <span className="block truncate text-[0.8rem] font-semibold text-ink">{user.full_name}</span>
+        <span className="block truncate text-[0.68rem] text-ink/50">
           {roleLabels[user.role] ?? user.role}
         </span>
       </span>
@@ -30,7 +49,8 @@ function UserPill() {
           navigate('/');
         }}
         aria-label="Sign out"
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink/40 transition-colors duration-200 hover:bg-canvas hover:text-ink"
+        title="Sign out"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink/40 transition-colors hover:bg-white hover:text-ink focus-visible:outline-2 focus-visible:outline-brand"
       >
         <LogOut className="h-4 w-4" />
       </button>
@@ -38,84 +58,109 @@ function UserPill() {
   );
 }
 
-/** The navigation rail, shared by the desktop sidebar and the mobile sheet. */
+function NavigationLink({ item, user, onNavigate }) {
+  const label = PRIMARY_LABELS[item.to]?.[user?.role] ?? item.label;
+  return (
+    <NavLink
+      to={item.to}
+      end={item.to === '/app'}
+      onClick={onNavigate}
+      className={({ isActive }) => cn(
+        'group relative flex min-h-10 items-center gap-3 px-3 py-2 text-[0.82rem] font-medium transition-colors duration-150',
+        isActive
+          ? 'bg-white text-brand-ink shadow-[inset_3px_0_0_#7041D8]'
+          : 'text-ink/65 hover:bg-white/70 hover:text-ink',
+      )}
+    >
+      {({ isActive }) => (
+        <>
+          <item.icon className={cn('h-[1.05rem] w-[1.05rem] shrink-0', isActive ? 'text-brand' : 'text-ink/40 group-hover:text-ink/70')} aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate">{label}</span>
+          {item.accent && !isActive ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" /> : null}
+        </>
+      )}
+    </NavLink>
+  );
+}
+
+/** Compact, role-aware rail; secondary tools remain accessible under More. */
 export function SidebarNav({ onNavigate }) {
   const { user } = useAuth();
   const groups = navGroupsForRole(user?.role);
+  const allowed = navItemsForRole(user?.role);
+  const primaryPaths = PRIMARY_PATHS[user?.role] ?? [];
+  const primary = primaryPaths
+    .map((path) => allowed.find((item) => item.to === path))
+    .filter(Boolean);
+  const primarySet = new Set(primary.map((item) => item.to));
+  const secondaryGroups = groups
+    .map((group) => ({ ...group, items: group.items.filter((item) => !primarySet.has(item.to)) }))
+    .filter((group) => group.items.length > 0);
+  const [moreOpen, setMoreOpen] = useState(false);
+
   return (
-    <nav className="scrollbar-slim flex-1 overflow-y-auto px-3 pb-4" aria-label="Sections">
-      {groups.map((group) => (
-        <div key={group.label} className="mb-5">
-          <p className="px-3 pb-2 text-[0.64rem] font-semibold tracking-[0.16em] text-ink/35 uppercase">
-            {group.label}
-          </p>
-          <ul className="space-y-0.5">
-            {group.items.map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  end={item.to === '/app'}
-                  onClick={onNavigate}
-                  className={({ isActive }) =>
-                    cn(
-                      'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[0.86rem] font-medium transition-all duration-200 ease-soft',
-                      isActive ? 'bg-canvas text-brand-ink' : 'text-ink/65 hover:bg-canvas/60 hover:text-ink'
-                    )
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      <span
-                        className={cn(
-                          'absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand transition-opacity duration-200',
-                          isActive ? 'opacity-100' : 'opacity-0'
-                        )}
-                      />
-                      <item.icon
-                        className={cn(
-                          'h-[1.05rem] w-[1.05rem] shrink-0 transition-colors duration-200',
-                          isActive ? 'text-brand' : 'text-ink/40 group-hover:text-ink/60'
-                        )}
-                      />
-                      <span className="truncate">{item.label}</span>
-                      {item.accent && !isActive ? (
-                        <span className="ml-auto h-1.5 w-1.5 rounded-full bg-brand-soft" />
-                      ) : null}
-                    </>
-                  )}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
+    <nav className="scrollbar-slim flex-1 overflow-y-auto px-3 pb-4 pt-2" aria-label="Workspace navigation">
+      <div className="space-y-1">
+        {primary.map((item) => (
+          <NavigationLink key={item.to} item={item} user={user} onNavigate={onNavigate} />
+        ))}
+      </div>
+
+      {secondaryGroups.length > 0 ? (
+        <div className="mt-4 border-t border-brand/10 pt-3">
+          <button
+            type="button"
+            aria-expanded={moreOpen}
+            onClick={() => setMoreOpen((open) => !open)}
+            className="flex min-h-10 w-full items-center gap-3 px-3 py-2 text-left text-[0.8rem] font-medium text-ink/60 transition-colors hover:bg-white/70 hover:text-ink focus-visible:outline-2 focus-visible:outline-brand"
+          >
+            <MoreHorizontal className="h-[1.05rem] w-[1.05rem] text-ink/45" aria-hidden="true" />
+            <span className="flex-1">More tools</span>
+            {moreOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </button>
+          {moreOpen ? (
+            <div className="mt-2 space-y-4 border-l border-brand/15 pl-2">
+              {secondaryGroups.map((group) => (
+                <div key={group.label}>
+                  <p className="px-3 pb-1.5 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-ink/35">
+                    {group.label}
+                  </p>
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => (
+                      <NavigationLink key={item.to} item={item} user={user} onNavigate={onNavigate} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
-      ))}
+      ) : null}
     </nav>
   );
 }
 
-/** The estate switcher above the rail, on a light header strip. */
+/** Brand and the currently selected estate live together like a workspace switcher. */
 export function SidebarHeader() {
   return (
-    <div className="px-5 pt-6 pb-4">
-      <NavLink to="/app" className="inline-flex">
+    <div className="px-4 pb-4 pt-5">
+      <NavLink to="/app" className="inline-flex rounded-sm px-1 py-1" aria-label="VALORA workspace home">
         <Logo size={28} />
       </NavLink>
-      <div className="mt-6">
+      <div className="mt-5">
         <EstateSwitcher />
       </div>
     </div>
   );
 }
 
-/** The full rail, fixed to the left edge from `lg` up. */
+/** Desktop rail. The mobile sheet reuses the same header and navigation. */
 export function Sidebar() {
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-[272px] flex-col border-r border-line bg-surface lg:flex">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-[232px] flex-col border-r border-brand/10 bg-[#F8F6FD] lg:flex">
       <SidebarHeader />
       <SidebarNav />
-      <div className="border-t border-line px-4 py-4">
-        <UserPill />
-      </div>
+      <UserPill />
     </aside>
   );
 }
