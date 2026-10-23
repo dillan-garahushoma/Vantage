@@ -71,7 +71,7 @@ describe('registrationPayload', () => {
 describe('Register — role paths and safe permissions', () => {
   it('shows resident, HOA manager and service provider account paths', () => {
     renderRegister();
-    expect(screen.getByRole('radio', { name: /^resident\b/i })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /^resident/i })).toBeChecked();
     expect(screen.getByRole('radio', { name: /hoa \/ estate manager/i })).toBeVisible();
     expect(screen.getByRole('radio', { name: /service provider/i })).toBeVisible();
   });
@@ -93,7 +93,7 @@ describe('Register — role paths and safe permissions', () => {
     const user = userEvent.setup();
     renderRegister();
     await user.click(screen.getByRole('radio', { name: /hoa \/ estate manager/i }));
-    await user.click(screen.getByRole('radio', { name: /^resident\b/i }));
+    await user.click(screen.getByRole('radio', { name: /^resident/i }));
     expect(screen.getByRole('button', { name: /create resident account/i })).toBeVisible();
     expect(screen.getByRole('textbox', { name: /full name/i })).toBeVisible();
   });
