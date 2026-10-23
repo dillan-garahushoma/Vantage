@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, LogOut, MoreHorizontal } from 'lucide-react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { roleLabels } from '../../lib/display';
 import { initials } from '../../lib/format';
@@ -66,7 +66,7 @@ function NavigationLink({ item, user, onNavigate }) {
       end={item.to === '/app'}
       onClick={onNavigate}
       className={({ isActive }) => cn(
-        'group relative flex min-h-10 items-center gap-3 px-3 py-2 text-[0.82rem] font-medium transition-colors duration-150',
+        'group relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-[0.82rem] font-medium transition-colors duration-150',
         isActive
           ? 'bg-white text-brand-ink shadow-[inset_3px_0_0_#7041D8]'
           : 'text-ink/65 hover:bg-white/70 hover:text-ink',
@@ -86,6 +86,7 @@ function NavigationLink({ item, user, onNavigate }) {
 /** Compact, role-aware rail; secondary tools remain accessible under More. */
 export function SidebarNav({ onNavigate }) {
   const { user } = useAuth();
+  const { pathname } = useLocation();
   const groups = navGroupsForRole(user?.role);
   const allowed = navItemsForRole(user?.role);
   const primaryPaths = PRIMARY_PATHS[user?.role] ?? [];
@@ -96,7 +97,7 @@ export function SidebarNav({ onNavigate }) {
   const secondaryGroups = groups
     .map((group) => ({ ...group, items: group.items.filter((item) => !primarySet.has(item.to)) }))
     .filter((group) => group.items.length > 0);
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(() => !primaryPaths.includes(pathname));
 
   return (
     <nav className="scrollbar-slim flex-1 overflow-y-auto px-3 pb-4 pt-2" aria-label="Workspace navigation">
