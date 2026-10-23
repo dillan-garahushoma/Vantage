@@ -494,7 +494,7 @@ export function AdminDashboard() {
       </section>
       <ComplaintDetail complaint={selectedComplaint} onClose={() => setSelectedComplaint(null)} />
     </div>
-  );;
+  );
 }
 
 export { AdminDashboard as DashboardBody };
