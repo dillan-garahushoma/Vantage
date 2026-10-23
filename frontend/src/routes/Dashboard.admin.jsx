@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, Bell, CalendarDays, CheckCircle2, CircleAlert, Clock3, FileText, HeartPulse, ShieldAlert, Wrench } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Chip, EmptyState, ErrorState, LoadingState } from '../components/ui';
+import { Chip, ErrorState, LoadingState } from '../components/ui';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../context/AuthContext';
 import { useEstateScope } from '../context/EstateContext';
@@ -138,7 +138,7 @@ function ScoreSummary({ snapshot, history, loading, error, onRecalculate, recalc
       ) : (
         <p className="mt-2 max-w-md text-sm leading-relaxed text-ink-soft">A score appears when the estate has enough measured operational data for a stored calculation.</p>
       )}
-      {recalculateError ? <p role="alert" className="mt-2 text-xs text-signal-ink">{recalculateError.message}</p> : null}
+      {recalculateError ? <div role="alert" className="mt-3 border-l-2 border-signal bg-signal-wash/60 px-3 py-2 text-xs text-signal-ink"><p className="font-semibold">The recalculation was refused.</p><p className="mt-1">{recalculateError.message}</p>{recalculateError.requestId ? <p className="mt-1">Reference: {recalculateError.requestId}</p> : null}</div> : null}
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         <Link to="/app/health" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink hover:underline">
           Explore Estate Health <ArrowRight className="h-3.5 w-3.5" />
@@ -279,7 +279,6 @@ export function AdminDashboard() {
   );
   const workOrderItems = workOrders.data?.items ?? [];
   const workOrdersInFlight = workOrderItems.filter((item) => ['assigned', 'in_progress'].includes(item.status ?? ''));
-  const openIncidents = null; // Incidents are intentionally not fabricated; only show a metric when a real incident endpoint is wired.
   const averageResolution = stats.data?.avg_resolution_hours;
   const resolutionRate = stats.data?.resolution_rate_pct;
   const notices = announcements.data?.items ?? [];
@@ -430,7 +429,7 @@ export function AdminDashboard() {
 
       <section aria-labelledby="recent-activity-heading" className="border-t border-line pt-6">
         <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-brand-ink">Record of action</p><h2 id="recent-activity-heading" className="mt-1 font-heading text-lg font-semibold text-ink">Recent activity</h2></div><p className="text-xs text-ink-muted">{estate?.estate_name ?? 'Selected estate'}</p></div>
-        {complaints.loading || workOrders.loading ? <div className="mt-3"><LoadingState label="Loading recent activity" /></div> : complaints.error && workOrders.error ? <p className="py-3 text-sm text-ink-muted">Recent activity is unavailable.</p> : <div className="mt-2"><ActivityList complaints={allComplaints.filter((item) => !CLOSED_STATUSES.has(item.status ?? '')).slice(0, 6)} workOrders={workOrderItems.slice(0, 6)} /></div>}
+        {complaints.loading || workOrders.loading ? <div className="mt-3"><LoadingState label="Loading recent activity" /></div> : complaints.error && workOrders.error ? <p className="py-3 text-sm text-ink-muted">Recent activity is unavailable.</p> : <div className="mt-2"><ActivityList complaints={allComplaints.slice(0, 6)} workOrders={workOrderItems.slice(0, 6)} /></div>}
       </section>
 
       <p className="border-t border-line pt-4 text-xs text-ink-muted">
