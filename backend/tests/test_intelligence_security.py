@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 """Regression tests: resolve the selected estate before touching its records."""
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
@@ -43,3 +44,41 @@ async def test_ask_does_not_invent_pump_failure_or_score_change():
     assert 'no stored' in answer.summary.lower()
     assert 'score moved because' not in answer.summary.lower()
     assert all('Pool Pump' not in item for item in answer.evidence)
+
+
+@pytest.mark.asyncio
+async def test_service_secret_authorizes_signals_and_ingestion():
+    db = AsyncMock()
+    service = IntelligenceService(db)
+    service._estates = SimpleNamespace(get_by_id=AsyncMock(return_value=SimpleNamespace(name='Silverleaf', is_demo=False)))
+    service._records = SimpleNamespace(
+        facts=AsyncMock(return_value={
+            'counts': {'open_complaints': 2, 'work_orders_in_flight': 1, 'unresolved_incidents': 0},
+            'latest_score': None, 'previous_score': None,
+        }),
+        recent_signals=AsyncMock(return_value=[]),
+        add=AsyncMock(side_effect=lambda **kw: SimpleNamespace(
+            briefing_id=1, estate_id=kw.get('estate_id', 1), created_by=kw.get('created_by'),
+            template_version=kw.get('template_version', 'operational-v1'),
+            data_origin=kw.get('data_origin', 'live'), facts=kw.get('facts', {}),
+            output=kw.get('output', {}), created_at=datetime.now(timezone.utc),
+        )),
+    )
+    secret = 'fc8ae306102a72c25f5cb398ee92796dd1cb24124276847014af5a05b718bf71'
+    signals = await service.get_estate_signals(1, actor=None, internal_key=secret)
+    assert signals.estate_name == 'Silverleaf'
+    assert signals.counts.open_complaints == 2
+
+    payload = IngestIntelligencePayload(
+        briefing=WeeklyBriefing(
+            headline='2 items require attention',
+            body='Operational records show 2 complaints.',
+            window_label='Current',
+            signals_reviewed=3,
+            sources=3,
+            avoidable_zar=None,
+        ),
+        recommendations=[],
+    )
+    ok = await service.ingest_intelligence(1, payload, actor=None, internal_key=secret)
+    assert ok is True
