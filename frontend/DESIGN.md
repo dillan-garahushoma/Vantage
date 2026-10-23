@@ -112,6 +112,15 @@ sans title at 26–32px, an optional 15px intro capped at 2xl, then content. Alt
 Vary the vertical rhythm: a tight section after the hero (py-10) and a generous one before the close
 (py-16). Uniform py-14 everywhere is what makes a page read as a template.
 
+**Account screen.** One layout for sign-in, create-account, join, request-access, recovery and the
+completion screen: `AuthShell`. Two columns on desktop (claim left, form card right, 1fr / 1.02fr,
+cap 1040px), one column below `lg`. The left column is an eyebrow in mono, the claim in the display
+serif at 34–40px, one 14.5px lead, then either three trust points (rotated accent squares) or the
+onboarding step thread — three numbered stops, completed in mint, current in accent. The card opens
+with a 16px title and a hairline, never a coloured header. The primary action is full width, the
+secondary link sits under the form, and `Forgot password?` is right-aligned above the button. Never
+let an account screen use a different shell, a centred single column, or a stepper as a banner.
+
 **Record row.** Left: title (15px medium) over a metadata line (11px mono, `ink-muted`). Right: status
 chip, then age in mono. Hover: hairline turns `line` → `brand-soft`, nothing moves.
 
