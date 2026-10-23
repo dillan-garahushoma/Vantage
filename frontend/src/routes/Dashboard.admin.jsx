@@ -301,7 +301,18 @@ export function AdminDashboard() {
     }
   }
 
-  const needsReview = activeComplaints.filter((item) => ['submitted', 'reviewed'].includes(item.status ?? '')).length;
+  const openComplaintCount = stats.data
+    ? Math.max(
+        0,
+        Number(stats.data.total ?? 0) -
+          Number(stats.data.by_status?.resolved ?? 0) -
+          Number(stats.data.by_status?.rated ?? 0) -
+          Number(stats.data.by_status?.closed ?? 0),
+      )
+    : activeComplaints.length;
+  const needsReview = stats.data
+    ? Number(stats.data.by_status?.submitted ?? 0) + Number(stats.data.by_status?.reviewed ?? 0)
+    : activeComplaints.filter((item) => ['submitted', 'reviewed'].includes(item.status ?? '')).length;
   const urgentCount = activeComplaints.filter((item) => ['urgent', 'high'].includes((item.priority ?? '').toLowerCase())).length;
 
   return (
@@ -327,7 +338,7 @@ export function AdminDashboard() {
       <section aria-label="Operational overview" className="grid gap-5 border-y border-line py-5 sm:grid-cols-2 xl:grid-cols-4">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 text-signal-ink"><CircleAlert className="h-4 w-4" /></span>
-          <div><p className="text-xs text-ink-muted">Open complaints</p><p className="num mt-1 font-heading text-3xl font-semibold text-ink">{complaints.loading ? '—' : activeComplaints.length}</p><p className="mt-1 text-xs text-ink-muted">{needsReview} awaiting review</p></div>
+          <div><p className="text-xs text-ink-muted">Open complaints</p><p className="num mt-1 font-heading text-3xl font-semibold text-ink">{stats.loading || stats.error ? '—' : openComplaintCount}</p><p className="mt-1 text-xs text-ink-muted">{stats.error ? 'Count unavailable' : `${needsReview} awaiting review`}</p></div>
         </div>
         <div className="flex items-start gap-3">
           <span className="mt-0.5 text-brand-ink"><Wrench className="h-4 w-4" /></span>
@@ -348,7 +359,7 @@ export function AdminDashboard() {
           <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-3">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-brand-ink">Needs a decision</p>
-              <h2 className="mt-1 font-heading text-xl font-semibold tracking-tight text-ink sm:text-2xl">Priority issues <span className="ml-1 text-sm font-medium text-ink-muted">{activeComplaints.length}</span></h2>
+              <h2 className="mt-1 font-heading text-xl font-semibold tracking-tight text-ink sm:text-2xl">Priority issues <span className="ml-1 text-sm font-medium text-ink-muted">{stats.error ? '' : openComplaintCount}</span></h2>
             </div>
             <Link to="/app/complaints" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink hover:underline">Open complaints <ArrowRight className="h-3.5 w-3.5" /></Link>
           </div>
@@ -356,7 +367,7 @@ export function AdminDashboard() {
           {urgentCount > 0 ? (
             <div className="my-4 flex items-start gap-3 border-l-2 border-signal bg-signal-wash/60 px-4 py-3">
               <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-signal-ink" />
-              <div><p className="text-sm font-semibold text-signal-ink">{urgentCount} high-priority issue{urgentCount === 1 ? '' : 's'} need attention</p><p className="mt-0.5 text-xs leading-relaxed text-ink-soft">Review the recorded details and decide the next action.</p></div>
+              <div><p className="text-sm font-semibold text-signal-ink">{urgentCount} high-priority item{urgentCount === 1 ? '' : 's'} in the latest records need attention</p><p className="mt-0.5 text-xs leading-relaxed text-ink-soft">Review the recorded details and decide the next action.</p></div>
             </div>
           ) : null}
 
