@@ -15,49 +15,35 @@ import { useAsync } from '../lib/useAsync';
 const OPEN_STATUSES = new Set(['submitted', 'reviewed', 'assigned', 'in_progress']);
 
 function EstateContextHero({ estate }) {
+  const location = [estate?.suburb, estate?.city, estate?.province].filter(Boolean).join(' · ');
   return (
-    <section className="grid overflow-hidden border-y border-line bg-brand-wash/45 md:grid-cols-[1fr_0.88fr]" aria-label="Estate context">
-      <div className="flex min-h-[230px] flex-col justify-between p-6 sm:p-8 lg:p-9">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-ink">Estate operations</p>
-          <h2 className="mt-3 max-w-2xl font-heading text-3xl font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-4xl">
-            {estate?.estate_name ?? 'Your estate'}.
-            <span className="block text-brand-ink">What needs attention today?</span>
-          </h2>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-soft">
-            Review outstanding work, keep residents informed, and follow operational issues through to resolution.
-          </p>
-        </div>
-        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-ink-muted">
-          {estate?.suburb || estate?.city ? (
-            <span className="inline-flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-              {[estate.suburb, estate.city, estate.province].filter(Boolean).join(', ')}
-            </span>
-          ) : null}
-          <span>{estate?.property_ids?.length ?? 0} linked units</span>
-          <Link to="/admin/settings" className="font-semibold text-brand-ink hover:underline">Estate profile <ArrowRight className="ml-1 inline h-3.5 w-3.5" /></Link>
-        </div>
-      </div>
-      <div className="relative min-h-[210px] overflow-hidden md:min-h-full">
-        <img
-          src="/estate-hero.jpg"
-          alt="Residential estate architecture"
-          width="960"
-          height="640"
-          fetchPriority="high"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#24153f]/80 via-[#24153f]/10 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/75">Management workspace</p>
-          <p className="mt-1 max-w-md font-heading text-xl font-semibold leading-snug text-white">
-            Clear priorities. Accountable action. A healthier estate.
-          </p>
-        </div>
+    <section className="relative min-h-[154px] overflow-hidden bg-brand-wash sm:min-h-[174px]" aria-label="Selected estate">
+      <img
+        src="/estate-hero.jpg"
+        alt="Contemporary residential architecture and landscaped grounds"
+        width="960"
+        height="420"
+        fetchPriority="high"
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#241532]/80 via-[#241532]/35 to-transparent" />
+      <div className="relative flex min-h-[154px] max-w-xl flex-col justify-end p-5 text-white sm:min-h-[174px] sm:p-6">
+        <p className="text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-white/75">Your estate</p>
+        <h2 className="mt-1 font-heading text-xl font-semibold tracking-tight sm:text-2xl">{estate?.estate_name ?? 'Selected estate'}</h2>
+        {location ? <p className="mt-1 text-xs text-white/80">{location}</p> : null}
       </div>
     </section>
   );
+}
+
+function nextAction(status) {
+  switch (status) {
+    case 'submitted': return 'Review issue';
+    case 'reviewed': return 'Assign provider';
+    case 'assigned': return 'Confirm work start';
+    case 'in_progress': return 'Follow repair';
+    default: return 'Open record';
+  }
 }
 
 function PriorityRow({ complaint, onSelect }) {
@@ -66,35 +52,42 @@ function PriorityRow({ complaint, onSelect }) {
   const high = priority === 'high';
   const status = complaintStatus[complaint.status ?? 'submitted'];
   return (
-    <li className="border-b border-line/80 last:border-b-0">
+    <li className="border-b border-brand/10 last:border-b-0">
       <button
         type="button"
         onClick={() => onSelect(complaint)}
-        className="group grid w-full gap-3 py-4 text-left transition-colors hover:bg-brand-wash/35 focus-visible:outline-2 focus-visible:outline-brand sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-3"
-        aria-label={`Review complaint ${complaint.id}: ${complaint.description}`}
+        className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 py-3.5 text-left transition-colors hover:bg-brand-wash/35 focus-visible:outline-2 focus-visible:outline-brand sm:grid-cols-[minmax(0,1.6fr)_100px_minmax(90px,0.7fr)_140px] sm:gap-4 sm:px-2"
+        aria-label={`Open issue details for complaint ${complaint.id}: ${complaint.description}`}
       >
-        <span className="flex min-w-0 items-start gap-3.5">
-          <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center ${critical ? 'bg-signal-wash text-signal-ink' : high ? 'bg-ochre-wash text-ochre-ink' : 'bg-brand-wash text-brand-ink'}`}>
-            {critical || high ? <CircleAlert className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}
+        <span className="flex min-w-0 items-start gap-3">
+          <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${critical ? 'bg-signal-wash text-signal-ink' : high ? 'bg-ochre-wash text-ochre-ink' : 'bg-brand-wash text-brand-ink'}`}>
+            {critical || high ? <CircleAlert className="h-3.5 w-3.5" aria-hidden="true" /> : <Wrench className="h-3.5 w-3.5" aria-hidden="true" />}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold text-ink">{complaint.description}</span>
-              <span className={`text-[10px] font-bold uppercase tracking-[0.08em] ${critical ? 'text-signal-ink' : high ? 'text-ochre-ink' : 'text-ink-muted'}`}>
-                {displayLabel(priority)}
-              </span>
+            <span className="block line-clamp-2 text-[0.82rem] font-semibold leading-snug text-ink">{complaint.description}</span>
+            <span className="mt-1 block truncate text-[0.68rem] text-ink/50">
+              {displayLabel(complaint.category)} · Unit {complaint.unit_id} · #{complaint.id}
             </span>
-            <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-muted">
-              <span>#{complaint.id}</span><span aria-hidden="true">·</span>
-              <span>{displayLabel(complaint.category)}</span>
-              {complaint.unit_id ? <><span aria-hidden="true">·</span><span>Unit {complaint.unit_id}</span></> : null}
-              <span aria-hidden="true">·</span><span>Logged {relativeDays(complaint.created_at)}</span>
+            <span className="mt-1 block text-[0.68rem] text-ink/45 sm:hidden">
+              {status?.label ?? displayLabel(complaint.status ?? 'submitted')} · {relativeDays(complaint.created_at)}
             </span>
           </span>
         </span>
-        <span className="flex items-center justify-between gap-3 pl-[3.15rem] sm:justify-end sm:pl-0">
-          <Chip tone={status?.tone ?? 'neutral'} glyph={status?.glyph}>{status?.label ?? complaint.status}</Chip>
-          <ArrowRight className="h-4 w-4 shrink-0 text-ink-muted transition-transform group-hover:translate-x-0.5 group-hover:text-brand" />
+
+        <span className={`inline-flex w-fit items-center rounded-full px-2 py-1 text-[0.62rem] font-semibold ${critical ? 'bg-signal-wash text-signal-ink' : high ? 'bg-ochre-wash text-ochre-ink' : priority === 'low' ? 'bg-mint-wash text-mint-ink' : 'bg-brand-wash text-brand-ink'}`}>
+          {displayLabel(priority)}
+        </span>
+
+        <span className="hidden min-w-0 truncate text-[0.74rem] text-ink/60 sm:block">
+          {complaint.assigned_to?.trim() || 'Not assigned'}
+        </span>
+
+        <span className="col-span-2 flex items-center justify-between gap-2 border-t border-brand/5 pt-2 text-[0.72rem] font-semibold text-brand-ink sm:col-span-1 sm:border-0 sm:pt-0">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="hidden text-[0.68rem] font-normal text-ink/45 sm:inline">{status?.label ?? displayLabel(complaint.status ?? 'submitted')}</span>
+            <span className="truncate">{nextAction(complaint.status)}</span>
+          </span>
+          <ArrowRight className="h-3.5 w-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
         </span>
       </button>
     </li>
@@ -107,45 +100,48 @@ function ScoreSummary({ snapshot, history, loading, error, onRecalculate, recalc
   const band = scored ? pillarBand(score) : null;
   const snapshots = [...(history?.snapshots ?? [])].reverse().filter((item) => item.overall_score !== null && item.overall_score !== undefined);
   const change = snapshots.length > 1 ? Number(snapshots.at(-1).overall_score) - Number(snapshots.at(-2).overall_score) : null;
+  const percentage = score === null ? 0 : Math.max(0, Math.min(100, score));
 
   return (
-    <section className="border-l-2 border-brand pl-4 sm:pl-5" aria-labelledby="estate-health-summary">
-      <div className="flex items-center gap-2 text-brand-ink">
-        <HeartPulse className="h-4 w-4" />
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em]">Estate health</p>
+    <section className="flex min-w-0 items-center gap-4" aria-labelledby="estate-health-summary">
+      <div
+        className="flex h-[74px] w-[74px] shrink-0 items-center justify-center rounded-full"
+        style={{ background: `conic-gradient(#7041D8 ${percentage}%, #e9e1f6 ${percentage}% 100%)` }}
+        role={scored ? 'img' : undefined}
+        aria-label={scored ? `Living Score ${score.toLocaleString('en-ZA', { maximumFractionDigits: 1 })} out of 100` : undefined}
+      >
+        <div className="flex h-[58px] w-[58px] flex-col items-center justify-center rounded-full bg-white">
+          <span className="num text-lg font-bold leading-none text-brand-ink">{loading ? '—' : scored ? score.toLocaleString('en-ZA', { maximumFractionDigits: 1 }) : '—'}</span>
+          <span className="mt-1 text-[0.55rem] text-ink/40">/ 100</span>
+        </div>
       </div>
-      <div className="mt-3 flex items-end gap-3">
-        {loading ? <LoadingState label="Loading Living Score" /> : error ? (
-          <p className="text-sm text-ink-muted">Estate health is temporarily unavailable.</p>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 text-brand-ink">
+          <HeartPulse className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <p id="estate-health-summary" className="text-[0.65rem] font-bold uppercase tracking-[0.13em]">Estate health</p>
+        </div>
+        {loading ? <div className="mt-2"><LoadingState label="Loading Living Score" /></div> : error ? (
+          <p className="mt-1 text-xs text-ink/55">Estate health is temporarily unavailable.</p>
         ) : scored ? (
           <>
-            <p className="num font-heading text-4xl font-semibold leading-none tracking-tight text-brand-ink">
-              {score.toLocaleString('en-ZA', { maximumFractionDigits: 1 })}
-              <span className="ml-1 text-sm font-medium text-ink-muted">/100</span>
-            </p>
-            <Chip tone={band?.tone === 'positive' ? 'good' : 'warn'}>{band?.label ?? 'Published score'}</Chip>
+            <p className="mt-1 text-[0.78rem] font-semibold text-ink">{band?.label ?? 'Published score'}</p>
+            <p className="mt-0.5 text-[0.66rem] text-ink/50">Updated {shortDate(snapshot.as_of ?? snapshot.calculated_at)}</p>
+            {change !== null ? <p className={`mt-1 text-[0.65rem] font-semibold ${change > 0 ? 'text-mint-ink' : change < 0 ? 'text-signal-ink' : 'text-ink/45'}`}>{change > 0 ? '+' : ''}{change.toLocaleString('en-ZA', { maximumFractionDigits: 1 })} points vs previous snapshot</p> : null}
           </>
-        ) : <p className="font-heading text-3xl font-semibold text-ink">Not scored yet</p>}
-      </div>
-      {scored ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
-          {change !== null ? <span className={`inline-flex items-center gap-1 font-semibold ${change > 0 ? 'text-mint-ink' : change < 0 ? 'text-signal-ink' : 'text-ink-muted'}`}>
-            {change > 0 ? <ArrowUpRight className="h-3.5 w-3.5" /> : change < 0 ? <ArrowDownRight className="h-3.5 w-3.5" /> : null}
-            {change > 0 ? '+' : ''}{change.toLocaleString('en-ZA', { maximumFractionDigits: 1 })} points vs previous snapshot
-          </span> : null}
-          <span>Updated {shortDate(snapshot.as_of ?? snapshot.calculated_at)}</span>
+        ) : (
+          <p className="mt-1 text-[0.74rem] leading-relaxed text-ink/55">Not enough data for a published Living Score yet.</p>
+        )}
+
+        {recalculateError ? <div role="alert" className="mt-2 border-l-2 border-signal bg-signal-wash/60 px-2.5 py-2 text-[0.68rem] text-signal-ink"><p className="font-semibold">Recalculation refused</p><p className="mt-1">{recalculateError.message}</p>{recalculateError.requestId ? <p className="mt-1">Reference: {recalculateError.requestId}</p> : null}</div> : null}
+
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <Link to="/app/health" className="inline-flex items-center gap-1 text-[0.72rem] font-semibold text-brand-ink hover:underline">
+            Explore Estate Health <ArrowRight className="h-3 w-3" aria-hidden="true" />
+          </Link>
+          <button type="button" onClick={onRecalculate} disabled={recalculating} className="text-[0.66rem] font-medium text-ink/45 underline-offset-4 hover:text-brand-ink hover:underline disabled:opacity-50">
+            {recalculating ? 'Recalculating…' : 'Recalculate'}
+          </button>
         </div>
-      ) : (
-        <p className="mt-2 max-w-md text-sm leading-relaxed text-ink-soft">A score appears when the estate has enough measured operational data for a stored calculation.</p>
-      )}
-      {recalculateError ? <div role="alert" className="mt-3 border-l-2 border-signal bg-signal-wash/60 px-3 py-2 text-xs text-signal-ink"><p className="font-semibold">The recalculation was refused.</p><p className="mt-1">{recalculateError.message}</p>{recalculateError.requestId ? <p className="mt-1">Reference: {recalculateError.requestId}</p> : null}</div> : null}
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Link to="/app/health" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink hover:underline">
-          Explore Estate Health <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-        <button type="button" onClick={onRecalculate} disabled={recalculating} className="text-xs font-medium text-ink-muted underline-offset-4 hover:text-brand-ink hover:underline disabled:opacity-50">
-          {recalculating ? 'Recalculating…' : 'Recalculate score'}
-        </button>
       </div>
     </section>
   );
