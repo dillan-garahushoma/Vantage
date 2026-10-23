@@ -39,8 +39,8 @@ export function TopBar({ onOpenNav, onCreateWorkOrder, onLogComplaint }) {
             : null;
 
     return (
-      <header className="sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-30 border-b border-brand/10 bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1540px] items-center gap-3 px-4 py-2.5 sm:px-6 lg:px-7">
           <button
             type="button"
             onClick={onOpenNav}
@@ -73,7 +73,7 @@ export function TopBar({ onOpenNav, onCreateWorkOrder, onLogComplaint }) {
                 onBlur={() => window.setTimeout(() => setFocused(false), 150)}
                 placeholder="Search workspace"
                 aria-label="Search the estate workspace"
-                className="h-10 w-[200px] bg-canvas pl-9 text-xs"
+                className="h-10 w-[220px] rounded-full border-brand/10 bg-[#F8F6FD] pl-9 text-xs placeholder:text-ink/35 focus-visible:ring-brand/15 lg:w-[270px]"
               />
               {focused && results.length > 0 ? (
                 <div className="animate-fade-in absolute top-[46px] right-0 left-0 z-40 rounded-2xl border border-line bg-surface p-1.5 shadow-lift">
@@ -101,13 +101,13 @@ export function TopBar({ onOpenNav, onCreateWorkOrder, onLogComplaint }) {
               to="/"
               aria-label="Website home"
               title="Website home"
-              className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full border border-line px-2.5 text-ink/60 transition-colors hover:border-brand-soft hover:bg-brand-wash hover:text-brand-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full border border-brand/10 bg-white px-2.5 text-ink/60 transition-colors hover:border-brand-soft hover:bg-brand-wash hover:text-brand-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               <House className="h-4 w-4" aria-hidden="true" />
               <span className="hidden text-xs font-medium sm:inline">Home</span>
             </Link>
             {quickAction ? (
-              <Button variant="ink" onClick={quickAction.onClick} className="hidden h-10 rounded-full px-5 sm:inline-flex">
+              <Button variant="default" onClick={quickAction.onClick} className="hidden h-10 rounded-full px-5 sm:inline-flex">
                 <Plus className="h-3.5 w-3.5" />
                 {quickAction.label}
               </Button>
@@ -122,8 +122,8 @@ export function TopBar({ onOpenNav, onCreateWorkOrder, onLogComplaint }) {
               <Bell className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
             </button>
 
-            <div className="flex items-center gap-2.5 rounded-full border border-line py-1 pr-3 pl-1">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-[0.68rem] font-bold text-white">
+            <div className="flex items-center gap-2.5 rounded-full border border-brand/10 bg-white py-1 pr-3 pl-1">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-wash text-[0.68rem] font-bold text-brand-ink">
                 {initials(user?.full_name ?? '')}
               </span>
               <span className="hidden leading-tight sm:block">
@@ -140,7 +140,7 @@ export function TopBar({ onOpenNav, onCreateWorkOrder, onLogComplaint }) {
 
         {quickAction ? (
           <div className="border-t border-line px-4 py-2 sm:hidden">
-            <Button variant="ink" onClick={quickAction.onClick} className={cn('h-9 w-full rounded-full text-[0.82rem]')}>
+            <Button variant="default" onClick={quickAction.onClick} className={cn('h-9 w-full rounded-full text-[0.82rem]')}>
               <Plus className="h-3.5 w-3.5" />
               {quickAction.label}
             </Button>
