@@ -310,79 +310,27 @@ export function AdminDashboard() {
     ? Number(stats.data.by_status?.submitted ?? 0) + Number(stats.data.by_status?.reviewed ?? 0)
     : activeComplaints.filter((item) => ['submitted', 'reviewed'].includes(item.status ?? '')).length;
   const urgentCount = activeComplaints.filter((item) => ['urgent', 'high'].includes((item.priority ?? '').toLowerCase())).length;
+  const firstName = user?.full_name?.trim().split(' ').filter(Boolean)[0] || 'there';
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="space-y-9 pb-6">
-      <header className="flex flex-col justify-between gap-4 border-b border-line pb-5 sm:flex-row sm:items-end">
+    <div className="space-y-6 pb-6">
+      <header className="flex flex-col justify-between gap-3 border-b border-brand/10 pb-5 sm:flex-row sm:items-end">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.17em] text-brand-ink">HOA workspace</p>
-          <h1 className="mt-2 font-heading text-3xl font-semibold tracking-[-0.035em] text-ink sm:text-4xl">The operating picture.</h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">Start with the issues that need a decision. The rest of the estate's record is one step away.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link to="/app/complaints" className="inline-flex min-h-10 items-center justify-center gap-2 border border-line px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-brand-wash">
-            <FileText className="h-4 w-4" /> Complaints
-          </Link>
-          <Link to="/app/work-orders" className="inline-flex min-h-10 items-center justify-center gap-2 bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-ink">
-            <Wrench className="h-4 w-4" /> Work orders <ArrowRight className="h-4 w-4" />
-          </Link>
+          <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-brand-ink">Welcome back</p>
+          <h1 className="mt-1 font-heading text-3xl font-semibold leading-tight tracking-[-0.045em] text-ink sm:text-[2.65rem]">
+            {greeting}, <span className="text-brand-ink">{firstName}</span>
+          </h1>
+          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-ink/55">
+            Here's the current status for {estate?.estate_name ?? 'your estate'}.
+          </p>
         </div>
       </header>
 
-      <EstateContextHero estate={estate} />
-
-      <section aria-label="Operational overview" className="grid gap-5 border-y border-line py-5 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 text-signal-ink"><CircleAlert className="h-4 w-4" /></span>
-          <div><p className="text-xs text-ink-muted">Open complaints</p><p className="num mt-1 font-heading text-3xl font-semibold text-ink">{stats.loading || stats.error ? '—' : openComplaintCount}</p><p className="mt-1 text-xs text-ink-muted">{stats.error ? 'Count unavailable' : `${needsReview} awaiting review`}</p></div>
-        </div>
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 text-brand-ink"><Wrench className="h-4 w-4" /></span>
-          <div><p className="text-xs text-ink-muted">Work orders in flight</p><p className="num mt-1 font-heading text-3xl font-semibold text-ink">{workOrders.loading ? '—' : workOrdersInFlight.length}</p><p className="mt-1 text-xs text-ink-muted">Assigned or in progress</p></div>
-        </div>
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 text-ochre-ink"><Activity className="h-4 w-4" /></span>
-          <div><p className="text-xs text-ink-muted">Resolution rate</p><p className="num mt-1 font-heading text-3xl font-semibold text-ink">{stats.loading || resolutionRate == null ? '—' : `${Number(resolutionRate).toFixed(0)}%`}</p><p className="mt-1 text-xs text-ink-muted">From recorded complaints</p></div>
-        </div>
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 text-brand"><Clock3 className="h-4 w-4" /></span>
-          <div><p className="text-xs text-ink-muted">Average resolution</p><p className="num mt-1 font-heading text-3xl font-semibold text-ink">{stats.loading || averageResolution == null ? '—' : durationHours(averageResolution)}</p><p className="mt-1 text-xs text-ink-muted">For resolved records</p></div>
-        </div>
-      </section>
-
-      <section className="grid gap-9 xl:grid-cols-[minmax(0,1.45fr)_minmax(290px,0.72fr)] xl:gap-12">
-        <div>
-          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-3">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-brand-ink">Needs a decision</p>
-              <h2 className="mt-1 font-heading text-xl font-semibold tracking-tight text-ink sm:text-2xl">Priority issues <span className="ml-1 text-sm font-medium text-ink-muted">{stats.error ? '' : openComplaintCount}</span></h2>
-            </div>
-            <Link to="/app/complaints" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink hover:underline">Open complaints <ArrowRight className="h-3.5 w-3.5" /></Link>
-          </div>
-
-          {urgentCount > 0 ? (
-            <div className="my-4 flex items-start gap-3 border-l-2 border-signal bg-signal-wash/60 px-4 py-3">
-              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-signal-ink" />
-              <div><p className="text-sm font-semibold text-signal-ink">{urgentCount} high-priority item{urgentCount === 1 ? '' : 's'} in the latest records need attention</p><p className="mt-0.5 text-xs leading-relaxed text-ink-soft">Review the recorded details and decide the next action.</p></div>
-            </div>
-          ) : null}
-
-          {complaints.loading ? <LoadingState label="Loading priority issues" /> : complaints.error ? (
-            <ErrorState title="Issues could not be loaded" message={complaints.error.message} requestId={complaints.error.requestId} action={<button onClick={complaints.reload} type="button" className="text-sm font-semibold text-brand-ink underline">Try again</button>} />
-          ) : activeComplaints.length === 0 ? (
-            <div className="flex items-start gap-3 py-7">
-              <CheckCircle2 className="mt-0.5 h-5 w-5 text-mint-ink" />
-              <div><p className="font-semibold text-ink">No open complaints on record.</p><p className="mt-1 text-sm text-ink-soft">New submissions will appear here for review.</p></div>
-            </div>
-          ) : (
-            <ul className="divide-y divide-line/80">
-              {activeComplaints.slice(0, 6).map((item) => <PriorityRow key={item.id} complaint={item} onSelect={setSelectedComplaint} />)}
-            </ul>
-          )}
-          {activeComplaints.length > 6 ? <Link to="/app/complaints" className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink hover:underline">View all {activeComplaints.length} open issues <ArrowRight className="h-3.5 w-3.5" /></Link> : null}
-        </div>
-
-        <aside className="space-y-8">
+      <section className="grid gap-0 overflow-hidden border border-brand/10 bg-white md:grid-cols-[1.12fr_0.88fr]" aria-label="Estate summary">
+        <EstateContextHero estate={estate} />
+        <div className="flex items-center px-5 py-5 sm:px-6">
           <ScoreSummary
             snapshot={score.data}
             history={scoreHistory.data}
@@ -392,62 +340,161 @@ export function AdminDashboard() {
             recalculating={recalculating}
             recalculateError={recalculateError}
           />
+        </div>
+      </section>
 
-          <section aria-labelledby="latest-notices">
-            <div className="flex items-center justify-between gap-3 border-b border-line pb-3">
-              <div><p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-brand-ink">Keep residents informed</p><h2 id="latest-notices" className="mt-1 font-heading text-lg font-semibold text-ink">Latest notices</h2></div>
-              <Link to="/app/announcements" aria-label="View all announcements" className="flex h-9 w-9 items-center justify-center text-brand-ink hover:bg-brand-wash"><ArrowRight className="h-4 w-4" /></Link>
+      <section className="grid gap-8 xl:grid-cols-[minmax(0,1.55fr)_minmax(250px,0.72fr)] xl:gap-9">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-brand/15 pb-3">
+            <div>
+              <h2 className="font-heading text-xl font-semibold tracking-tight text-ink sm:text-2xl">What needs your attention today?</h2>
+              <p className="mt-1 text-xs text-ink/50">Priority issues and open items requiring action.</p>
+            </div>
+            <Link to="/app/complaints" className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-ink hover:underline">
+              All complaints <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </Link>
+          </div>
+
+          {urgentCount > 0 ? (
+            <div className="my-3 flex items-start gap-2.5 border-l-2 border-signal bg-signal-wash/55 px-3.5 py-2.5">
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-signal-ink" aria-hidden="true" />
+              <div>
+                <p className="text-xs font-semibold text-signal-ink">{urgentCount} high-priority issue{urgentCount === 1 ? '' : 's'} in the latest records</p>
+                <p className="mt-0.5 text-[0.7rem] leading-relaxed text-ink/60">Open an issue to inspect the record and continue the workflow.</p>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="hidden grid-cols-[minmax(0,1.6fr)_100px_minmax(90px,0.7fr)_140px] gap-4 border-b border-brand/10 px-2 py-2.5 text-[0.6rem] font-bold uppercase tracking-[0.13em] text-ink/40 sm:grid">
+            <span>Issue</span><span>Priority</span><span>Owner</span><span>Next action</span>
+          </div>
+
+          {complaints.loading ? <div className="py-5"><LoadingState label="Loading priority issues" /></div> : complaints.error ? (
+            <div className="py-4">
+              <ErrorState title="Issues could not be loaded" message={complaints.error.message} requestId={complaints.error.requestId} action={<button onClick={complaints.reload} type="button" className="text-sm font-semibold text-brand-ink underline">Try again</button>} />
+            </div>
+          ) : activeComplaints.length === 0 ? (
+            <div className="flex items-start gap-3 py-7">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 text-mint-ink" aria-hidden="true" />
+              <div><p className="font-semibold text-ink">No open complaints on record.</p><p className="mt-1 text-sm text-ink/55">New submissions will appear here for review.</p></div>
+            </div>
+          ) : (
+            <ul>{activeComplaints.slice(0, 7).map((item) => <PriorityRow key={item.id} complaint={item} onSelect={setSelectedComplaint} />)}</ul>
+          )}
+          {activeComplaints.length > 7 ? <Link to="/app/complaints" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-ink hover:underline">View all {activeComplaints.length} open items <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link> : null}
+
+          <section className="mt-7 border-t border-brand/10 pt-5" aria-labelledby="operational-pulse-heading">
+            <div className="flex items-baseline justify-between gap-3">
+              <div>
+                <h2 id="operational-pulse-heading" className="font-heading text-lg font-semibold text-ink">Operational pulse</h2>
+                <p className="mt-1 text-xs text-ink/50">Latest measurements from stored estate records.</p>
+              </div>
+              <Link to="/app/health" className="text-xs font-semibold text-brand-ink hover:underline">Estate health <ArrowRight className="ml-1 inline h-3 w-3" aria-hidden="true" /></Link>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-4 border-y border-brand/10 py-4 sm:grid-cols-4 sm:gap-0">
+              <div className="sm:border-r sm:border-brand/10 sm:pr-4">
+                <p className="flex items-center gap-2 text-[0.68rem] text-ink/55"><span className="h-2 w-2 rounded-full bg-signal" />Open complaints</p>
+                <p className="num mt-1 text-2xl font-semibold text-ink">{stats.loading || stats.error ? '—' : openComplaintCount}</p>
+              </div>
+              <div className="sm:border-r sm:border-brand/10 sm:px-4">
+                <p className="flex items-center gap-2 text-[0.68rem] text-ink/55"><span className="h-2 w-2 rounded-full bg-brand" />Work in progress</p>
+                <p className="num mt-1 text-2xl font-semibold text-ink">{workOrders.loading || workOrders.error ? '—' : workOrdersInFlight.length}</p>
+              </div>
+              <div className="sm:border-r sm:border-brand/10 sm:px-4">
+                <p className="flex items-center gap-2 text-[0.68rem] text-ink/55"><span className="h-2 w-2 rounded-full bg-ochre" />Awaiting review</p>
+                <p className="num mt-1 text-2xl font-semibold text-ink">{stats.loading || stats.error ? '—' : needsReview}</p>
+              </div>
+              <div className="sm:pl-4">
+                <p className="flex items-center gap-2 text-[0.68rem] text-ink/55"><span className="h-2 w-2 rounded-full bg-mint" />Resolution rate</p>
+                <p className="num mt-1 text-2xl font-semibold text-ink">{stats.loading || stats.error || resolutionRate == null ? '—' : String(Number(resolutionRate).toFixed(0)) + '%'}</p>
+              </div>
+            </div>
+            {complaints.loading || workOrders.loading ? <div className="mt-3"><LoadingState label="Loading recent activity" /></div> : complaints.error && workOrders.error ? (
+              <p className="py-3 text-xs text-ink/50">Recent activity is unavailable.</p>
+            ) : (
+              <div className="mt-2"><ActivityList complaints={allComplaints.slice(0, 6)} workOrders={workOrderItems.slice(0, 6)} /></div>
+            )}
+          </section>
+        </div>
+
+        <aside className="min-w-0">
+          <section className="border border-brand/10 bg-white" aria-labelledby="estate-profile-heading">
+            <img src="/estate-hero.jpg" alt="Contemporary residential architecture" width="720" height="320" loading="lazy" className="h-[118px] w-full object-cover sm:h-[140px]" />
+            <div className="p-4">
+              <p className="text-[0.6rem] font-bold uppercase tracking-[0.15em] text-brand-ink">Selected estate</p>
+              <h2 id="estate-profile-heading" className="mt-1 font-heading text-lg font-semibold text-ink">{estate?.estate_name ?? 'Estate profile'}</h2>
+              <p className="mt-0.5 text-xs text-ink/50">{[estate?.suburb, estate?.city, estate?.province].filter(Boolean).join(', ') || 'Location not recorded'}</p>
+              <p className="mt-1 text-xs text-ink/50">{estate?.property_ids?.length ?? 0} units linked to your account</p>
+              <div className="mt-4 divide-y divide-brand/10 border-t border-brand/10">
+                <Link to="/admin/settings" className="flex items-center justify-between gap-3 py-3 text-xs font-semibold text-ink/70 hover:text-brand-ink">Estate profile <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+                <Link to="/admin/members" className="flex items-center justify-between gap-3 py-3 text-xs font-semibold text-ink/70 hover:text-brand-ink">Residents and access <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+                <Link to="/intelligence" className="flex items-center justify-between gap-3 py-3 text-xs font-semibold text-ink/70 hover:text-brand-ink">Reports and intelligence <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-6 border-t border-brand/10 pt-5" aria-labelledby="latest-notices">
+            <div className="flex items-start justify-between gap-3">
+              <div><h2 id="latest-notices" className="font-heading text-lg font-semibold text-ink">Community updates</h2><p className="mt-1 text-xs text-ink/50">Keep residents informed.</p></div>
+              <Link to="/app/announcements" aria-label="View all announcements" className="flex h-8 w-8 items-center justify-center text-brand-ink hover:bg-brand-wash"><ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
             </div>
             {announcements.loading ? <div className="mt-3"><LoadingState label="Loading notices" /></div> : announcements.error ? (
-              <p className="mt-3 text-sm text-ink-muted">Notices are temporarily unavailable.</p>
+              <p className="mt-3 text-xs text-ink/55">Notices are temporarily unavailable.</p>
             ) : notices.length === 0 ? (
-              <div className="flex gap-3 py-4"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-brand-ink" /><p className="text-sm text-ink-muted">No notices have been published yet.</p></div>
+              <div className="mt-3 flex items-start gap-2.5 bg-brand-wash/40 px-3 py-3"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-brand-ink" aria-hidden="true" /><p className="text-xs text-ink/55">No notices have been published yet.</p></div>
             ) : (
-              <ul className="divide-y divide-line/80">
-                {notices.slice(0, 3).map((notice) => <li key={notice.id} className="py-3.5">
-                  <div className="flex items-start gap-2"><CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-brand-ink" /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-baseline justify-between gap-2"><p className="text-sm font-semibold text-ink">{notice.title}</p><time className="text-xs text-ink-muted">{shortDate(notice.created_at)}</time></div><p className="mt-1 line-clamp-2 text-sm leading-relaxed text-ink-soft">{notice.message}</p></div></div>
+              <ul className="mt-3 divide-y divide-brand/10">
+                {notices.slice(0, 2).map((notice, index) => <li key={notice.id} className={index === 0 ? 'bg-brand-wash/45 px-3 py-3' : 'py-3'}>
+                  <div className="flex items-start gap-2.5">
+                    <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-brand-ink" aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2"><p className="text-xs font-semibold text-ink">{notice.title}</p><time className="text-[0.64rem] text-ink/40">{shortDate(notice.created_at)}</time></div>
+                      <p className="mt-1 line-clamp-2 text-[0.7rem] leading-relaxed text-ink/55">{notice.message}</p>
+                    </div>
+                  </div>
                 </li>)}
               </ul>
             )}
-            <Link to="/app/announcements" className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink hover:underline">Manage notices <ArrowRight className="h-3.5 w-3.5" /></Link>
+            <Link to="/app/announcements" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-ink hover:underline">Manage announcements <ArrowRight className="h-3 w-3" aria-hidden="true" /></Link>
+          </section>
+
+          <section className="mt-6 border-t border-brand/10 pt-5" aria-labelledby="work-orders-heading">
+            <div className="flex items-center justify-between gap-3">
+              <div><h2 id="work-orders-heading" className="font-heading text-lg font-semibold text-ink">Work in motion</h2><p className="mt-1 text-xs text-ink/50">Assigned and active repairs.</p></div>
+              <Link to="/app/work-orders" aria-label="View all work orders" className="flex h-8 w-8 items-center justify-center text-brand-ink hover:bg-brand-wash"><ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+            </div>
+            {workOrders.loading ? <div className="mt-3"><LoadingState label="Loading work orders" /></div> : workOrders.error ? (
+              <p className="mt-3 text-xs text-ink/55">Work orders are temporarily unavailable.</p>
+            ) : workOrdersInFlight.length === 0 ? (
+              <p className="py-4 text-xs text-ink/50">No active work orders are recorded.</p>
+            ) : (
+              <ul className="mt-2 divide-y divide-brand/10">
+                {workOrdersInFlight.slice(0, 3).map((order) => {
+                  const status = workOrderStatus[order.status ?? 'assigned'];
+                  return <li key={order.id} className="flex items-start gap-2.5 py-3">
+                    <Wrench className="mt-0.5 h-4 w-4 shrink-0 text-brand-ink" aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-ink">Work order #{order.id}</p>
+                      <p className="mt-0.5 text-[0.68rem] text-ink/50">Complaint #{order.complaint_id}</p>
+                      <p className="mt-1 text-[0.68rem] text-ink/60">{status?.label ?? displayLabel(order.status ?? 'assigned')}</p>
+                    </div>
+                  </li>;
+                })}
+              </ul>
+            )}
           </section>
         </aside>
       </section>
 
-      <section aria-labelledby="work-orders-heading" className="border-t border-line pt-6">
-        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-3">
-          <div><p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-brand-ink">Operational follow-through</p><h2 id="work-orders-heading" className="mt-1 font-heading text-xl font-semibold text-ink sm:text-2xl">Work in motion</h2><p className="mt-1 text-sm text-ink-soft">Assigned work and in-progress repairs.</p></div>
-          <Link to="/app/work-orders" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink hover:underline">All work orders <ArrowRight className="h-3.5 w-3.5" /></Link>
+      <section className="border-t border-brand/10 pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[0.7rem] text-ink/45">Figures reflect records returned for this estate. Living Score details and supporting history are in Estate Health.</p>
+          <Link to="/app/health" className="inline-flex items-center gap-1 text-[0.7rem] font-semibold text-brand-ink hover:underline">Explore Estate Health <ArrowRight className="h-3 w-3" aria-hidden="true" /></Link>
         </div>
-        {workOrders.loading ? <div className="mt-3"><LoadingState label="Loading work orders" /></div> : workOrders.error ? (
-          <div className="mt-3"><ErrorState title="Work orders are unavailable" message={workOrders.error.message} requestId={workOrders.error.requestId} action={<button type="button" onClick={workOrders.reload} className="text-sm font-semibold text-brand-ink underline">Try again</button>} /></div>
-        ) : workOrdersInFlight.length === 0 ? (
-          <p className="py-5 text-sm text-ink-muted">No active work orders are recorded.</p>
-        ) : (
-          <ul className="divide-y divide-line/80">
-            {workOrdersInFlight.slice(0, 4).map((order) => {
-              const status = workOrderStatus[order.status ?? 'assigned'];
-              return <li key={order.id} className="grid gap-2 py-3.5 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
-                <div className="flex min-w-0 items-center gap-3"><Wrench className="h-4 w-4 shrink-0 text-brand-ink" /><div className="min-w-0"><p className="truncate text-sm font-semibold text-ink">Work order #{order.id}</p><p className="mt-0.5 text-xs text-ink-muted">Complaint #{order.complaint_id}{order.provider_id ? ` · Provider #${order.provider_id}` : ''}</p></div></div>
-                <Chip tone={status?.tone ?? 'neutral'} glyph={status?.glyph}>{status?.label ?? order.status}</Chip>
-                <Link to="/app/work-orders" className="inline-flex items-center gap-1 text-sm font-semibold text-brand-ink hover:underline">Review <ArrowRight className="h-3.5 w-3.5" /></Link>
-              </li>;
-            })}
-          </ul>
-        )}
       </section>
-
-      <section aria-labelledby="recent-activity-heading" className="border-t border-line pt-6">
-        <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-brand-ink">Record of action</p><h2 id="recent-activity-heading" className="mt-1 font-heading text-lg font-semibold text-ink">Recent activity</h2></div><p className="text-xs text-ink-muted">{estate?.estate_name ?? 'Selected estate'}</p></div>
-        {complaints.loading || workOrders.loading ? <div className="mt-3"><LoadingState label="Loading recent activity" /></div> : complaints.error && workOrders.error ? <p className="py-3 text-sm text-ink-muted">Recent activity is unavailable.</p> : <div className="mt-2"><ActivityList complaints={allComplaints.slice(0, 6)} workOrders={workOrderItems.slice(0, 6)} /></div>}
-      </section>
-
-      <p className="border-t border-line pt-4 text-xs text-ink-muted">
-        Operational figures reflect records currently returned by VALORA. Deeper score history, calculation details, and intelligence evidence live in their dedicated workspaces.
-      </p>
       <ComplaintDetail complaint={selectedComplaint} onClose={() => setSelectedComplaint(null)} />
     </div>
-  );
+  );;
 }
 
 export { AdminDashboard as DashboardBody };
