@@ -126,7 +126,7 @@ describe('Dashboard — Living Score', () => {
       </MemoryRouter>);
         expect(await screen.findByText('86,4')).toBeVisible();
         expect(screen.queryByText('Demo data')).toBeNull();
-        expect(screen.getByRole('heading', { name: 'How your estate is doing' })).toBeVisible();
+        expect(screen.getByRole('heading', { name: 'Estate health' })).toBeVisible();
         expect(screen.queryByText('Resolution speed')).toBeNull();
         expect(mocks.get).toHaveBeenCalledWith('/api/v1/analytics/living-score', {
             estate_id: 1,
@@ -153,7 +153,7 @@ describe('Dashboard — Living Score', () => {
         render(<MemoryRouter initialEntries={['/app']}>
         <Dashboard />
       </MemoryRouter>);
-        await user.click(await screen.findByRole('button', { name: /recalculate score/i }));
+        await user.click(await screen.findByRole('button', { name: /recalculate/i }));
         expect(mocks.post).toHaveBeenCalledWith('/api/v1/analytics/living-score/recalculate', {}, { estate_id: 1 });
         // A fresh read, never a locally adjusted number.
         await waitFor(() => expect(mocks.get.mock.calls.filter(([path]) => path === '/api/v1/analytics/living-score')
@@ -174,8 +174,8 @@ describe('Dashboard — Living Score', () => {
         render(<MemoryRouter initialEntries={['/app']}>
         <Dashboard />
       </MemoryRouter>);
-        await user.click(await screen.findByRole('button', { name: /recalculate score/i }));
-        expect(await screen.findByText(/The recalculation was refused/)).toBeVisible();
+        await user.click(await screen.findByRole('button', { name: /recalculate/i }));
+        expect(await screen.findByText(/Recalculation refused/)).toBeVisible();
         expect(screen.getByText('This account is not an administrator of this estate.')).toBeVisible();
         expect(screen.getByText(/req-403/)).toBeVisible();
     });

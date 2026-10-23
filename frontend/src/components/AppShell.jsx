@@ -28,15 +28,18 @@ export function AppShell() {
     <div className="min-h-screen bg-paper">
       <Sidebar />
 
-      <div className="lg:pl-[272px]">
+      <div className="lg:pl-[232px]">
         <TopBar
           onOpenNav={() => setNavOpen(true)}
           onCreateWorkOrder={user.role === 'hoa_admin' ? () => setCreatingWorkOrder(true) : undefined}
           onLogComplaint={user.role === 'resident' ? () => setLoggingComplaint(true) : undefined}
         />
 
-        <main className="mx-auto max-w-[1440px] px-4 pt-5 pb-28 sm:px-6 lg:px-8 lg:pb-12">
-          <Outlet />
+        <main className="mx-auto max-w-[1540px] px-4 pt-5 pb-28 sm:px-6 lg:px-7 lg:pb-12">
+          <Outlet context={{
+            onCreateWorkOrder: user.role === 'hoa_admin' ? () => setCreatingWorkOrder(true) : undefined,
+            onLogComplaint: user.role === 'resident' ? () => setLoggingComplaint(true) : undefined,
+          }} />
         </main>
       </div>
 
