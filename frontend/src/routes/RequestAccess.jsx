@@ -29,7 +29,7 @@ export function RequestAccess() {
     const [query, setQuery] = useState('');
     const [committed, setCommitted] = useState('');
     const [picked, setPicked] = useState(() => selectedPublicEstate());
-    const [unitNo, setUnitNo] = useState('');
+    const [unitNo, setUnitNo] = useState(() => selectedPublicEstate()?.unit_no ?? '');
     const [note, setNote] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
@@ -159,27 +159,42 @@ export function RequestAccess() {
                       {picked.location}
                     </span>
                   </span>
-                  <Button type="button" variant="ghost" onClick={() => setPicked(null)}>
+                  <Button type="button" variant="ghost" onClick={() => {
+                    setPicked(null);
+                    setUnitNo('');
+                    clearSelectedPublicEstate();
+                  }}>
                     Change
                   </Button>
                 </div>) : (<>
                   <div className="flex gap-2">
-                    <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by name, suburb or city" aria-label="Search the published complexes"/>
+                    <Input
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          setCommitted(query.trim());
+                        }
+                      }}
+                      placeholder="Search by name, suburb or city"
+                      aria-label="Search the published complexes"
+                    />
                     <Button type="button" variant="secondary" onClick={search}>
                       Search
                     </Button>
                   </div>
 
                   <div className="mt-3">
-                    {directory.loading ? (<LoadingState label="Searching complexes"/>) : directory.error ? (<ErrorState message={directory.error.message} requestId={directory.error.requestId} action={<Button variant="secondary" onClick={directory.reload}>
+                    {directory.loading ? (<LoadingState label="Searching published complexes"/>) : directory.error ? (<ErrorState title="Could not load published complexes" message={directory.error.message} requestId={directory.error.requestId} action={<Button variant="secondary" onClick={directory.reload}>
                             Try again
-                          </Button>}/>) : items.length === 0 ? (<EmptyState title="No published complex matches" body="Only complexes that publish a public profile appear here. If yours is missing, ask your estate office for a join code."/>) : (<ul className="space-y-2">
+                          </Button>}/>) : items.length === 0 ? (<EmptyState title={committed ? "No published complex matches" : "No complexes are published yet"} body={committed ? "Try another name, suburb, city or province. Private and unpublished estates cannot appear in the public selector; ask your estate office for a join code." : "The selector only lists estates that have enabled their public profile. You can search again or ask your estate office for a join code."}/>) : (<ul className="space-y-2">
                         {items.map((item) => (<li key={item.estate_id}>
                             <button type="button" onClick={() => setPicked({
                         estate_id: item.estate_id,
                         name: item.name,
                         location: location(item),
-                    })} className="hairline w-full rounded-xs bg-surface px-3 py-2.5 text-left transition-colors hover:border-accent">
+                    })} className="hairline w-full rounded-xs bg-surface px-3 py-2.5 text-left transition-colors hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                               <span className="block text-[13.5px] font-medium">{item.name}</span>
                               <span className="num mt-0.5 block text-[11.5px] text-ink-muted">
                                 {location(item)} · {item.unit_count ?? 0} units

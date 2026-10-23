@@ -1,106 +1,232 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, Bell, CalendarDays, CheckCircle2, CircleAlert, Clock3, FileText, HeartPulse, ShieldAlert, Wrench } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { IconArrowRight, IconClock, IconMegaphone, IconReport, IconWrench } from '../components/Icons';
-import { RequireEstate } from '../components/RequireEstate';
-import { Chip, EmptyState, ErrorState, LoadingState, SectionTitle } from '../components/ui';
+import { Chip, ErrorState, LoadingState } from '../components/ui';
+import { Drawer } from '../components/ui/drawer';
 import { Button } from '../components/ui/button';
-import { MetricCard } from '../components/valora/MetricCard';
-import { ScoreCard } from '../components/valora/ScoreCard';
-import { SectionHeading } from '../components/valora/SectionHeading';
-import { Surface } from '../components/valora/Surface';
-import { AttentionPanel } from '../components/valora/AttentionPanel';
 import { useAuth } from '../context/AuthContext';
 import { useEstateScope } from '../context/EstateContext';
 import { api, ApiError } from '../lib/api';
 import { getLivingScore, getLivingScoreHistory, recalculateLivingScore } from '../lib/analytics';
 import { complaintStatus, pillarBand, workOrderStatus } from '../lib/display';
-import { durationHours, displayLabel, ratio, relativeDays, shortDate } from '../lib/format';
+import { displayLabel, durationHours, relativeDays, shortDate } from '../lib/format';
 import { useAsync } from '../lib/useAsync';
 
 const OPEN_STATUSES = new Set(['submitted', 'reviewed', 'assigned', 'in_progress']);
 
-function EstateCard() {
-  const { estate } = useEstateScope();
-  if (!estate) return null;
+function EstateContextHero({ estate }) {
   return (
-    <Surface>
-      <p className="text-[0.66rem] font-semibold tracking-[0.14em] text-ink/40 uppercase">Estate</p>
-      <h2 className="mt-1 font-heading text-[1.05rem] font-bold text-ink">{estate.estate_name}</h2>
-      <p className="num mt-1 text-[0.78rem] text-ink-muted">
-        {estate.suburb}, {estate.city}, {estate.province}
-      </p>
-
-      <dl className="mt-4 space-y-2.5">
-        <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-[0.82rem] text-ink-soft">Your role here</dt>
-          <dd className="num text-[0.82rem] font-medium">
-            {estate.is_estate_admin
-              ? 'HOA administrator'
-              : estate.is_estate_provider
-              ? 'Service provider'
-              : (estate.membership_roles[0] ?? 'member')}
-          </dd>
+    <section className="grid overflow-hidden border-y border-line bg-brand-wash/45 md:grid-cols-[1fr_0.88fr]" aria-label="Estate context">
+      <div className="flex min-h-[230px] flex-col justify-between p-6 sm:p-8 lg:p-9">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-ink">Estate operations</p>
+          <h2 className="mt-3 max-w-2xl font-heading text-3xl font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-4xl">
+            {estate?.estate_name ?? 'Your estate'}.
+            <span className="block text-brand-ink">What needs attention today?</span>
+          </h2>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-soft">
+            Review outstanding work, keep residents informed, and follow operational issues through to resolution.
+          </p>
         </div>
-        <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-[0.82rem] text-ink-soft">Units linked to you</dt>
-          <dd className="num text-[0.82rem] font-medium">{estate.property_ids.length}</dd>
+        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-ink-muted">
+          {estate?.suburb || estate?.city ? (
+            <span className="inline-flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+              {[estate.suburb, estate.city, estate.province].filter(Boolean).join(', ')}
+            </span>
+          ) : null}
+          <span>{estate?.property_ids?.length ?? 0} linked units</span>
+          <Link to="/admin/settings" className="font-semibold text-brand-ink hover:underline">Estate profile <ArrowRight className="ml-1 inline h-3.5 w-3.5" /></Link>
         </div>
-        <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-[0.82rem] text-ink-soft">Estate reference</dt>
-          <dd className="num text-[0.82rem] font-medium">#{estate.estate_id}</dd>
+      </div>
+      <div className="relative min-h-[210px] overflow-hidden md:min-h-full">
+        <img
+          src="/estate-hero.jpg"
+          alt="Residential estate architecture"
+          width="960"
+          height="640"
+          fetchPriority="high"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#24153f]/80 via-[#24153f]/10 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/75">Management workspace</p>
+          <p className="mt-1 max-w-md font-heading text-xl font-semibold leading-snug text-white">
+            Clear priorities. Accountable action. A healthier estate.
+          </p>
         </div>
-      </dl>
-
-      <p className="mt-4 border-t border-line pt-3 text-[0.75rem] text-ink-muted">
-        This identifier is resolved on the server from your membership. Supplying an estate number is
-        never treated as proof of access.
-      </p>
-    </Surface>
+      </div>
+    </section>
   );
 }
 
-function NeedsAttention({ complaints }) {
-  const open = complaints.filter((item) => OPEN_STATUSES.has(item.status ?? '')).slice(0, 5);
-  const items =
-    open.length > 0
-      ? open.map((item) => ({
-          id: item.id,
-          title: item.description,
-          detail: `Unit ${item.unit_id} · ${displayLabel(item.category)} · logged ${relativeDays(item.created_at)}`,
-          area: `Unit ${item.unit_id}`,
-          eta: item.priority === 'urgent' ? 'Immediate SLA' : 'Standard SLA',
-          impact: `Priority: ${displayLabel(item.priority)}`,
-          urgency:
-            item.priority === 'urgent'
-              ? 'Critical'
-              : item.priority === 'high'
-              ? 'At Risk'
-              : 'Watch',
-        }))
-      : [];
-  return <AttentionPanel items={items} />;
+function PriorityRow({ complaint, onSelect }) {
+  const priority = (complaint.priority ?? 'normal').toLowerCase();
+  const critical = priority === 'urgent';
+  const high = priority === 'high';
+  const status = complaintStatus[complaint.status ?? 'submitted'];
+  return (
+    <li className="border-b border-line/80 last:border-b-0">
+      <button
+        type="button"
+        onClick={() => onSelect(complaint)}
+        className="group grid w-full gap-3 py-4 text-left transition-colors hover:bg-brand-wash/35 focus-visible:outline-2 focus-visible:outline-brand sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-3"
+        aria-label={`Review complaint ${complaint.id}: ${complaint.description}`}
+      >
+        <span className="flex min-w-0 items-start gap-3.5">
+          <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center ${critical ? 'bg-signal-wash text-signal-ink' : high ? 'bg-ochre-wash text-ochre-ink' : 'bg-brand-wash text-brand-ink'}`}>
+            {critical || high ? <CircleAlert className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-semibold text-ink">{complaint.description}</span>
+              <span className={`text-[10px] font-bold uppercase tracking-[0.08em] ${critical ? 'text-signal-ink' : high ? 'text-ochre-ink' : 'text-ink-muted'}`}>
+                {displayLabel(priority)}
+              </span>
+            </span>
+            <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-muted">
+              <span>#{complaint.id}</span><span aria-hidden="true">·</span>
+              <span>{displayLabel(complaint.category)}</span>
+              {complaint.unit_id ? <><span aria-hidden="true">·</span><span>Unit {complaint.unit_id}</span></> : null}
+              <span aria-hidden="true">·</span><span>Logged {relativeDays(complaint.created_at)}</span>
+            </span>
+          </span>
+        </span>
+        <span className="flex items-center justify-between gap-3 pl-[3.15rem] sm:justify-end sm:pl-0">
+          <Chip tone={status?.tone ?? 'neutral'} glyph={status?.glyph}>{status?.label ?? complaint.status}</Chip>
+          <ArrowRight className="h-4 w-4 shrink-0 text-ink-muted transition-transform group-hover:translate-x-0.5 group-hover:text-brand" />
+        </span>
+      </button>
+    </li>
+  );
 }
 
-function AnnouncementList({ announcements }) {
-  if (announcements.length === 0) {
-    return (
-      <EmptyState
-        title="No announcements yet"
-        body="When your HOA publishes a notice — an outage, an AGM, a security upgrade — it appears here for every member of the estate."
-      />
-    );
-  }
+function ScoreSummary({ snapshot, history, loading, error, onRecalculate, recalculating, recalculateError }) {
+  const scored = snapshot?.status === 'scored' && snapshot?.overall_score !== null && snapshot?.overall_score !== undefined;
+  const score = scored ? Number(snapshot.overall_score) : null;
+  const band = scored ? pillarBand(score) : null;
+  const snapshots = [...(history?.snapshots ?? [])].reverse().filter((item) => item.overall_score !== null && item.overall_score !== undefined);
+  const change = snapshots.length > 1 ? Number(snapshots.at(-1).overall_score) - Number(snapshots.at(-2).overall_score) : null;
+
   return (
-    <ul className="divide-y divide-line">
-      {announcements.map((item) => (
-        <li key={item.id} className="py-3.5">
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 className="text-[0.88rem] font-medium">{item.title}</h3>
-            <span className="num shrink-0 text-[0.75rem] text-ink-muted">
-              {shortDate(item.created_at)}
+    <section className="border-l-2 border-brand pl-4 sm:pl-5" aria-labelledby="estate-health-summary">
+      <div className="flex items-center gap-2 text-brand-ink">
+        <HeartPulse className="h-4 w-4" />
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em]">Estate health</p>
+      </div>
+      <div className="mt-3 flex items-end gap-3">
+        {loading ? <LoadingState label="Loading Living Score" /> : error ? (
+          <p className="text-sm text-ink-muted">Estate health is temporarily unavailable.</p>
+        ) : scored ? (
+          <>
+            <p className="num font-heading text-4xl font-semibold leading-none tracking-tight text-brand-ink">
+              {score.toLocaleString('en-ZA', { maximumFractionDigits: 1 })}
+              <span className="ml-1 text-sm font-medium text-ink-muted">/100</span>
+            </p>
+            <Chip tone={band?.tone === 'positive' ? 'good' : 'warn'}>{band?.label ?? 'Published score'}</Chip>
+          </>
+        ) : <p className="font-heading text-3xl font-semibold text-ink">Not scored yet</p>}
+      </div>
+      {scored ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+          {change !== null ? <span className={`inline-flex items-center gap-1 font-semibold ${change > 0 ? 'text-mint-ink' : change < 0 ? 'text-signal-ink' : 'text-ink-muted'}`}>
+            {change > 0 ? <ArrowUpRight className="h-3.5 w-3.5" /> : change < 0 ? <ArrowDownRight className="h-3.5 w-3.5" /> : null}
+            {change > 0 ? '+' : ''}{change.toLocaleString('en-ZA', { maximumFractionDigits: 1 })} points vs previous snapshot
+          </span> : null}
+          <span>Updated {shortDate(snapshot.as_of ?? snapshot.calculated_at)}</span>
+        </div>
+      ) : (
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-ink-soft">A score appears when the estate has enough measured operational data for a stored calculation.</p>
+      )}
+      {recalculateError ? <div role="alert" className="mt-3 border-l-2 border-signal bg-signal-wash/60 px-3 py-2 text-xs text-signal-ink"><p className="font-semibold">The recalculation was refused.</p><p className="mt-1">{recalculateError.message}</p>{recalculateError.requestId ? <p className="mt-1">Reference: {recalculateError.requestId}</p> : null}</div> : null}
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <Link to="/app/health" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink hover:underline">
+          Explore Estate Health <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+        <button type="button" onClick={onRecalculate} disabled={recalculating} className="text-xs font-medium text-ink-muted underline-offset-4 hover:text-brand-ink hover:underline disabled:opacity-50">
+          {recalculating ? 'Recalculating…' : 'Recalculate score'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ComplaintDetail({ complaint, onClose }) {
+  const status = complaint ? complaintStatus[complaint.status ?? 'submitted'] : null;
+  return (
+    <Drawer
+      open={Boolean(complaint)}
+      onOpenChange={(open) => { if (!open) onClose(); }}
+      side="right"
+      width="sm:max-w-[560px]"
+      title={complaint ? `Complaint #${complaint.id}` : ''}
+      subtitle={complaint ? `${displayLabel(complaint.category ?? 'General')}${complaint.unit_id ? ` · Unit ${complaint.unit_id}` : ''}` : ''}
+      badge={complaint ? <Chip tone={status?.tone ?? 'neutral'} glyph={status?.glyph}>{status?.label ?? complaint.status}</Chip> : null}
+      footer={complaint ? (
+        <Link to="/app/complaints" onClick={onClose} className="inline-flex w-full items-center justify-center gap-2 bg-brand px-4 py-3 text-sm font-semibold text-white hover:bg-brand-ink">
+          Open complaint workspace <ArrowRight className="h-4 w-4" />
+        </Link>
+      ) : null}
+    >
+      {complaint ? (
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`text-xs font-semibold uppercase ${complaint.priority === 'urgent' ? 'text-signal-ink' : complaint.priority === 'high' ? 'text-ochre-ink' : 'text-ink-muted'}`}>
+              {displayLabel(complaint.priority ?? 'normal')} priority
             </span>
+            <span className="text-xs text-ink-muted">Logged {relativeDays(complaint.created_at)}</span>
           </div>
-          <p className="mt-1 line-clamp-2 text-[0.83rem] text-ink-soft">{item.message}</p>
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Record details</h3>
+            <dl className="mt-3 divide-y divide-line">
+              <div className="flex justify-between gap-4 py-3 text-sm"><dt className="text-ink-muted">Created</dt><dd className="text-right font-medium text-ink">{shortDate(complaint.created_at)}</dd></div>
+              <div className="flex justify-between gap-4 py-3 text-sm"><dt className="text-ink-muted">Last updated</dt><dd className="text-right font-medium text-ink">{shortDate(complaint.updated_at ?? complaint.created_at)}</dd></div>
+              <div className="flex justify-between gap-4 py-3 text-sm"><dt className="text-ink-muted">Unit</dt><dd className="text-right font-medium text-ink">{complaint.unit_id ?? 'Not recorded'}</dd></div>
+            </dl>
+          </section>
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Description</h3>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink-soft">{complaint.description}</p>
+          </section>
+          <div className="border-l-2 border-brand bg-brand-wash/50 px-4 py-3">
+            <p className="text-sm font-semibold text-ink">Next step</p>
+            <p className="mt-1 text-sm leading-relaxed text-ink-soft">Open the complaint workspace to inspect the full record, assign a provider, and continue the complaint lifecycle.</p>
+          </div>
+        </div>
+      ) : null}
+    </Drawer>
+  );
+}
+
+function ActivityList({ complaints, workOrders }) {
+  const records = [
+    ...complaints.map((item) => ({
+      key: `complaint-${item.id}`,
+      icon: <FileText className="h-4 w-4" />,
+      title: item.description,
+      detail: `Complaint #${item.id} · ${displayLabel(item.status ?? 'submitted')}`,
+      date: item.updated_at ?? item.created_at,
+    })),
+    ...workOrders.map((item) => ({
+      key: `work-order-${item.id}`,
+      icon: <Wrench className="h-4 w-4" />,
+      title: `Work order #${item.id}`,
+      detail: `${displayLabel(item.status ?? 'assigned')} · Complaint #${item.complaint_id}`,
+      date: item.updated_at ?? item.created_at,
+    })),
+  ].sort((a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime()).slice(0, 4);
+
+  if (records.length === 0) return <p className="py-4 text-sm text-ink-muted">Recent activity will appear here as estate work is recorded.</p>;
+  return (
+    <ul className="divide-y divide-line/80">
+      {records.map((item) => (
+        <li key={item.key} className="flex items-start gap-3 py-3.5">
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center bg-brand-wash text-brand-ink">{item.icon}</span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-ink">{item.title}</p>
+            <p className="mt-1 text-xs text-ink-muted">{item.detail}</p>
+          </div>
+          <time className="shrink-0 pt-0.5 text-xs text-ink-muted">{shortDate(item.date)}</time>
         </li>
       ))}
     </ul>
@@ -110,55 +236,55 @@ function AnnouncementList({ announcements }) {
 export function AdminDashboard() {
   const { estateId, estate } = useEstateScope();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'hoa_admin';
-  const announcements = useAsync(
-    () => api.get('/api/v1/announcements', { estate_id: estateId, size: 4 }),
-    [estateId]
-  );
-  const complaints = useAsync(
-    () =>
-      api.get('/api/v1/complaints', {
-        estate_id: estateId,
-        size: 12,
-        sort: '-created_at',
-      }),
-    [estateId]
-  );
-  const stats = useAsync(
-    () =>
-      isAdmin
-        ? api.get('/api/v1/complaints/stats', { estate_id: estateId })
-        : Promise.resolve(null),
-    [estateId, isAdmin]
-  );
-  const workOrders = useAsync(
-    () =>
-      isAdmin
-        ? api.get('/api/v1/work-orders', { estate_id: estateId, size: 100 })
-        : Promise.resolve(null),
-    [estateId, isAdmin]
-  );
-  const properties = useAsync(
-    () => api.get('/api/v1/properties', { estate_id: estateId, size: 100 }),
-    [estateId]
-  );
-
-  // The stored snapshot, exactly as the engine wrote it: this screen never
-  // calculates a score. A 404 (never scored) and an `insufficient_data` snapshot
-  // are both rendered as "not enough data yet", never as a zero.
-  const livingScoreSnapshot = useAsync(
-    () => (estateId === null ? Promise.resolve(null) : getLivingScore(estateId)),
-    [estateId]
-  );
-  const livingScoreHistory = useAsync(
-    () => (estateId === null ? Promise.resolve(null) : getLivingScoreHistory(estateId, 12)),
-    [estateId]
-  );
-
-  // The one action on this panel. The server decides whether the caller may
-  // calculate; a refusal is shown verbatim and nothing is recalculated locally.
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [recalculating, setRecalculating] = useState(false);
   const [recalculateError, setRecalculateError] = useState(null);
+
+  const announcements = useAsync(
+    () => estateId === null ? Promise.resolve({ items: [], total: 0 }) : api.get('/api/v1/announcements', { estate_id: estateId, size: 4 }),
+    [estateId],
+  );
+  const complaints = useAsync(
+    () => estateId === null ? Promise.resolve({ items: [], total: 0 }) : api.get('/api/v1/complaints', { estate_id: estateId, size: 50, sort: '-created_at' }),
+    [estateId],
+  );
+  const stats = useAsync(
+    () => user?.role === 'hoa_admin' && estateId !== null ? api.get('/api/v1/complaints/stats', { estate_id: estateId }) : Promise.resolve(null),
+    [estateId, user?.role],
+  );
+  const workOrders = useAsync(
+    () => user?.role === 'hoa_admin' && estateId !== null ? api.get('/api/v1/work-orders', { estate_id: estateId, size: 50 }) : Promise.resolve({ items: [], total: 0 }),
+    [estateId, user?.role],
+  );
+  const score = useAsync(
+    () => estateId === null ? Promise.resolve(null) : getLivingScore(estateId).catch((error) => {
+      if (error?.status === 404) return null;
+      throw error;
+    }),
+    [estateId],
+  );
+  const scoreHistory = useAsync(
+    () => estateId === null ? Promise.resolve(null) : getLivingScoreHistory(estateId, 12).catch((error) => {
+      if (error?.status === 404) return { snapshots: [] };
+      throw error;
+    }),
+    [estateId],
+  );
+
+  const allComplaints = complaints.data?.items ?? [];
+  const activeComplaints = useMemo(
+    () => allComplaints.filter((item) => OPEN_STATUSES.has(item.status ?? '')).sort((a, b) => {
+      const priorityRank = (value) => value === 'urgent' ? 0 : value === 'high' ? 1 : value === 'normal' ? 2 : 3;
+      const priorityDifference = priorityRank(a.priority) - priorityRank(b.priority);
+      return priorityDifference || new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime();
+    }),
+    [allComplaints],
+  );
+  const workOrderItems = workOrders.data?.items ?? [];
+  const workOrdersInFlight = workOrderItems.filter((item) => ['assigned', 'in_progress'].includes(item.status ?? ''));
+  const averageResolution = stats.data?.avg_resolution_hours;
+  const resolutionRate = stats.data?.resolution_rate_pct;
+  const notices = announcements.data?.items ?? [];
 
   async function recalculateScore() {
     if (estateId === null || recalculating) return;
@@ -166,450 +292,166 @@ export function AdminDashboard() {
     setRecalculateError(null);
     try {
       await recalculateLivingScore(estateId);
-      livingScoreSnapshot.reload();
-      livingScoreHistory.reload();
+      score.reload();
+      scoreHistory.reload();
     } catch (cause) {
-      setRecalculateError(
-        cause instanceof ApiError
-          ? cause
-          : new ApiError(0, cause instanceof Error ? cause.message : 'Something went wrong.')
-      );
+      setRecalculateError(cause instanceof ApiError ? cause : new ApiError(0, cause instanceof Error ? cause.message : 'Could not recalculate the score.'));
     } finally {
       setRecalculating(false);
     }
   }
 
-  const snapshot = livingScoreSnapshot.data;
-  const scored =
-    snapshot !== null &&
-    snapshot.status === 'scored' &&
-    snapshot.overall_score !== null &&
-    snapshot.overall_score !== undefined;
-
-  // The engine's own pillars, with the weights it published — never re-derived.
-  const pillars = (snapshot?.components ?? []).map((component) => ({
-    key: component.key,
-    name: component.label,
-    score:
-      component.score === null || component.score === undefined ? 0 : Number(component.score),
-    weight: Number(component.weight) * 100,
-    summary: component.explanation || undefined,
-    measured: component.status === 'measured' && component.score !== null,
-  }));
-
-  // Stored snapshots, oldest first: a trajectory of published numbers.
-  const trajectory = [...(livingScoreHistory.data?.snapshots ?? [])]
-    .reverse()
-    .filter((row) => row.overall_score !== null)
-    .map((row) => ({ date: shortDate(row.as_of), score: Number(row.overall_score) }));
-
-  // The written status and the movement come from the snapshots this screen
-  // fetched — the band is a *label* for the published number, and the change is
-  // the difference between two stored figures. Neither is a score calculation.
-  const storedValues = trajectory.map((point) => point.score);
-  const band = scored ? pillarBand(Number(snapshot?.overall_score)) : null;
-  const trend =
-    storedValues.length > 1
-      ? Math.round((storedValues[storedValues.length - 1] - storedValues[storedValues.length - 2]) * 10) /
-        10
-      : null;
-
-  // “Healthy, with watch areas” — the composite band, qualified by the pillars
-  // the engine measured below the healthy band.
-  const flagged = pillars.filter(
-    (pillar) => pillar.measured && pillarBand(pillar.score).tone !== 'positive'
-  );
-  const statusLabel = !scored
-    ? 'Not enough data yet'
-    : `${band?.label ?? 'Healthy'}${flagged.length === 0 ? '' : ', with watch areas'}`;
-
-  const openCount = (complaints.data?.items ?? []).filter((item) =>
-    OPEN_STATUSES.has(item.status ?? '')
-  ).length;
-  const unitCount = properties.data?.total ?? null;
-  const averageResolution = stats.data?.avg_resolution_hours;
-  const workOrdersInFlight = (workOrders.data?.items ?? []).filter((order) =>
-    ['assigned', 'in_progress'].includes(order.status ?? '')
-  ).length;
-
-  const operationalTimeline = [
-    ...(complaints.data?.items ?? []).map((item) => ({
-      id: `complaint-${item.id}`,
-      date: shortDate(item.updated_at ?? item.created_at),
-      title: `Complaint #${item.id}: ${displayLabel(item.status ?? 'submitted')}`,
-      description: item.description,
-      meta: `Unit ${item.unit_id} · ${displayLabel(item.category)}`,
-      status: OPEN_STATUSES.has(item.status ?? '') ? 'current' : 'completed',
-      occurredAt: item.updated_at ?? item.created_at,
-    })),
-    ...(isAdmin
-      ? (workOrders.data?.items ?? []).map((order) => ({
-          id: `work-order-${order.id}`,
-          date: shortDate(order.updated_at ?? order.created_at),
-          title: `Work order #${order.id}: ${displayLabel(order.status ?? 'assigned')}`,
-          description:
-            order.completion_notes ?? `Complaint #${order.complaint_id} · provider #${order.provider_id}`,
-          meta: `Work order #${order.id}`,
-          status: ['assigned', 'in_progress'].includes(order.status ?? '') ? 'current' : 'completed',
-          occurredAt: order.updated_at ?? order.created_at,
-        }))
-      : []),
-  ]
-    .sort(
-      (left, right) =>
-        new Date(right.occurredAt ?? 0).getTime() - new Date(left.occurredAt ?? 0).getTime()
-    )
-    .slice(0, 8);
-
-  // ADD: triage banner computation
-  const unassignedComplaints = (complaints.data?.items ?? []).filter(
-    (c) => c.status === 'submitted' || c.status === 'reviewed'
-  );
+  const openComplaintCount = stats.data
+    ? Math.max(
+        0,
+        Number(stats.data.total ?? 0) -
+          Number(stats.data.by_status?.resolved ?? 0) -
+          Number(stats.data.by_status?.rated ?? 0) -
+          Number(stats.data.by_status?.closed ?? 0),
+      )
+    : activeComplaints.length;
+  const needsReview = stats.data
+    ? Number(stats.data.by_status?.submitted ?? 0) + Number(stats.data.by_status?.reviewed ?? 0)
+    : activeComplaints.filter((item) => ['submitted', 'reviewed'].includes(item.status ?? '')).length;
+  const urgentCount = activeComplaints.filter((item) => ['urgent', 'high'].includes((item.priority ?? '').toLowerCase())).length;
 
   return (
-    <div className="space-y-5">
-      {/* ---- Triage banners (NEW — leads the view) ---- */}
-      {unassignedComplaints.length > 0 ? (
-        <div className="flex items-center justify-between gap-4 rounded-xl border border-signal/30 border-l-4 border-l-signal bg-signal-wash px-4 py-3.5">
-          <div>
-            <p className="text-[13.5px] font-semibold text-signal-ink">
-              {unassignedComplaints.length} complaint{unassignedComplaints.length !== 1 ? 's' : ''} need{unassignedComplaints.length === 1 ? 's' : ''} review
-            </p>
-            <p className="text-[12px] text-ink-soft">
-              Unassigned — no contractor has been assigned yet.
-            </p>
-          </div>
-          <Link
-            to="/app/complaints"
-            className="shrink-0 rounded-xs border border-signal/30 bg-white px-3 py-1.5 text-[12.5px] font-medium text-signal-ink transition-colors hover:bg-signal-wash"
-          >
-            Review →
+    <div className="space-y-9 pb-6">
+      <header className="flex flex-col justify-between gap-4 border-b border-line pb-5 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.17em] text-brand-ink">HOA workspace</p>
+          <h1 className="mt-2 font-heading text-3xl font-semibold tracking-[-0.035em] text-ink sm:text-4xl">The operating picture.</h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">Start with the issues that need a decision. The rest of the estate's record is one step away.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/app/complaints" className="inline-flex min-h-10 items-center justify-center gap-2 border border-line px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-brand-wash">
+            <FileText className="h-4 w-4" /> Complaints
+          </Link>
+          <Link to="/app/work-orders" className="inline-flex min-h-10 items-center justify-center gap-2 bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-ink">
+            <Wrench className="h-4 w-4" /> Work orders <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-      ) : null}
+      </header>
 
-      {/* ---- All existing DashboardBody JSX below, unchanged ---- */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <SectionHeading
-          eyebrow={isAdmin ? 'Governance overview' : 'Estate overview'}
-          title="Property health at a glance"
-          description="Operational data as recorded by the estate. Each score shows its own calculation date."
-        />
-      </div>
+      <EstateContextHero estate={estate} />
 
-      <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
-        <ScoreCard
-          empty={!scored}
-          value={scored ? ratio(snapshot?.overall_score) : undefined}
-          status={statusLabel}
-          change={scored ? (trend ?? undefined) : undefined}
-          spark={scored ? storedValues : undefined}
-          label="Living Score"
-          description={
-            scored
-              ? `Stored for a rolling 90-day window by engine ${snapshot?.engine_version}. The figure is read, never recalculated on this screen.`
-              : 'This estate has no publishable score yet. Every operational action — a logged complaint, a completed work order, a resident rating — feeds the five weighted pillars below.'
-          }
-          action={
-            <div className="space-y-3">
-              {recalculateError ? (
-                <ErrorState
-                  title="The recalculation was refused"
-                  message={recalculateError.message}
-                  requestId={recalculateError.requestId}
-                />
-              ) : null}
-              <div className="flex flex-wrap items-center gap-2">
-                {isAdmin ? (
-                  <Button variant="secondary" onClick={recalculateScore} disabled={recalculating}>
-                    {recalculating ? 'Recalculating…' : 'Recalculate now'}
-                  </Button>
-                ) : null}
-                <Link
-                  to="/app/health"
-                  className="inline-flex items-center gap-1.5 text-[0.8rem] font-medium text-brand-ink hover:underline"
-                >
-                  Full health breakdown
-                  <IconArrowRight size={15} />
-                </Link>
-              </div>
-            </div>
-          }
-        />
-        <EstateCard />
-      </div>
-
-      {/* ------------------------------------------------ KPI row */}
-      {isAdmin ? (
-        stats.loading ? (
-          <LoadingState label="Loading estate metrics" />
-        ) : stats.error ? (
-          <ErrorState message={stats.error.message} requestId={stats.error.requestId} />
-        ) : stats.data ? (
-          <section aria-label="Estate operations at a glance" className="border-y border-line bg-surface">
-            <dl className="grid divide-y divide-line sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
-              {[
-                {
-                  label: 'Complaints logged',
-                  value: String(stats.data.total),
-                  detail: `${stats.data.total - (stats.data.by_status.resolved ?? 0) - (stats.data.by_status.rated ?? 0) - (stats.data.by_status.closed ?? 0)} still open`,
-                  icon: <IconReport size={16} />,
-                  tone: 'text-signal-ink',
-                },
-                {
-                  label: 'Resolution rate',
-                  value: `${Number(stats.data.resolution_rate_pct).toFixed(0)}%`,
-                  detail: 'Reached resolved',
-                  icon: <IconClock size={16} />,
-                  tone: 'text-mint-ink',
-                },
-                {
-                  label: 'Average resolution',
-                  value: durationHours(averageResolution),
-                  detail: 'Benchmark: 5 business days',
-                  icon: <IconWrench size={16} />,
-                  tone: averageResolution && Number(averageResolution) > 24 * 5 ? 'text-ochre-ink' : 'text-mint-ink',
-                },
-                {
-                  label: 'Work orders in flight',
-                  value: String(workOrdersInFlight),
-                  detail: 'Assigned or in progress',
-                  icon: <IconWrench size={16} />,
-                  tone: workOrdersInFlight > 0 ? 'text-brand-ink' : 'text-mint-ink',
-                },
-              ].map((metric) => (
-                <div key={metric.label} className="px-5 py-4 sm:px-6">
-                  <dt className="flex items-center gap-2 text-[0.68rem] font-semibold tracking-[0.12em] text-ink/45 uppercase">
-                    <span className={metric.tone}>{metric.icon}</span>
-                    {metric.label}
-                  </dt>
-                  <dd className="num mt-3 text-[1.8rem] leading-none font-semibold tracking-[-0.03em] text-ink">{metric.value}</dd>
-                  <p className="mt-2 text-[0.75rem] text-ink/50">{metric.detail}</p>
-                </div>
-              ))}
-            </dl>
-          </section>
-        ) : null
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <MetricCard
-            label={user?.role === 'resident' ? 'Your open complaints' : 'Open complaints'}
-            value={String(openCount)}
-            deltaTone={openCount > 0 ? 'attention' : 'positive'}
-            hint={user?.role === 'resident' ? 'Issues you have logged' : 'Across the estate'}
-            icon={<IconReport size={17} />}
-          />
-          <MetricCard
-            label="Estate units"
-            value={unitCount === null ? '—' : String(unitCount)}
-            hint="Registered in VALORA"
-            icon={<IconClock size={17} />}
-          />
-          <MetricCard
-            label="Announcements"
-            value={String(announcements.data?.total ?? 0)}
-            hint="Published by the HOA"
-            icon={<IconMegaphone size={17} />}
-          />
+      <section aria-label="Operational overview" className="grid gap-5 border-y border-line py-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 text-signal-ink"><CircleAlert className="h-4 w-4" /></span>
+          <div><p className="text-xs text-ink-muted">Open complaints</p><p className="num mt-1 font-heading text-3xl font-semibold text-ink">{stats.loading || stats.error ? '—' : openComplaintCount}</p><p className="mt-1 text-xs text-ink-muted">{stats.error ? 'Count unavailable' : `${needsReview} awaiting review`}</p></div>
         </div>
-      )}
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 text-brand-ink"><Wrench className="h-4 w-4" /></span>
+          <div><p className="text-xs text-ink-muted">Work orders in flight</p><p className="num mt-1 font-heading text-3xl font-semibold text-ink">{workOrders.loading ? '—' : workOrdersInFlight.length}</p><p className="mt-1 text-xs text-ink-muted">Assigned or in progress</p></div>
+        </div>
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 text-ochre-ink"><Activity className="h-4 w-4" /></span>
+          <div><p className="text-xs text-ink-muted">Resolution rate</p><p className="num mt-1 font-heading text-3xl font-semibold text-ink">{stats.loading || resolutionRate == null ? '—' : `${Number(resolutionRate).toFixed(0)}%`}</p><p className="mt-1 text-xs text-ink-muted">From recorded complaints</p></div>
+        </div>
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 text-brand"><Clock3 className="h-4 w-4" /></span>
+          <div><p className="text-xs text-ink-muted">Average resolution</p><p className="num mt-1 font-heading text-3xl font-semibold text-ink">{stats.loading || averageResolution == null ? '—' : durationHours(averageResolution)}</p><p className="mt-1 text-xs text-ink-muted">For resolved records</p></div>
+        </div>
+      </section>
 
-      {/* ------------------------------------------------ lower grid */}
-      <div className="grid gap-5 lg:grid-cols-[1.35fr_1fr]">
-        {isAdmin ? (
-          complaints.loading ? (
-            <LoadingState label="Loading complaints" />
-          ) : complaints.error ? (
-            <ErrorState
-              message={complaints.error.message}
-              requestId={complaints.error.requestId}
-            />
+      <section className="grid gap-9 xl:grid-cols-[minmax(0,1.45fr)_minmax(290px,0.72fr)] xl:gap-12">
+        <div>
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-brand-ink">Needs a decision</p>
+              <h2 className="mt-1 font-heading text-xl font-semibold tracking-tight text-ink sm:text-2xl">Priority issues <span className="ml-1 text-sm font-medium text-ink-muted">{stats.error ? '' : openComplaintCount}</span></h2>
+            </div>
+            <Link to="/app/complaints" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink hover:underline">Open complaints <ArrowRight className="h-3.5 w-3.5" /></Link>
+          </div>
+
+          {urgentCount > 0 ? (
+            <div className="my-4 flex items-start gap-3 border-l-2 border-signal bg-signal-wash/60 px-4 py-3">
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-signal-ink" />
+              <div><p className="text-sm font-semibold text-signal-ink">{urgentCount} high-priority item{urgentCount === 1 ? '' : 's'} in the latest records need attention</p><p className="mt-0.5 text-xs leading-relaxed text-ink-soft">Review the recorded details and decide the next action.</p></div>
+            </div>
+          ) : null}
+
+          {complaints.loading ? <LoadingState label="Loading priority issues" /> : complaints.error ? (
+            <ErrorState title="Issues could not be loaded" message={complaints.error.message} requestId={complaints.error.requestId} action={<button onClick={complaints.reload} type="button" className="text-sm font-semibold text-brand-ink underline">Try again</button>} />
+          ) : activeComplaints.length === 0 ? (
+            <div className="flex items-start gap-3 py-7">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 text-mint-ink" />
+              <div><p className="font-semibold text-ink">No open complaints on record.</p><p className="mt-1 text-sm text-ink-soft">New submissions will appear here for review.</p></div>
+            </div>
           ) : (
-            <NeedsAttention complaints={complaints.data?.items ?? []} />
-          )
-        ) : (
-          <Surface>
-            <SectionTitle
-              title={user?.role === 'resident' ? 'Your complaints' : 'Your activity'}
-              hint="Only issues you logged are visible to you"
-              action={
-                user?.role === 'resident' ? (
-                  <Link
-                    to="/app/complaints"
-                    className="inline-flex items-center gap-1.5 text-[0.8rem] font-medium text-brand-ink hover:underline"
-                  >
-                    Open complaints
-                    <IconArrowRight size={15} />
-                  </Link>
-                ) : null
-              }
-            />
-            {complaints.loading ? (
-              <LoadingState label="Loading complaints" />
-            ) : complaints.error ? (
-              <ErrorState
-                message={complaints.error.message}
-                requestId={complaints.error.requestId}
-              />
-            ) : (complaints.data?.items.length ?? 0) === 0 ? (
-              <p className="py-4 text-[0.83rem] text-ink-muted">
-                {user?.role === 'resident'
-                  ? 'You have not logged any complaints yet.'
-                  : 'Nothing logged against your membership.'}
-              </p>
+            <ul className="divide-y divide-line/80">
+              {activeComplaints.slice(0, 6).map((item) => <PriorityRow key={item.id} complaint={item} onSelect={setSelectedComplaint} />)}
+            </ul>
+          )}
+          {activeComplaints.length > 6 ? <Link to="/app/complaints" className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink hover:underline">View all {activeComplaints.length} open issues <ArrowRight className="h-3.5 w-3.5" /></Link> : null}
+        </div>
+
+        <aside className="space-y-8">
+          <ScoreSummary
+            snapshot={score.data}
+            history={scoreHistory.data}
+            loading={score.loading || scoreHistory.loading}
+            error={score.error || scoreHistory.error}
+            onRecalculate={recalculateScore}
+            recalculating={recalculating}
+            recalculateError={recalculateError}
+          />
+
+          <section aria-labelledby="latest-notices">
+            <div className="flex items-center justify-between gap-3 border-b border-line pb-3">
+              <div><p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-brand-ink">Keep residents informed</p><h2 id="latest-notices" className="mt-1 font-heading text-lg font-semibold text-ink">Latest notices</h2></div>
+              <Link to="/app/announcements" aria-label="View all announcements" className="flex h-9 w-9 items-center justify-center text-brand-ink hover:bg-brand-wash"><ArrowRight className="h-4 w-4" /></Link>
+            </div>
+            {announcements.loading ? <div className="mt-3"><LoadingState label="Loading notices" /></div> : announcements.error ? (
+              <p className="mt-3 text-sm text-ink-muted">Notices are temporarily unavailable.</p>
+            ) : notices.length === 0 ? (
+              <div className="flex gap-3 py-4"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-brand-ink" /><p className="text-sm text-ink-muted">No notices have been published yet.</p></div>
             ) : (
-              <ul className="divide-y divide-line">
-                {(complaints.data?.items ?? []).slice(0, 5).map((item) => {
-                  const status = complaintStatus[item.status ?? 'submitted'];
-                  return (
-                    <li key={item.id} className="flex items-start gap-3 py-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[0.86rem]">{item.description}</p>
-                        <p className="num mt-0.5 text-[0.75rem] text-ink-muted">
-                          #{item.id} · {item.category} · {relativeDays(item.created_at)}
-                        </p>
-                      </div>
-                      <Chip tone={status?.tone ?? 'neutral'} glyph={status?.glyph}>
-                        {status?.label ?? item.status}
-                      </Chip>
-                    </li>
-                  );
-                })}
+              <ul className="divide-y divide-line/80">
+                {notices.slice(0, 3).map((notice) => <li key={notice.id} className="py-3.5">
+                  <div className="flex items-start gap-2"><CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-brand-ink" /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-baseline justify-between gap-2"><p className="text-sm font-semibold text-ink">{notice.title}</p><time className="text-xs text-ink-muted">{shortDate(notice.created_at)}</time></div><p className="mt-1 line-clamp-2 text-sm leading-relaxed text-ink-soft">{notice.message}</p></div></div>
+                </li>)}
               </ul>
             )}
-          </Surface>
-        )}
+            <Link to="/app/announcements" className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink hover:underline">Manage notices <ArrowRight className="h-3.5 w-3.5" /></Link>
+          </section>
+        </aside>
+      </section>
 
-        <Surface>
-          <SectionTitle
-            title="Latest announcements"
-            hint="Governance activity is itself a health signal"
-            action={
-              <Link
-                to="/app/announcements"
-                className="inline-flex items-center gap-1.5 text-[0.8rem] font-medium text-brand-ink hover:underline"
-              >
-                All
-                <IconArrowRight size={15} />
-              </Link>
-            }
-          />
-          {announcements.loading ? (
-            <LoadingState label="Loading announcements" />
-          ) : announcements.error ? (
-            <ErrorState
-              message={announcements.error.message}
-              requestId={announcements.error.requestId}
-            />
-          ) : (
-            <AnnouncementList announcements={announcements.data?.items ?? []} />
-          )}
-        </Surface>
-      </div>
-
-      {isAdmin ? (
-        <Surface>
-          <SectionTitle
-            title="Maintenance in flight"
-            hint="Work orders measure operational quality, not just cost"
-            action={
-              <Link
-                to="/app/work-orders"
-                className="inline-flex items-center gap-1.5 text-[0.8rem] font-medium text-brand-ink hover:underline"
-              >
-                All work orders
-                <IconArrowRight size={15} />
-              </Link>
-            }
-          />
-          {workOrders.loading ? (
-            <LoadingState label="Loading work orders" />
-          ) : workOrders.error ? (
-            <ErrorState
-              message={workOrders.error.message}
-              requestId={workOrders.error.requestId}
-            />
-          ) : (workOrders.data?.items.length ?? 0) === 0 ? (
-            <p className="py-4 text-[0.83rem] text-ink-muted">
-              No work orders have been raised yet.
-            </p>
-          ) : (
-            <ul className="divide-y divide-line">
-              {(workOrders.data?.items ?? []).slice(0, 6).map((order) => {
-                const status = workOrderStatus[order.status ?? 'assigned'];
-                return (
-                  <li key={order.id} className="flex flex-wrap items-center gap-3 py-3">
-                    <IconWrench size={16} className="shrink-0 text-ink-muted" />
-                    <span className="num text-[0.8rem]">
-                      WO-{String(order.id).padStart(4, '0')}
-                    </span>
-                    <span className="num text-[0.8rem] text-ink-muted">
-                      complaint #{order.complaint_id}
-                    </span>
-                    <span className="num text-[0.8rem] text-ink-muted">
-                      provider #{order.provider_id}
-                    </span>
-                    <span className="ml-auto">
-                      <Chip tone={status?.tone ?? 'neutral'} glyph={status?.glyph}>
-                        {status?.label ?? order.status}
-                      </Chip>
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Surface>
-      ) : null}
-
-      {/* --------------------------------------------------- operational timeline */}
-      <Surface>
-        <SectionTitle
-          title="Recent estate operations"
-          hint="Authorized complaint and work-order records, newest first"
-        />
-        <div className="mt-4">
-          {complaints.loading || (isAdmin && workOrders.loading) ? (
-            <LoadingState label="Loading recent operations" />
-          ) : complaints.error ? (
-            <ErrorState
-              message={complaints.error.message}
-              requestId={complaints.error.requestId}
-            />
-          ) : isAdmin && workOrders.error ? (
-            <ErrorState
-              message={workOrders.error.message}
-              requestId={workOrders.error.requestId}
-            />
-          ) : operationalTimeline.length === 0 ? (
-            <EmptyState
-              title="No recent operational activity"
-              body="Logged complaints and work-order updates will appear here once the estate has records."
-            />
-          ) : (
-            <ul className="divide-y divide-line">
-              {operationalTimeline.map((item) => (
-                <li key={item.id} className="py-3">
-                  <div className="flex flex-wrap items-baseline justify-between gap-3">
-                    <p className="text-[13px] font-medium">{item.title}</p>
-                    <span className="num text-[11.5px] text-ink-muted">{item.date}</span>
-                  </div>
-                  <p className="mt-1 text-[12.5px] text-ink-soft">{item.description}</p>
-                  <p className="mt-1 text-[11.5px] text-ink-muted">{item.meta}</p>
-                </li>
-              ))}
-            </ul>
-          )}
+      <section aria-labelledby="work-orders-heading" className="border-t border-line pt-6">
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-3">
+          <div><p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-brand-ink">Operational follow-through</p><h2 id="work-orders-heading" className="mt-1 font-heading text-xl font-semibold text-ink sm:text-2xl">Work in motion</h2><p className="mt-1 text-sm text-ink-soft">Assigned work and in-progress repairs.</p></div>
+          <Link to="/app/work-orders" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink hover:underline">All work orders <ArrowRight className="h-3.5 w-3.5" /></Link>
         </div>
-      </Surface>
+        {workOrders.loading ? <div className="mt-3"><LoadingState label="Loading work orders" /></div> : workOrders.error ? (
+          <div className="mt-3"><ErrorState title="Work orders are unavailable" message={workOrders.error.message} requestId={workOrders.error.requestId} action={<button type="button" onClick={workOrders.reload} className="text-sm font-semibold text-brand-ink underline">Try again</button>} /></div>
+        ) : workOrdersInFlight.length === 0 ? (
+          <p className="py-5 text-sm text-ink-muted">No active work orders are recorded.</p>
+        ) : (
+          <ul className="divide-y divide-line/80">
+            {workOrdersInFlight.slice(0, 4).map((order) => {
+              const status = workOrderStatus[order.status ?? 'assigned'];
+              return <li key={order.id} className="grid gap-2 py-3.5 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+                <div className="flex min-w-0 items-center gap-3"><Wrench className="h-4 w-4 shrink-0 text-brand-ink" /><div className="min-w-0"><p className="truncate text-sm font-semibold text-ink">Work order #{order.id}</p><p className="mt-0.5 text-xs text-ink-muted">Complaint #{order.complaint_id}{order.provider_id ? ` · Provider #${order.provider_id}` : ''}</p></div></div>
+                <Chip tone={status?.tone ?? 'neutral'} glyph={status?.glyph}>{status?.label ?? order.status}</Chip>
+                <Link to="/app/work-orders" className="inline-flex items-center gap-1 text-sm font-semibold text-brand-ink hover:underline">Review <ArrowRight className="h-3.5 w-3.5" /></Link>
+              </li>;
+            })}
+          </ul>
+        )}
+      </section>
 
-      <p className="text-[0.72rem] text-ink/35">
-        Scope: {estate?.estate_name ?? 'no estate selected'} ·{' '}
-        {stats.data ? `${stats.data.total} complaints on record` : 'estate metrics unavailable'}
+      <section aria-labelledby="recent-activity-heading" className="border-t border-line pt-6">
+        <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-brand-ink">Record of action</p><h2 id="recent-activity-heading" className="mt-1 font-heading text-lg font-semibold text-ink">Recent activity</h2></div><p className="text-xs text-ink-muted">{estate?.estate_name ?? 'Selected estate'}</p></div>
+        {complaints.loading || workOrders.loading ? <div className="mt-3"><LoadingState label="Loading recent activity" /></div> : complaints.error && workOrders.error ? <p className="py-3 text-sm text-ink-muted">Recent activity is unavailable.</p> : <div className="mt-2"><ActivityList complaints={allComplaints.slice(0, 6)} workOrders={workOrderItems.slice(0, 6)} /></div>}
+      </section>
+
+      <p className="border-t border-line pt-4 text-xs text-ink-muted">
+        Operational figures reflect records currently returned by VALORA. Deeper score history, calculation details, and intelligence evidence live in their dedicated workspaces.
       </p>
+      <ComplaintDetail complaint={selectedComplaint} onClose={() => setSelectedComplaint(null)} />
     </div>
   );
 }
 
-// Re-export as DashboardBody for backwards compatibility
 export { AdminDashboard as DashboardBody };

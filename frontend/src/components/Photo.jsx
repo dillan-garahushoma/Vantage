@@ -17,7 +17,7 @@ export function PhotoFallback({ label, className }) {
 }
 export function Photo({ src, alt, width, height, className, fallbackLabel, loading = 'lazy', }) {
     const [failed, setFailed] = useState(false);
-    if (failed) {
+    if (!src || failed) {
         return <PhotoFallback label={fallbackLabel ?? alt} className={className}/>;
     }
     return (<img src={src} alt={alt} width={width} height={height} loading={loading} decoding="async" onError={() => setFailed(true)} className={className}/>);
