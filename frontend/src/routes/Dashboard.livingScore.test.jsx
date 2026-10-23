@@ -174,7 +174,7 @@ describe('Dashboard — Living Score', () => {
         render(<MemoryRouter initialEntries={['/app']}>
         <Dashboard />
       </MemoryRouter>);
-        await user.click(await screen.findByRole('button', { name: /recalculate now/i }));
+        await user.click(await screen.findByRole('button', { name: /recalculate score/i }));
         expect(await screen.findByText(/The recalculation was refused/)).toBeVisible();
         expect(screen.getByText('This account is not an administrator of this estate.')).toBeVisible();
         expect(screen.getByText(/req-403/)).toBeVisible();
