@@ -161,6 +161,7 @@ export function RequestAccess() {
                   </span>
                   <Button type="button" variant="ghost" onClick={() => {
                     setPicked(null);
+                    setUnitNo('');
                     clearSelectedPublicEstate();
                   }}>
                     Change
