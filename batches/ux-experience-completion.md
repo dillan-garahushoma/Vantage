@@ -13,7 +13,7 @@ The product should feel like one considered experience, not disconnected routes 
 
 ## Token-budget protocol — mandatory
 
-1. Read this batch, `AGENTS.md`, `docs/CODEX_UX_REDESIGN_BRIEF.md`, the relevant progress reports, and the applicable installed design skills. Inspect the current working tree and existing changes first. Preserve user changes.
+1. Read this batch, `AGENTS.md`, `docs/CODEX_UX_REDESIGN_BRIEF.md`, `docs/design/VALORA-PORTAL-EXPERIENCE-DIRECTION.md`, the relevant progress reports, and the applicable installed design skills. Inspect the current working tree and existing changes first. Preserve user changes.
 2. Use existing design skills and installed tools; do not spend time installing a pile of overlapping skills or researching unnecessarily. Read the existing design contract if present. If documentation named in `AGENTS.md` is absent, record that once and proceed using available docs.
 3. Spend at least 80% of the work budget on implementation, not test execution, planning, or status narration. Do not run broad tests or browser suites during exploration. Do not rerun the same failing command repeatedly.
 4. Implement in coherent batches: trace the critical flows, make the changes, review the diff, then run only one focused validation pass near the end. Prefer build/type/lint and a few relevant tests. Do not start a full Playwright suite unless implementation is complete and sufficient budget remains. Never let repeated tests consume the session budget.
