@@ -12,6 +12,11 @@ Read these first, in order: `CLAUDE_README.md`, `ARCHITECTURE_AND_DOMAIN.md`, `E
 ### Product UX redesign exception
 When the task is the explicitly approved VALORA frontend experience redesign, read `docs/CODEX_UX_REDESIGN_BRIEF.md` before editing and treat it as the source of truth for UX, content hierarchy, role-specific dashboards, AI answer presentation, visual direction and acceptance criteria. In that scoped frontend redesign, the general “Do not redesign” and “keep edits small and additive” guidance does not prohibit deliberate layout/component refactors; refactor only what is necessary, preserve domain/API/security behaviour, and deliver in the brief’s staged phases. Do not extend the redesign into unrelated backend architecture.
 
+
+## Current owner-approved task — complete VALORA experience
+
+For the current task on branch `codex/valora-experience-completion`, execute `batches/ux-experience-completion.md` as the single session batch. It supplements `docs/CODEX_UX_REDESIGN_BRIEF.md` with the owner's complete experience expectations, confirmed integration issues, acceptance criteria, and a token-conscious implementation protocol. Read it before editing. Do not stop at a plan; implement the batch and write its final progress report. Do not start unrelated batches.
+
 ## Environment (Windows)
 Use the repo interpreter explicitly. A bare `python` is not reliably on PATH.
 
