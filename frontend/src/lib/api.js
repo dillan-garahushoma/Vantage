@@ -85,6 +85,13 @@ function buildUrl(path, params) {
     return url.toString();
 }
 async function request(path, options = {}) {
+    if (!API_CONFIGURED) {
+        throw new ApiError(
+            0,
+            'VALORA could not connect because this deployment has no API address configured. Set VITE_API_BASE_URL to the deployed backend URL in the frontend hosting settings, then rebuild.',
+            'API_BASE_URL_MISSING',
+        );
+    }
     const { method = 'GET', params, body, anonymous } = options;
     const headers = { Accept: 'application/json' };
     if (!anonymous) {
