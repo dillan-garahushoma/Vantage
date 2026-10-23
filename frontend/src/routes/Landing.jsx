@@ -136,14 +136,30 @@ function FeaturedEstates() {
             ))}
           </div>
         ) : directory.error ? (
-          <div className="mt-8 rounded-2xl border border-ink/15 bg-surface p-8 text-center">
-            <p className="text-[14.5px] text-ink-soft">
-              The public catalogue could not be reached right now.{' '}
-              <Link to="/estates" className="font-medium text-accent-ink underline">
-                Open directory
-              </Link>
-              .
-            </p>
+          <div className="mt-8 border-y border-ink/15 bg-surface px-5 py-7 sm:px-8">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-[14.5px] font-semibold text-ink">
+                The public catalogue could not be loaded.
+              </p>
+              <p role="alert" className="mt-2 text-sm leading-relaxed text-ink-soft">
+                {directory.error.message}
+              </p>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={directory.reload}
+                  className="inline-flex min-h-10 items-center justify-center border border-ink/20 px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-accent hover:bg-accent-wash hover:text-accent-ink"
+                >
+                  Try again
+                </button>
+                <Link
+                  to="/estates"
+                  className="inline-flex min-h-10 items-center justify-center px-4 py-2 text-sm font-semibold text-accent-ink hover:underline"
+                >
+                  Open directory <IconArrowRight size={15} />
+                </Link>
+              </div>
+            </div>
           </div>
         ) : estates.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-ink/15 bg-surface p-10 text-center">
