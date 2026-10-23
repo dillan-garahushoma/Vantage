@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, Bell, CalendarDays, CheckCircle2, CircleAlert, Clock3, FileText, HeartPulse, ShieldAlert, Wrench } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Chip, ErrorState, LoadingState } from '../components/ui';
-import { Drawer } from '../components/ui/drawer';
+import { ComplaintDrawer } from '../components/ComplaintDrawer';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../context/AuthContext';
 import { useEstateScope } from '../context/EstateContext';
@@ -144,53 +144,6 @@ function ScoreSummary({ snapshot, history, loading, error, onRecalculate, recalc
         </div>
       </div>
     </section>
-  );
-}
-
-function ComplaintDetail({ complaint, onClose }) {
-  const status = complaint ? complaintStatus[complaint.status ?? 'submitted'] : null;
-  return (
-    <Drawer
-      open={Boolean(complaint)}
-      onOpenChange={(open) => { if (!open) onClose(); }}
-      side="right"
-      width="sm:max-w-[560px]"
-      title={complaint ? `Complaint #${complaint.id}` : ''}
-      subtitle={complaint ? `${displayLabel(complaint.category ?? 'General')}${complaint.unit_id ? ` · Unit ${complaint.unit_id}` : ''}` : ''}
-      badge={complaint ? <Chip tone={status?.tone ?? 'neutral'} glyph={status?.glyph}>{status?.label ?? complaint.status}</Chip> : null}
-      footer={complaint ? (
-        <Link to="/app/complaints" onClick={onClose} className="inline-flex w-full items-center justify-center gap-2 bg-brand px-4 py-3 text-sm font-semibold text-white hover:bg-brand-ink">
-          Open complaint workspace <ArrowRight className="h-4 w-4" />
-        </Link>
-      ) : null}
-    >
-      {complaint ? (
-        <div className="space-y-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={`text-xs font-semibold uppercase ${complaint.priority === 'urgent' ? 'text-signal-ink' : complaint.priority === 'high' ? 'text-ochre-ink' : 'text-ink-muted'}`}>
-              {displayLabel(complaint.priority ?? 'normal')} priority
-            </span>
-            <span className="text-xs text-ink-muted">Logged {relativeDays(complaint.created_at)}</span>
-          </div>
-          <section>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Record details</h3>
-            <dl className="mt-3 divide-y divide-line">
-              <div className="flex justify-between gap-4 py-3 text-sm"><dt className="text-ink-muted">Created</dt><dd className="text-right font-medium text-ink">{shortDate(complaint.created_at)}</dd></div>
-              <div className="flex justify-between gap-4 py-3 text-sm"><dt className="text-ink-muted">Last updated</dt><dd className="text-right font-medium text-ink">{shortDate(complaint.updated_at ?? complaint.created_at)}</dd></div>
-              <div className="flex justify-between gap-4 py-3 text-sm"><dt className="text-ink-muted">Unit</dt><dd className="text-right font-medium text-ink">{complaint.unit_id ?? 'Not recorded'}</dd></div>
-            </dl>
-          </section>
-          <section>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Description</h3>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink-soft">{complaint.description}</p>
-          </section>
-          <div className="border-l-2 border-brand bg-brand-wash/50 px-4 py-3">
-            <p className="text-sm font-semibold text-ink">Next step</p>
-            <p className="mt-1 text-sm leading-relaxed text-ink-soft">Open the complaint workspace to inspect the full record, assign a provider, and continue the complaint lifecycle.</p>
-          </div>
-        </div>
-      ) : null}
-    </Drawer>
   );
 }
 
@@ -492,7 +445,19 @@ export function AdminDashboard() {
           <Link to="/app/health" className="inline-flex items-center gap-1 text-[0.7rem] font-semibold text-brand-ink hover:underline">Explore Estate Health <ArrowRight className="h-3 w-3" aria-hidden="true" /></Link>
         </div>
       </section>
-      <ComplaintDetail complaint={selectedComplaint} onClose={() => setSelectedComplaint(null)} />
+      {selectedComplaint ? (
+        <ComplaintDrawer
+          complaintId={selectedComplaint.id}
+          onClose={() => setSelectedComplaint(null)}
+          onChanged={() => {
+            complaints.reload();
+            stats.reload();
+            workOrders.reload();
+            score.reload();
+            scoreHistory.reload();
+          }}
+        />
+      ) : null}
     </div>
   );
 }
