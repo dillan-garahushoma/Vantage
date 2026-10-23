@@ -1,4 +1,4 @@
-import { Bell, House, Menu, Plus, Search, Sparkles } from 'lucide-react';
+import { Bell, House, Menu, Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -101,9 +101,10 @@ export function TopBar({ onOpenNav, onCreateWorkOrder, onLogComplaint }) {
               to="/"
               aria-label="Website home"
               title="Website home"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line text-ink/60 transition-colors hover:border-brand-soft hover:bg-brand-wash hover:text-brand-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full border border-line px-2.5 text-ink/60 transition-colors hover:border-brand-soft hover:bg-brand-wash hover:text-brand-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               <House className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden text-xs font-medium sm:inline">Home</span>
             </Link>
             {quickAction ? (
               <Button variant="ink" onClick={quickAction.onClick} className="hidden h-10 rounded-full px-5 sm:inline-flex">
