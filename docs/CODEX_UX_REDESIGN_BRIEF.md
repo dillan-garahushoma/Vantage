@@ -1,7 +1,7 @@
 # VALORA Experience Redesign — Codex Execution Brief
 
 **Status:** Owner-approved product direction  
-**Repository:** \`dillan-garahushoma/Vantage\`  
+**Repository:** `dillan-garahushoma/Vantage`  
 **Primary objective:** Turn VALORA into a polished, trustworthy, editorially designed property-health product with coherent public discovery, role-specific workflows, and a well-designed AI experience.
 
 This is an execution brief, not a request to merely write another plan. Audit the current implementation, identify what is real and reusable, then deliver the redesign in small, testable phases. Do not rewrite the backend or invent product capabilities just to make the UI look richer.
@@ -22,9 +22,9 @@ The work must not be a generic Tailwind reskin. Make explicit choices about user
 
 Before making changes:
 
-1. Read root \`AGENTS.md\`, this brief, \`.agents/skills/valora-product-design/SKILL.md\`, and the AI-conversation skill. Follow the existing architecture, security and test rules.
+1. Read root `AGENTS.md`, this brief, `.agents/skills/valora-product-design/SKILL.md`, Inspect `.agents/skills/` for any existing AI/conversation-specific skill and read it if present; do not assume a skill exists. Follow the architecture, security and test rules.
 2. Inspect current git status and branch. Never discard or overwrite user changes. Work in the existing Codex working tree; do not reset or clean the repo.
-3. Inspect the actual frontend routes and components, including \`App.jsx\`, \`Landing.jsx\`, \`PublicEstates.jsx\`, \`PublicEstateDetail.jsx\`, \`Dashboard.admin.jsx\`, \`Dashboard.resident.jsx\`, \`Dashboard.jsx\`, \`EstateHealth.jsx\`, \`Intelligence.jsx\`, \`AskValora.jsx\`, \`AskValoraSpotlight.jsx\`, \`HealthBrief.jsx\`, \`AppShell.jsx\`, navigation/layout components, and current UI primitives.
+3. Inspect the actual frontend routes and components, including `App.jsx`, `Landing.jsx`, `PublicEstates.jsx`, `PublicEstateDetail.jsx`, `Dashboard.admin.jsx`, `Dashboard.resident.jsx`, `Dashboard.jsx`, `EstateHealth.jsx`, `Intelligence.jsx`, `AskValora.jsx`, `AskValoraSpotlight.jsx`, `HealthBrief.jsx`, `AppShell.jsx`, navigation/layout components, and current UI primitives.
 4. Read the actual API response types and service implementations used by those components before changing any data presentation.
 5. Run existing frontend checks and note the baseline. Distinguish failures that existed beforehand from failures introduced by the redesign.
 6. Create a short route/persona audit in the progress report, then execute the phases below. Do not stop after returning a plan.
@@ -35,14 +35,14 @@ Work incrementally. Each phase needs focused tests, visual verification and a co
 
 The earlier repository audit found the following; recheck each against the current working tree before fixing it because the repository may have changed:
 
-- The app has \`PublicEstates.jsx\` and \`PublicEstateDetail.jsx\`, and public navigation links to \`/estates\`, but \`App.jsx\` did not register \`/estates\` or \`/estates/:id\`. The screenshot showed the resulting 404.
-- \`Dashboard.jsx\` sends the administrator role to \`AdminDashboard\` and all other roles to \`ResidentDashboard\`. A service provider must not get the resident dashboard.
+- The app has `PublicEstates.jsx` and `PublicEstateDetail.jsx`, and public navigation links to `/estates`, but `App.jsx` did not register `/estates` or `/estates/:id`. The screenshot showed the resulting 404.
+- `Dashboard.jsx` sends the administrator role to `AdminDashboard` and all other roles to `ResidentDashboard`. A service provider must not get the resident dashboard.
 - The current landing hero uses “South African private estates” and “MVP — pilot deployment” badges, a static estate-plan illustration and dashboard-like metrics. This foregrounds internal positioning instead of the product's purpose.
 - The current admin dashboard places many sections inside repeated boxed surfaces. The resident dashboard repeats Living Score explanation and prioritises a generic score panel over the resident's issue journey.
-- \`Intelligence.jsx\` and the Ask VALORA components need a deliberate information design for AI output. Long, raw Markdown-like text with visible asterisks or repetitive lines is unacceptable.
+- `Intelligence.jsx` and the Ask VALORA components need a deliberate information design for AI output. Long, raw Markdown-like text with visible asterisks or repetitive lines is unacceptable.
 - The E2E smoke test was noted to expect an old hero heading; the mobile sweep can pass a 404 because it measures overflow instead of asserting that the intended route rendered. Verify whether these tests remain stale.
-- \`backend/app/seed_demo.py\` was noted to seed fictional complexes with \`is_demo=False\`, \`is_public=True\`, and \`show_living_score=True\`. The directory filters by publication status, while score origin uses the demo flag. Trace the real seed/deploy behavior and correct classification so fictional sample records cannot be represented as live estates. Use demo records for visual fixtures only, or label demo data unambiguously in a controlled demo experience. Do not silently change production publication or score behaviour without tests.
-- Extra pages such as \`Financial.jsx\`, \`Community.jsx\`, \`ProviderPortal.jsx\`, and \`PropertyWorkflows.jsx\` may be legacy, disconnected or sample-only. Classify them; do not surface unfinished screens or fake interactivity as product functionality.
+- `backend/app/seed_demo.py` was noted to seed fictional complexes with `is_demo=False`, `is_public=True`, and `show_living_score=True`. The directory filters by publication status, while score origin uses the demo flag. Trace the real seed/deploy behavior and correct classification so fictional sample records cannot be represented as live estates. Use demo records for visual fixtures only, or label demo data unambiguously in a controlled demo experience. Do not silently change production publication or score behaviour without tests.
+- Extra pages such as `Financial.jsx`, `Community.jsx`, `ProviderPortal.jsx`, and `PropertyWorkflows.jsx` may be legacy, disconnected or sample-only. Classify them; do not surface unfinished screens or fake interactivity as product functionality.
 
 These are audit leads, not permission to assume the current branch is unchanged. Prove each defect before altering it.
 
@@ -87,7 +87,7 @@ Reuse the real public-directory API and components. Do not create a separate fak
 
 ### 4.4 Target public flow
 
-\`\`\`mermaid
+```mermaid
 flowchart TD
     A[Editorial homepage] --> B[Browse or search published complexes]
     B --> C[Photo-led complex profile]
@@ -99,7 +99,7 @@ flowchart TD
     F --> I[Membership resolved by API]
     H --> I
     I --> J[Correct role-specific workspace]
-\`\`\`
+```
 
 ## 5. Design role-specific dashboards around tasks
 
@@ -137,7 +137,7 @@ Do not let an estate-wide score crowd out the resident's own request. The reside
 
 Primary question: **What work is assigned to me, what is due, and how do I progress it?**
 
-- Route service providers to a provider-specific overview or \`My work\`, not \`ResidentDashboard\`.
+- Route service providers to a provider-specific overview or `My work`, not `ResidentDashboard`.
 - Prioritise assigned/in-progress jobs, due dates, job references, status and any recorded completion evidence.
 - Provide actions matching the API state machine and current permissions: start work, submit completion notes, complete work where allowed.
 - Never show a resident-only complaint CTA as the provider's primary action.
@@ -161,12 +161,12 @@ This should be a decision-support workspace, not another oversized dashboard of 
 
 The AI feature currently looks like an essay: visible asterisks/Markdown characters, paragraph after paragraph, and weak visual variation. Do not ship that again.
 
-Audit \`AskValora.jsx\`, \`AskValoraSpotlight.jsx\`, \`HealthBrief.jsx\`, \`Intelligence.jsx\`, and the actual API response shape. Implement one reusable, consistent answer renderer where possible instead of four separate styling approaches.
+Audit `AskValora.jsx`, `AskValoraSpotlight.jsx`, `HealthBrief.jsx`, `Intelligence.jsx`, and the actual API response shape. Implement one reusable, consistent answer renderer where possible instead of four separate styling approaches.
 
 ### 6.1 Render structure, not raw Markdown characters
 
-- Never display raw Markdown markers such as \`**bold**\`, leading \`*\`, literal heading hashes, or raw list syntax to the user.
-- If the service returns Markdown, render it through a safe React Markdown renderer with explicit component styling and no raw-HTML execution. Check installed dependencies first; if needed, choose a maintained parser such as \`react-markdown\` with \`remark-gfm\`. Do not use \`dangerouslySetInnerHTML\` or enable unsanitised model HTML.
+- Never display raw Markdown markers such as `**bold**`, leading `*`, literal heading hashes, or raw list syntax to the user.
+- If the service returns Markdown, render it through a safe React Markdown renderer with explicit component styling and no raw-HTML execution. Check installed dependencies first; if needed, choose a maintained parser such as `react-markdown` with `remark-gfm`. Do not use `dangerouslySetInnerHTML` or enable unsanitised model HTML.
 - If the API returns a structured object, render its schema into purposeful interface elements. Do not flatten it into one string just for ease of implementation.
 - Preserve meaning, citations/evidence and line breaks. Normalise malformed or repeated whitespace safely; do not aggressively rewrite the model's factual claims.
 - Keep typography restrained and readable. Short paragraphs, useful headings, correctly formatted ordered/unordered lists, bold emphasis only where helpful, inline code only for actual technical identifiers, and tables only when they improve comparison.
@@ -217,7 +217,7 @@ Do not impose this template on every trivial answer. A simple question deserves 
 - Prefer fine dividers, typography and whitespace to heavy shadows and boxes.
 - Establish a deliberate type scale, line lengths and consistent spacing. Use tabular numerals for scores, dates and counts.
 - Use architecture/complex photography purposefully with consistent aspect ratios and high-quality crops. No image should be treated as “live” evidence without a real data relationship.
-- Use motion sparingly and honour \`prefers-reduced-motion\`. Maintain keyboard focus and WCAG AA contrast.
+- Use motion sparingly and honour `prefers-reduced-motion`. Maintain keyboard focus and WCAG AA contrast.
 - Use semantic HTML landmarks and correct heading order. Interactions must be accessible by keyboard and have visible focus states.
 
 ### Explicit anti-patterns
@@ -234,16 +234,16 @@ Do not impose this template on every trivial answer. A simple question deserves 
 ## 8. Design skills and tools
 
 Existing project assets:
-- \`.agents/skills/valora-product-design/SKILL.md\` (update/obey this project-specific skill).
-- \`.agents/mcp.json\` contains Playwright, Chrome DevTools, shadcn and Context7 server declarations. Do not assume Codex automatically reads this file; inspect Codex's actual MCP configuration and document the required setup without breaking working configuration.
+- `.agents/skills/valora-product-design/SKILL.md` (update/obey this project-specific skill).
+- `.agents/mcp.json` contains Playwright, Chrome DevTools, shadcn and Context7 server declarations. Do not assume Codex automatically reads this file; inspect Codex's actual MCP configuration and document the required setup without breaking working configuration.
 - The frontend has Playwright Test configured. Inspect package scripts and E2E coverage before adding overlapping tools.
 
 Evaluate this production UI skill for Codex:
-- **Frontend Design Pro**: \`https://github.com/PGraeff/frontend-design-pro-agent-skill\`
-- It is designed around product-specific creative direction, searchable design guidance and a UI-copy filter. Review its \`SKILL.md\` and license before installation or use; external skills are untrusted instructions until reviewed.
+- **Frontend Design Pro**: `https://github.com/PGraeff/frontend-design-pro-agent-skill`
+- It is designed around product-specific creative direction, searchable design guidance and a UI-copy filter. Review its `SKILL.md` and license before installation or use; external skills are untrusted instructions until reviewed.
 - If compatible and approved by the environment, the current published install command is:
-  \`npx skills add PGraeff/frontend-design-pro-agent-skill --skill frontend-design-pro --global --agent codex --yes --copy\`
-- Do not install several overlapping design packs just because they exist. Compare with Addy Osmani's \`frontend-ui-engineering\` skill (\`https://github.com/addyosmani/agent-skills/tree/main/skills/frontend-ui-engineering\`) only if a specific gap remains—especially component engineering, responsive behaviour or accessibility.
+  `npx skills add PGraeff/frontend-design-pro-agent-skill --skill frontend-design-pro --global --agent codex --yes --copy`
+- Do not install several overlapping design packs just because they exist. Compare with Addy Osmani's `frontend-ui-engineering` skill (`https://github.com/addyosmani/agent-skills/tree/main/skills/frontend-ui-engineering`) only if a specific gap remains—especially component engineering, responsive behaviour or accessibility.
 - The external skill supplements this brief; it never overrides VALORA's domain rules, tone, API constraints or anti-patterns.
 
 Tool trade-offs:
@@ -263,13 +263,13 @@ For each major phase:
 - Add/repair route-level tests and user-journey tests.
 - Update stale tests when the product's intentional copy/UX changes.
 - Ensure browser tests assert the target heading/content and key controls, not only that a page has no overflow.
-- Run \`npm test\`, \`npm run build\`, and \`npm run test:e2e\` from \`frontend/\` when supported by the environment. If Chromium is not installed, use the documented Playwright installation path and accurately report whether tests ran.
+- Run `npm test`, `npm run build`, and `npm run test:e2e` from `frontend/` when supported by the environment. If Chromium is not installed, use the documented Playwright installation path and accurately report whether tests ran.
 - Inspect at minimum desktop (1440px wide) and mobile (390px wide); include tablet where layouts change materially.
 - Capture screenshots of the homepage, directory, profile, admin overview, resident overview, provider work and AI response. Compare them visually before/after; verify one of each role under representative API data.
 - Inspect browser console/page errors and important network failures. Confirm there is no sideways page overflow.
 - Test loading, empty, error, insufficient-data and populated states.
 - Test keyboard operation, focus management, semantic structure, contrast, reduced motion, and AI output formatting.
-- Check \`git diff --check\`; keep API types, domain computations and authorisation responsibilities intact.
+- Check `git diff --check`; keep API types, domain computations and authorisation responsibilities intact.
 
 Do not claim browser verification if no browser was run. Use mocked data for deterministic visual tests when necessary, but do not treat a mocked screenshot as proof that production data or backend integration is correct.
 
