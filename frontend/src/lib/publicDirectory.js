@@ -24,6 +24,7 @@ export function getPublicEstate(estateId) {
  * `public_id`, and the size is one of the two the API produces.
  */
 export function publicPhotoUrl(publicId, size = 'full') {
+    if (!API_BASE) return '';
     return `${API_BASE}/api/v1/public/photos/${encodeURIComponent(publicId)}?size=${size}`;
 }
 /** Alt text for a photo: its caption, or a plain description of the image. */
