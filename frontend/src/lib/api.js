@@ -6,8 +6,15 @@
  *  2. `estate_id` is a *scope selector*, not proof of access. The server resolves
  *     the caller's memberships; we only pass along the estate the user picked.
  */
-const RAW_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
+const configuredBase = typeof import.meta.env.VITE_API_BASE_URL === 'string'
+    ? import.meta.env.VITE_API_BASE_URL.trim()
+    : '';
+// Local development gets a convenient origin; production must be configured
+// with the deployed API host at build time. Never ship a browser call to the
+// visitor's own localhost when Pages has no API environment variable.
+const RAW_BASE = configuredBase || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 export const API_BASE = RAW_BASE.replace(/\/$/, '');
+export const API_CONFIGURED = Boolean(API_BASE);
 const TOKEN_KEY = 'valora.token';
 const USER_KEY = 'valora.user';
 export class ApiError extends Error {
@@ -60,6 +67,13 @@ export function setUnauthorizedHandler(handler) {
     onUnauthorized = handler;
 }
 function buildUrl(path, params) {
+    if (!API_BASE) {
+        throw new ApiError(
+            0,
+            'VALORA could not connect because this deployment has no API address configured. Set VITE_API_BASE_URL to the deployed backend URL in the frontend hosting settings, then rebuild.',
+            'API_BASE_URL_MISSING',
+        );
+    }
     const url = new URL(`${API_BASE}${path}`);
     if (params) {
         for (const [key, value] of Object.entries(params)) {
