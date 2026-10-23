@@ -9,6 +9,9 @@ Read these first, in order: `CLAUDE_README.md`, `ARCHITECTURE_AND_DOMAIN.md`, `E
 - Follow the batch file exactly. If it conflicts with this file, the batch file wins for that batch.
 - If something in the batch is already done or does not match the real code, say so and do the smallest correct thing. Do not redesign.
 
+### Product UX redesign exception
+When the task is the explicitly approved VALORA frontend experience redesign, read `docs/CODEX_UX_REDESIGN_BRIEF.md` before editing and treat it as the source of truth for UX, content hierarchy, role-specific dashboards, AI answer presentation, visual direction and acceptance criteria. In that scoped frontend redesign, the general “Do not redesign” and “keep edits small and additive” guidance does not prohibit deliberate layout/component refactors; refactor only what is necessary, preserve domain/API/security behaviour, and deliver in the brief’s staged phases. Do not extend the redesign into unrelated backend architecture.
+
 ## Environment (Windows)
 Use the repo interpreter explicitly. A bare `python` is not reliably on PATH.
 
