@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Keyline } from '../components/Brand';
-import { PublicShell } from '../components/PublicShell';
-import { Button, Card, ErrorState, Field, Input } from '../components/ui';
+import { AuthShell } from '../components/AuthShell';
+import { Button, ErrorState, Field, Input } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../lib/api';
 export function Login() {
@@ -33,64 +32,42 @@ export function Login() {
             setBusy(false);
         }
     }
-    return (<PublicShell>
-      <div className="mx-auto grid max-w-[1000px] gap-10 px-5 py-14 lg:grid-cols-2 lg:items-center">
-        <div>
-          <p className="num text-[11px] tracking-[0.18em] text-accent-ink uppercase">
-            Estate access
-          </p>
-          <h1 className="mt-3 text-[32px] leading-tight font-semibold">Sign in</h1>
-          <p className="mt-3 max-w-md text-[14.5px] text-ink-soft">
-            Your account gives you access to the estates you are a member of, and nothing else. If an
-            HOA has provisioned your estate, it appears as soon as you sign in.
-          </p>
+    return (<AuthShell
+      eyebrow="Estate access"
+      title="Sign in"
+      intro="Your account gives you access to the estates you are a member of, and nothing else. If an HOA has provisioned your estate, it appears as soon as you sign in."
+      points={[
+        ['Estate-scoped', 'A supplied estate identifier is never proof of access.'],
+        ['Roles from membership', 'HOA and provider capability need a matching estate membership.'],
+        ['Attempts are recorded', 'Repeated failures are rate-limited per account.'],
+      ]}
+      cardTitle="Welcome back"
+      footer={<p className="mt-5 text-[13px] text-ink-muted">
+          No account yet?{' '}
+          <Link to="/register" className="font-medium text-accent-ink hover:underline">
+            Create an account
+          </Link>
+          .
+        </p>}
+    >
+      <form className="space-y-4" onSubmit={submit} noValidate>
+        {error ? (<ErrorState title={error.status === 429 ? 'Too many attempts' : 'Could not sign you in'} message={error.message} requestId={error.requestId}/>) : null}
 
-          <div className="mt-8 max-w-md space-y-3">
-            {[
-            ['Estate-scoped', 'A supplied estate identifier is never proof of access.'],
-            ['Roles from membership', 'HOA and provider capability need a matching estate membership.'],
-            ['Attempts are recorded', 'Repeated failures are rate-limited per account.'],
-        ].map(([term, detail]) => (<div key={term} className="flex gap-3">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rotate-45 bg-accent"/>
-                <p className="text-[13px] text-ink-soft">
-                  <span className="font-medium text-ink">{term}.</span> {detail}
-                </p>
-              </div>))}
-          </div>
+        <Field label="Email address">
+          <Input type="email" name="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.co.za"/>
+        </Field>
+
+        <Field label="Password">
+          <Input type="password" name="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••"/>
+        </Field>
+
+        <div className="text-right text-[13px]">
+          <Link to="/password-recovery" className="font-medium text-accent-ink hover:underline">Forgot password?</Link>
         </div>
 
-        <Card className="p-6">
-          <h2 className="text-[16px] font-semibold">Welcome back</h2>
-          <Keyline className="mt-3"/>
-
-          <form className="mt-5 space-y-4" onSubmit={submit} noValidate>
-            {error ? (<ErrorState title={error.status === 429 ? 'Too many attempts' : 'Could not sign you in'} message={error.message} requestId={error.requestId}/>) : null}
-
-            <Field label="Email address">
-              <Input type="email" name="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.co.za"/>
-            </Field>
-
-            <Field label="Password">
-              <Input type="password" name="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••"/>
-            </Field>
-
-            <div className="text-right text-[13px]">
-              <Link to="/password-recovery" className="font-medium text-accent-ink hover:underline">Forgot password?</Link>
-            </div>
-
-            <Button type="submit" variant="primary" className="w-full py-2.5" disabled={busy}>
-              {busy ? 'Signing in…' : 'Sign in'}
-            </Button>
-          </form>
-
-          <p className="mt-5 text-[13px] text-ink-muted">
-            No account yet?{' '}
-            <Link to="/register" className="font-medium text-accent-ink hover:underline">
-              Create an account
-            </Link>
-            .
-          </p>
-        </Card>
-      </div>
-    </PublicShell>);
+        <Button type="submit" variant="primary" className="w-full py-2.5" disabled={busy}>
+          {busy ? 'Signing in…' : 'Sign in'}
+        </Button>
+      </form>
+    </AuthShell>);
 }

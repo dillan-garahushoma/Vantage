@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { Keyline } from '../components/Brand';
-import { PublicShell } from '../components/PublicShell';
+import { AuthShell } from '../components/AuthShell';
 import { Button, Card, Chip, EmptyState, ErrorState, Field, Input, LoadingState, SectionTitle, Textarea, } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { useEstate } from '../context/EstateContext';
@@ -81,20 +80,16 @@ export function RequestAccess() {
     }
     const items = directory.data?.items ?? [];
     const requests = mine.data ?? [];
-    return (<PublicShell>
-      <div className="mx-auto grid max-w-[1040px] gap-10 px-5 py-14 lg:grid-cols-[1fr_1.05fr]">
-        <div className="min-w-0">
-          <p className="num text-[11px] tracking-[0.18em] text-accent-ink uppercase">
-            Resident onboarding
-          </p>
-          <h1 className="mt-3 text-[32px] leading-tight font-semibold">
-            Ask to join your estate
-          </h1>
-          <p className="mt-3 max-w-md text-[14.5px] text-ink-soft">
-            Send your details to the estate office. They review the request against their unit
-            register, then approve or decline it. You will not have access until they approve it.
-          </p>
-          <p className="mt-3 max-w-md text-[13px] text-ink-muted">
+    return (<AuthShell
+      eyebrow="Resident onboarding"
+      title="Ask to join your estate"
+      intro="Send your details to the estate office. They review the request against their unit register, then approve or decline it. You will not have access until they approve it."
+      points={[
+        ['Approval, not self-selection', 'The estate office decides against their own unit register.'],
+        ['One home per request', 'Pick the complex you actually live in — the server re-checks the unit.'],
+      ]}
+      aside={<>
+          <p className="mt-4 max-w-md text-[13px] text-ink-muted">
             Already have a join code from your estate office?{' '}
             <Link to="/join" className="font-medium text-accent-ink hover:underline">
               Redeem it instead
@@ -131,13 +126,9 @@ export function RequestAccess() {
                 })}
                 </ul>)}
             </div>)}
-        </div>
-
-        <Card className="min-w-0 self-start p-6">
-          <h2 className="text-[16px] font-semibold">Find your complex</h2>
-          <Keyline className="mt-3"/>
-
-          <form className="mt-5 space-y-4" onSubmit={submit} noValidate>
+      </>}
+    >
+      <form className="space-y-4" onSubmit={submit} noValidate>
             {error ? (<ErrorState title={error.status === 409
                 ? 'You cannot request this one'
                 : error.status === 404
@@ -213,11 +204,9 @@ export function RequestAccess() {
             </Button>
           </form>
 
-          <p className="mt-5 text-[12.5px] text-ink-muted">
-            Your name and email on this account are what the estate office sees. There is nothing
-            else to fill in, and no code to find.
-          </p>
-        </Card>
-      </div>
-    </PublicShell>);
+      <p className="mt-5 text-[12.5px] text-ink-muted">
+        Your name and email on this account are what the estate office sees. There is nothing
+        else to fill in, and no code to find.
+      </p>
+    </AuthShell>);
 }

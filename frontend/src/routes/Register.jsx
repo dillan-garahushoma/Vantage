@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Keyline } from '../components/Brand';
-import { OnboardingShell } from '../components/OnboardingShell';
+import { AuthShell } from '../components/AuthShell';
 import { Button, ErrorState, Field, Input } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../lib/api';
@@ -95,12 +95,13 @@ export function Register() {
   }
 
   return (
-    <OnboardingShell
+    <AuthShell
+      eyebrow="Estate access"
       step={1}
       totalSteps={3}
       stepLabels={['Account', 'Join estate', "You're in"]}
       title="Create your account"
-      subtitle="Resident accounts join an estate with a code from your estate office."
+      intro="Public registration creates a resident. Privileged estate roles are granted by the estate office, never picked from a dropdown."
     >
       <div className="space-y-5">
         <div>
@@ -232,6 +233,6 @@ export function Register() {
           .
         </p>
       </div>
-    </OnboardingShell>
+    </AuthShell>
   );
 }

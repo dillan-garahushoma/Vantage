@@ -80,13 +80,19 @@ export function Meter({ label, value, max = 100, barClass = 'bg-accent', caption
 }
 /* ---------------------------------------------------------------- forms */
 export function Field({ label, hint, error, children, }) {
-    return (<label className="block">
-      <span className="mb-1.5 block text-[12px] font-medium tracking-wide text-ink-soft uppercase">
-        {label}
-      </span>
-      {children}
+    // The hint and the error sit *outside* the label: inside it they are part of
+    // the control's accessible name (`getByLabelText('New password')` would read
+    // "New passwordAt least 8 characters" instead). The label still wraps the
+    // control, so the implicit association, and the click target, are kept.
+    return (<div className="block">
+      <label className="block">
+        <span className="mb-1.5 block text-[12px] font-medium tracking-wide text-ink-soft uppercase">
+          {label}
+        </span>
+        {children}
+      </label>
       {error ? (<span className="mt-1 block text-[12px] text-signal-ink">{error}</span>) : hint ? (<span className="mt-1 block text-[12px] text-ink-muted">{hint}</span>) : null}
-    </label>);
+    </div>);
 }
 const controlClass = 'w-full rounded-xs border border-ink/20 bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-muted/70 focus:border-accent focus:outline-none';
 export function Input({ className, ...rest }) {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { OnboardingShell } from '../components/OnboardingShell';
+import { AuthShell } from '../components/AuthShell';
 import { Button, ErrorState, Field, Input } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { useEstate } from '../context/EstateContext';
@@ -67,13 +67,19 @@ export function Join() {
           : 'Could not join with that code';
 
   return (
-    <OnboardingShell
+    <AuthShell
+      eyebrow="Estate access"
       step={2}
       totalSteps={3}
       stepLabels={['Account', 'Join estate', "You're in"]}
       title="Enter your code and unit"
-      subtitle="The code comes from your estate office — it names the estate for you."
+      intro="The code comes from your estate office — it names the estate for you."
+      points={[
+        ['One code, one estate', 'The code carries the estate, so there is nothing else to pick.'],
+        ['Your unit is checked', 'The office matches the unit number against their register.'],
+      ]}
       backTo="/register"
+      backLabel="Back to your account"
     >
       <form className="space-y-4" onSubmit={submit} noValidate>
         {error ? (
@@ -124,6 +130,6 @@ export function Join() {
       <p className="mt-3 text-center text-[12px] text-ink-muted">
         No code yet? Your estate office will review the request.
       </p>
-    </OnboardingShell>
+    </AuthShell>
   );
 }

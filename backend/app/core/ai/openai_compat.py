@@ -146,13 +146,19 @@ class OpenAICompatLLMClient:
         *,
         system: str,
         user: str,
+        messages: list[dict[str, str]] | None = None,
     ) -> AsyncIterator[str]:
-        body: dict[str, Any] = {
-            "model": self.model,
-            "messages": [
+        if messages:
+            msg_list = messages
+        else:
+            msg_list = [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
-            ],
+            ]
+
+        body: dict[str, Any] = {
+            "model": self.model,
+            "messages": msg_list,
             "stream": True,
             "max_tokens": self.max_output_tokens,
         }

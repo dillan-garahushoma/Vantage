@@ -58,6 +58,7 @@ class LLMClient(Protocol):
         *,
         system: str,
         user: str,
+        messages: list[dict[str, str]] | None = None,
     ) -> AsyncIterator[str]: ...
 
 
@@ -147,16 +148,18 @@ class GatedLLMClient:
         *,
         system: str,
         user: str,
+        messages: list[dict[str, str]] | None = None,
     ) -> AsyncIterator[str]:
         settings = self._settings
         if not settings.AI_ENABLED:
             raise AIUnavailableError("disabled")
-        if len(system) + len(user) > settings.AI_MAX_INPUT_CHARS:
+        total_len = len(system) + len(user) + sum(len(m.get("content", "")) for m in (messages or []))
+        if total_len > settings.AI_MAX_INPUT_CHARS:
             raise AIUnavailableError("policy")
         if self.inner is None or not hasattr(self.inner, "stream_text"):
             raise AIUnavailableError("disabled")
 
-        async for chunk in self.inner.stream_text(system=system, user=user):
+        async for chunk in self.inner.stream_text(system=system, user=user, messages=messages):
             yield chunk
 
 

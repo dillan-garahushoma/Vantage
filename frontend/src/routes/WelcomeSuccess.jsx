@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { OnboardingShell } from '../components/OnboardingShell';
+import { AuthShell } from '../components/AuthShell';
 import { useEstate } from '../context/EstateContext';
 
 export function WelcomeSuccess() {
@@ -9,12 +9,13 @@ export function WelcomeSuccess() {
   if (!estateName) {
     // Request is still pending approval
     return (
-      <OnboardingShell
+      <AuthShell
         step={3}
         totalSteps={3}
         stepLabels={['Account', 'Join estate', "You're in"]}
+        eyebrow="Resident onboarding"
         title="Request submitted"
-        subtitle="Your estate office will review and approve your request."
+        intro="Your estate office will review and approve your request."
       >
         <div className="space-y-4 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-ochre-wash text-[28px]">
@@ -30,7 +31,7 @@ export function WelcomeSuccess() {
             View your request status →
           </Link>
         </div>
-      </OnboardingShell>
+      </AuthShell>
     );
   }
 
@@ -41,12 +42,13 @@ export function WelcomeSuccess() {
   ];
 
   return (
-    <OnboardingShell
+    <AuthShell
       step={3}
       totalSteps={3}
       stepLabels={['Account', 'Join estate', "You're in"]}
+      eyebrow="Estate access"
       title={`Welcome to ${estateName}`}
-      subtitle="Your membership is confirmed. Here's what you can do first."
+      intro="Your membership is confirmed. Here's what you can do first."
     >
       <div className="space-y-4">
         {/* Estate visual banner */}
@@ -91,6 +93,6 @@ export function WelcomeSuccess() {
           You can always reach these from the sidebar once you're inside the app.
         </p>
       </div>
-    </OnboardingShell>
+    </AuthShell>
   );
 }

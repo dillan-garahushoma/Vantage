@@ -92,6 +92,7 @@ class FakeLLMClient:
         *,
         system: str,
         user: str,
+        messages: list[dict[str, str]] | None = None,
     ):
         if self._delay_seconds:
             await asyncio.sleep(self._delay_seconds)

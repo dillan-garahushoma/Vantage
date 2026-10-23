@@ -41,7 +41,7 @@ function Section({ id, eyebrow, title, intro, children }) {
   return (
     <section id={id} className="mx-auto max-w-[1200px] px-5 py-14">
       <p className="num text-[11px] tracking-[0.18em] text-accent-ink uppercase">{eyebrow}</p>
-      <h2 className="mt-3 max-w-2xl text-[26px] leading-tight font-semibold sm:text-[32px]">
+      <h2 className="mt-3 max-w-2xl font-display text-[27px] leading-[1.12] font-medium sm:text-[33px]">
         {title}
       </h2>
       {intro ? <p className="mt-3 max-w-2xl text-[15px] text-ink-soft">{intro}</p> : null}
@@ -55,7 +55,7 @@ export function Landing() {
     <PublicShell>
       {/* ------------------------------------------------------------ hero */}
       <section className="border-b border-ink/15 bg-surface">
-        <div className="mx-auto grid max-w-[1200px] gap-10 px-5 py-14 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:py-20">
+        <div className="mx-auto grid max-w-[1200px] gap-10 px-5 py-14 lg:grid-cols-[1.18fr_0.82fr] lg:items-center lg:py-20">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <Chip tone="progress" glyph="◆">
@@ -64,10 +64,10 @@ export function Landing() {
               <Chip glyph="◷">MVP — pilot deployment</Chip>
             </div>
 
-            <h1 className="mt-5 text-[38px] leading-[1.05] font-semibold tracking-tight sm:text-[52px]">
+            <h1 className="mt-5 font-display text-[36px] leading-[1.04] font-normal tracking-[-0.012em] sm:text-[50px]">
               Know what your estate needs.
               <br />
-              <span className="text-accent-ink">See what changes.</span>
+              <span className="text-accent-ink italic">See what changes.</span>
             </h1>
 
             <p className="mt-5 max-w-xl text-[16px] text-ink-soft">
@@ -166,7 +166,7 @@ export function Landing() {
             <p className="num text-[11px] tracking-[0.18em] text-accent-ink uppercase">
               Estate intelligence
             </p>
-            <h2 className="mt-2 text-[22px] font-semibold leading-snug">
+            <h2 className="mt-2 font-display text-[24px] leading-snug font-medium">
               Every score shows its working
             </h2>
             <p className="mt-1.5 max-w-xl text-[14px] text-ink-soft">
@@ -243,7 +243,7 @@ export function Landing() {
           <p className="num text-[11px] tracking-[0.18em] text-accent-ink uppercase">
             More than a unit register
           </p>
-          <h2 className="mt-3 max-w-2xl text-[26px] leading-tight font-semibold sm:text-[32px]">
+          <h2 className="mt-3 max-w-2xl font-display text-[27px] leading-[1.12] font-medium sm:text-[33px]">
             The operational record exists inside the community that runs on it
           </h2>
 
@@ -290,7 +290,7 @@ export function Landing() {
       <section className="bg-ink text-paper">
         <div className="mx-auto max-w-[1200px] px-5 py-14">
           <Keyline className="opacity-40" />
-          <h2 className="mt-6 max-w-2xl text-[26px] leading-tight font-semibold sm:text-[30px]">
+          <h2 className="mt-6 max-w-2xl font-display text-[28px] leading-[1.1] font-medium text-paper sm:text-[34px]">
             Ready to see your estate's real operational data?
           </h2>
           <p className="mt-3 max-w-2xl text-[14.5px] text-paper/75">

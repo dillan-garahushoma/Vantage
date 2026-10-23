@@ -5,12 +5,12 @@
  *
  *  * the weekly briefing and its three priority recommendations render with their
  *    evidence and their rand value;
- *  * “Review” opens the drawer with the source signals behind a finding;
- *  * “Create work order” opens a dialog that submits VALORA's *real* contract —
+ *  * "Review" opens the drawer with the source signals behind a finding;
+ *  * "Create work order" opens a dialog that submits VALORA's *real* contract —
  *    `POST /api/v1/work-orders` with `complaint_id` and `provider_id`, because a
  *    work order is the assignment of a provider to a complaint and not a
  *    free-standing job record;
- *  * “Ask VALORA” answers a suggested prompt with a structured response.
+ *  * "Ask VALORA" opens the spotlight, streams a response, and shows errors.
  *
  * Intelligence responses are explicitly fictional API fixtures for UI wiring tests.
  */
@@ -18,8 +18,11 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ValoraChatProvider } from '../context/ValoraChatContext';
 import { priorityRecommendations, weeklyBriefing } from './intelligenceFixtures';
-const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
+
+const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), streamAskValora: vi.fn() }));
+
 vi.mock('../lib/api', () => ({
     ApiError: class ApiError extends Error {
         status;
@@ -38,6 +41,19 @@ vi.mock('../lib/api', () => ({
     api: { get: mocks.get, post: mocks.post, patch: vi.fn(), remove: vi.fn() },
     session: { token: () => 'test-token', user: () => null },
 }));
+
+/**
+ * Mock the intelligence library so we can control streamAskValora
+ * without touching the network or SSE plumbing.  The mock preserves all
+ * named exports the route and components rely on (rolePrompts,
+ * parseRecommendations …) by re-exporting the real module and only
+ * swapping out streamAskValora.
+ */
+vi.mock('../lib/intelligence', async (importOriginal) => {
+    const real = await importOriginal();
+    return { ...real, streamAskValora: mocks.streamAskValora };
+});
+
 vi.mock('../context/AuthContext', () => ({
     useAuth: () => ({
         user: { id: 1, full_name: 'Thandi Nkosi', role: 'hoa_admin' },
@@ -81,6 +97,7 @@ vi.mock('../context/EstateContext', () => ({
     }),
 }));
 import { Toaster } from '../components/ui/toast';
+import { AskValoraSpotlight } from '../components/valora/AskValoraSpotlight';
 import { Intelligence } from './Intelligence';
 const openComplaint = {
     id: 12,
@@ -106,6 +123,14 @@ function pageOf(items, total = items.length) {
 beforeEach(() => {
     mocks.get.mockReset();
     mocks.post.mockReset();
+    mocks.streamAskValora.mockReset();
+
+    // Default: streamAskValora fires onToken once then onDone.
+    mocks.streamAskValora.mockImplementation(async (_q, _ctx, { onToken, onDone }) => {
+        onToken('VALORA has analysed the estate operational signals for this query.');
+        onDone();
+    });
+
     mocks.post.mockImplementation(async (path) => path.endsWith('/ask')
         ? { summary: 'The stored score has no comparable prior snapshot.', evidence: ['Stored snapshot #1'], recommendation: 'Review the source records.', related: ['Estate health'], source: 'estate-domain' }
         : { id: 21, complaint_id: 12, provider_id: 5, status: 'assigned' });
@@ -144,12 +169,17 @@ beforeEach(() => {
     });
 });
 function renderPage() {
-    return render(<MemoryRouter initialEntries={['/intelligence']}>
-      <Intelligence />
-      {/* The shell mounts this in `main.jsx`; a confirmed success is announced
-            there, so the submission test needs it here too. */}
-      <Toaster />
-    </MemoryRouter>);
+    return render(
+      <MemoryRouter initialEntries={['/intelligence']}>
+        <ValoraChatProvider>
+          <Intelligence />
+          <AskValoraSpotlight />
+          {/* The shell mounts this in `main.jsx`; a confirmed success is announced
+                there, so the submission test needs it here too. */}
+          <Toaster />
+        </ValoraChatProvider>
+      </MemoryRouter>
+    );
 }
 describe('VALORA Intelligence', () => {
     it('uses server counts beyond the first page and can save a current briefing', async () => {
@@ -179,12 +209,21 @@ describe('VALORA Intelligence', () => {
     });
 
     it('shows ask errors without replacing them with a made-up answer', async () => {
-        mocks.post.mockRejectedValue(new Error('Estate access denied'));
+        // Configure the stream mock to fire onError instead of onToken.
+        mocks.streamAskValora.mockImplementation(async (_q, _ctx, { onError }) => {
+            onError(new Error('Estate access denied'));
+        });
         const user = userEvent.setup();
         renderPage();
-        await user.click(await screen.findByRole('button', { name: 'Why did our estate health score change?' }));
-        expect(await screen.findByRole('alert')).toHaveTextContent('Estate access denied');
-        expect(screen.queryByText('Summary')).not.toBeInTheDocument();
+        // The user is hoa_admin+is_estate_admin; the right-rail panel shows the
+        // hoa_admin suggestion prompts.  Clicking one opens the Spotlight and sends.
+        await user.click(await screen.findByRole('button', {
+            name: 'What is the operational risk summary for this week?',
+        }));
+        // The Spotlight opens and the error text is shown in the error bar.
+        expect(await screen.findByText('Estate access denied')).toBeVisible();
+        // No streamed AI answer should appear in the thread.
+        expect(screen.queryByText('VALORA has analysed')).not.toBeInTheDocument();
     });
 
     it('renders the weekly briefing and every priority recommendation with its impact', async () => {
@@ -211,7 +250,7 @@ describe('VALORA Intelligence', () => {
         expect(screen.getByText('Suggested action')).toBeVisible();
         expect(screen.getByText(/This is a recommendation, not a recorded outcome/)).toBeVisible();
     });
-    it('raises the work order through the API’s real contract', async () => {
+    it('raises the work order through the API\u2019s real contract', async () => {
         const user = userEvent.setup();
         renderPage();
         const actionButtons = await screen.findAllByRole('button', { name: /create work order/i });
@@ -229,19 +268,26 @@ describe('VALORA Intelligence', () => {
         expect(body).toMatchObject({ complaint_id: 12, provider_id: 5, job_cost: 9800 });
         expect(await screen.findByText(/Work order raised/)).toBeVisible();
     });
-    it('answers a suggested question with a structured response', async () => {
+    it('answers a suggested prompt and shows the streamed response in the spotlight', async () => {
         const user = userEvent.setup();
         renderPage();
+        // The hoa_admin suggestion buttons appear in the right-rail AskValora panel.
+        // Clicking one opens the Spotlight and immediately sends via streamAskValora.
         await user.click(await screen.findByRole('button', {
-            name: 'Why did our estate health score change?',
+            name: 'What is the operational risk summary for this week?',
         }));
-        expect(await screen.findByText('Summary', {}, { timeout: 4000 })).toBeVisible();
-        // The answer card repeats the card labels (“Evidence”, “Recommendation”), so
-        // the structured sections are asserted by their distinct copy instead.
-        expect(screen.getAllByText('Evidence').length).toBeGreaterThan(1);
-        expect(screen.getByText('Recommendation')).toBeVisible();
-        expect(screen.getByText('Related records')).toBeVisible();
-        // Answered from the estate's stored records, and the footer says so.
-        expect(screen.getByText(/answered from the estate’s stored records/i)).toBeVisible();
+        // The Ask VALORA spotlight modal opens.
+        expect(await screen.findByRole('dialog', { name: 'Ask VALORA Intelligence' })).toBeVisible();
+        // The user's own question appears as a message bubble.
+        const userBubbles = await screen.findAllByText('What is the operational risk summary for this week?');
+        expect(userBubbles.length).toBeGreaterThan(0);
+        // The streamed AI answer appears in the assistant bubble.
+        const aiBubbles = await screen.findAllByText('VALORA has analysed the estate operational signals for this query.');
+        expect(aiBubbles.length).toBeGreaterThan(0);
+        // streamAskValora was called once with the correct estate context.
+        expect(mocks.streamAskValora).toHaveBeenCalledOnce();
+        const [question, context] = mocks.streamAskValora.mock.calls[0];
+        expect(question).toBe('What is the operational risk summary for this week?');
+        expect(context).toMatchObject({ estateId: 1 });
     });
 });

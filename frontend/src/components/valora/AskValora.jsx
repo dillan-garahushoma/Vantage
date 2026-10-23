@@ -1,348 +1,213 @@
-import { FileText, Link2, ListChecks, Maximize2, Minimize2, Send, Sparkles, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
+import {
+  CornerDownLeft,
+  Maximize2,
+  MessageSquare,
+  RotateCcw,
+  Sparkles,
+} from 'lucide-react';
+import { useRef, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { useEstateScope } from '../../context/EstateContext';
-import { askValora, askValoraPrompts, intelligenceServiceConfigured } from '../../lib/intelligence';
+import { useValoraChat } from '../../context/ValoraChatContext';
+import { rolePrompts } from '../../lib/intelligence';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-
-function AnalysingState() {
-  return (
-    <div
-      className="flex items-center gap-3 rounded-2xl border border-line bg-canvas px-4 py-3.5"
-      role="status"
-      aria-live="polite"
-    >
-      <svg viewBox="0 0 120 24" className="h-6 w-[120px]" aria-hidden="true">
-        <path
-          d="M0 12 h18 l5 -8 l6 16 l6 -12 l5 6 h14 l5 -9 l6 17 l5 -8 h22"
-          fill="none"
-          stroke="currentColor"
-          className="animate-signal-trace text-brand"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeDasharray="320"
-        />
-      </svg>
-      <p className="text-[0.82rem] font-medium text-ink/60">Reading stored estate records…</p>
-    </div>
-  );
-}
-
-function AnswerCard({ answer, onRelated }) {
-  return (
-    <div className="animate-fade-in space-y-4 rounded-2xl border border-line bg-surface p-5 shadow-soft">
-      <div>
-        <p className="text-[0.66rem] font-semibold tracking-[0.14em] text-brand-ink uppercase">
-          Summary
-        </p>
-        <p className="mt-1.5 text-[0.88rem] leading-relaxed text-ink/75">{answer.summary}</p>
-      </div>
-
-      {answer.evidence.length > 0 ? (
-        <div className="rounded-xl bg-canvas p-4">
-          <p className="flex items-center gap-1.5 text-[0.66rem] font-semibold tracking-[0.14em] text-ink/45 uppercase">
-            <FileText className="h-3.5 w-3.5" /> Evidence
-          </p>
-          <ul className="mt-2.5 space-y-2">
-            {answer.evidence.map((item) => (
-              <li key={item} className="flex gap-2.5 text-[0.82rem] leading-snug text-ink/70">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-soft" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      {answer.recommendation ? (
-        <div className="rounded-xl border border-line p-4">
-          <p className="flex items-center gap-1.5 text-[0.66rem] font-semibold tracking-[0.14em] text-ink/45 uppercase">
-            <ListChecks className="h-3.5 w-3.5" /> Recommendation
-          </p>
-          <p className="mt-2 text-[0.86rem] leading-relaxed text-ink/75">
-            {answer.recommendation}
-          </p>
-        </div>
-      ) : null}
-
-      {answer.related.length > 0 ? (
-        <div>
-          <p className="flex items-center gap-1.5 text-[0.66rem] font-semibold tracking-[0.14em] text-ink/45 uppercase">
-            <Link2 className="h-3.5 w-3.5" /> Related records
-          </p>
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            {answer.related.map((pill) => (
-              <button
-                key={pill}
-                type="button"
-                onClick={() => onRelated(pill)}
-                className="rounded-full border border-line px-3 py-1.5 text-[0.76rem] font-medium text-ink/70 transition-colors duration-200 hover:border-brand-soft hover:bg-canvas hover:text-brand-ink"
-              >
-                {pill}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      <p className="border-t border-line pt-3 text-[0.7rem] leading-relaxed text-ink/35">
-        {answer.source === 'n8n'
-          ? 'Answered by the VALORA intelligence service. Recommendation only — verify against the source records before acting.'
-          : 'Recommendation only, answered from the estate’s stored records. Verify against the source records before acting.'}
-      </p>
-    </div>
-  );
-}
+import { FormattedMarkdown } from './FormattedMarkdown';
 
 /**
- * The chat body — shared between the collapsed inline card and the expanded modal.
- */
-function ChatBody({ messages, loading, error, value, setValue, onAsk, onRelated }) {
-  const bottomRef = useRef(null);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView?.({ behavior: 'smooth' });
-  }, [messages, loading]);
-
-  return (
-    <>
-      {/* Message feed */}
-      <div className="scrollbar-slim flex-1 space-y-4 overflow-y-auto px-5 py-5">
-        {messages.length === 0 ? (
-          <div className="rounded-2xl bg-canvas p-5">
-            <p className="text-[0.85rem] leading-relaxed text-ink/60">
-              Ask about estate condition, spend, assets or service providers. Answers come back as a
-              summary, the evidence behind it and a recommended next step.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {askValoraPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  type="button"
-                  onClick={() => onAsk(prompt)}
-                  className="rounded-full border border-line bg-surface px-3.5 py-2 text-left text-[0.78rem] font-medium text-ink/70 transition-all duration-200 hover:border-brand-soft hover:text-brand-ink"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {messages.map((message) =>
-          message.role === 'user' ? (
-            <div key={message.id} className="flex justify-end">
-              <p className="max-w-[85%] rounded-2xl rounded-br-md bg-ink px-4 py-2.5 text-[0.85rem] leading-snug text-white">
-                {message.text}
-              </p>
-            </div>
-          ) : message.answer ? (
-            <AnswerCard key={message.id} answer={message.answer} onRelated={onRelated} />
-          ) : null,
-        )}
-
-        {error ? (
-          <p role="alert" className="text-sm text-red-700">
-            {error}
-          </p>
-        ) : null}
-        {loading ? <AnalysingState /> : null}
-        <div ref={bottomRef} />
-      </div>
-
-      {/* Input */}
-      <div className="border-t border-line/50 px-5 py-4">
-        <div className="flex items-center gap-2">
-          <Input
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') onAsk();
-            }}
-            placeholder="Ask about estate condition, spend or providers"
-            aria-label="Ask VALORA a question"
-            className="h-11"
-          />
-          <Button
-            onClick={onAsk}
-            disabled={loading}
-            variant="ink"
-            size="icon"
-            className="h-11 w-11 shrink-0"
-            aria-label="Send question"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-        <p className="mt-2.5 text-[0.7rem] text-ink/35">
-          {intelligenceServiceConfigured
-            ? 'VALORA Intelligence reads estate operational signals only — never private resident data.'
-            : "Answers come from the estate's stored operational records. VALORA Intelligence reads operational signals only — never private resident data."}
-        </p>
-      </div>
-    </>
-  );
-}
-
-/**
- * "Ask VALORA"
+ * Ask VALORA Panel (Intelligence Page Right Rail).
  *
- * Renders as a compact inline card. When the user starts interacting (or clicks
- * expand), the chat moves into a centered modal with a blurred backdrop so the
- * conversation gets full focus. The modal can be dismissed back to inline.
+ * Designed to seamlessly expand into center view whenever focused or clicked,
+ * providing fluid two-way multi-turn conversation backed by real estate signals.
  */
 export function AskValora({ className }) {
   const { estateId, estate } = useEstateScope();
-  const [messages, setMessages] = useState([]);
-  const [value, setValue] = useState('');
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [nextId, setNextId] = useState(1);
-  const [expanded, setExpanded] = useState(false);
+  const { user } = useAuth();
+  const {
+    messages,
+    streaming,
+    error,
+    setSpotlightOpen,
+    sendQuestion,
+    clearMessages,
+  } = useValoraChat();
 
-  async function ask(prompt) {
-    const question = (prompt ?? value).trim();
-    if (!question || loading) return;
-    // Auto-expand when the user asks the first question
-    if (messages.length === 0) setExpanded(true);
-    setValue('');
-    setMessages((current) => [...current, { id: nextId, role: 'user', text: question }]);
-    setNextId((current) => current + 1);
-    setLoading(true);
-    setError(null);
-    try {
-      const answer = await askValora(question, {
-        estateId,
-        estateName: estate?.estate_name ?? null,
-      });
-      setMessages((current) => [
-        ...current,
-        { id: nextId + 1, role: 'assistant', answer },
-      ]);
-      setNextId((current) => current + 2);
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : 'Intelligence is unavailable. Please try again.',
-      );
-    } finally {
-      setLoading(false);
-    }
+  const [inputVal, setInputVal] = useState('');
+  const inputRef = useRef(null);
+
+  // Resolve user role
+  const isHoaAdmin = user?.role === 'hoa_admin' && estate?.is_estate_admin === true;
+  const isProvider = user?.role === 'service_provider' || estate?.is_estate_provider === true;
+  const role = isHoaAdmin ? 'hoa_admin' : isProvider ? 'service_provider' : 'resident';
+  const roleLabel = isHoaAdmin
+    ? 'HOA Executive'
+    : isProvider
+    ? 'Contractor'
+    : 'Resident';
+
+  const suggestions = rolePrompts[role] ?? rolePrompts.resident;
+
+  function handleFocusOrExpand() {
+    // Automatically expand to center stage on entering/clicking the field
+    setSpotlightOpen(true);
   }
 
-  function handleRelated(pill) {
-    void ask(pill);
+  function handleSend(customText) {
+    const text = (customText ?? inputVal).trim();
+    if (!text || streaming) return;
+    setInputVal('');
+    // Open center view and submit
+    setSpotlightOpen(true);
+    sendQuestion(text, { estateId, role });
   }
-
-  const chatBodyProps = { messages, loading, error, value, setValue, onAsk: ask, onRelated: handleRelated };
 
   return (
-    <>
-      {/* ---- Expanded center modal ---- */}
-      <DialogPrimitive.Root open={expanded} onOpenChange={setExpanded}>
-        <DialogPrimitive.Portal>
-          {/* Blurred backdrop */}
-          <DialogPrimitive.Overlay className="vl-overlay fixed inset-0 z-50 bg-ink/50 backdrop-blur-md" />
-
-          {/* Glass panel */}
-          <DialogPrimitive.Content
-            className="vl-dialog fixed left-[50%] top-[50%] z-50 flex w-[calc(100vw-2rem)] translate-x-[-50%] translate-y-[-50%] flex-col sm:max-w-[680px] max-h-[88vh] rounded-2xl border border-white/10 shadow-lift overflow-hidden focus:outline-none"
-            style={{
-              background: 'color-mix(in srgb, var(--color-surface) 84%, transparent)',
-              backdropFilter: 'blur(24px) saturate(1.5)',
-              WebkitBackdropFilter: 'blur(24px) saturate(1.5)',
-            }}
-            aria-label="Ask VALORA — estate intelligence"
-          >
-            {/* Modal header */}
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-5 py-4"
-              style={{ background: 'color-mix(in srgb, var(--color-surface) 70%, transparent)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-wash text-brand-ink">
-                  <Sparkles className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="font-heading text-[0.95rem] font-bold text-ink">Ask VALORA</p>
-                  <p className="text-[0.72rem] text-ink/45">Structured answers, every claim traceable</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setExpanded(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-ink/40 transition-colors hover:bg-canvas hover:text-ink"
-                  aria-label="Collapse to inline"
-                >
-                  <Minimize2 className="h-4 w-4" />
-                </button>
-                <DialogPrimitive.Close
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-ink/40 transition-colors hover:bg-canvas hover:text-ink"
-                  aria-label="Close"
-                >
-                  <X className="h-4 w-4" />
-                </DialogPrimitive.Close>
-              </div>
-            </div>
-
-            <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-              <ChatBody {...chatBodyProps} />
-            </div>
-          </DialogPrimitive.Content>
-        </DialogPrimitive.Portal>
-      </DialogPrimitive.Root>
-
-      {/* ---- Inline collapsed card ---- */}
-      <div className={cn('flex flex-col rounded-2xl border border-line bg-surface shadow-soft overflow-hidden', className)}>
-        <div className="flex items-center justify-between gap-2 border-b border-line px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-wash text-brand-ink">
-              <Sparkles className="h-4 w-4" />
-            </span>
-            <div className="min-w-0">
+    <div
+      className={cn(
+        'flex flex-col h-full rounded-2xl border border-line bg-surface shadow-soft overflow-hidden transition-all',
+        className
+      )}
+    >
+      {/* Panel Header */}
+      <div className="flex shrink-0 items-center justify-between border-b border-line px-5 py-4 bg-canvas/30">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-wash text-brand-ink">
+            <Sparkles className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
               <p className="font-heading text-[0.95rem] font-bold text-ink">Ask VALORA</p>
-              <p className="truncate text-[0.72rem] text-ink/45">
-                Structured answers, every claim traceable
-              </p>
+              <span className="rounded-full bg-brand-soft/20 px-2 py-0.5 text-[10px] font-semibold text-brand-ink">
+                {roleLabel}
+              </span>
             </div>
+            <p className="text-[0.72rem] text-ink/45 truncate">
+              Two-way intelligence, every claim traceable
+            </p>
           </div>
-          {messages.length > 0 ? (
-            <button
-              onClick={() => setExpanded(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-ink/40 transition-colors hover:bg-canvas hover:text-ink"
-              aria-label="Expand chat"
-            >
-              <Maximize2 className="h-4 w-4" />
-            </button>
-          ) : null}
         </div>
 
-        {/* Collapsed: show prompts + input only when no messages, or a summary + expand prompt */}
-        {messages.length === 0 ? (
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <ChatBody {...chatBodyProps} />
-          </div>
-        ) : (
+        <div className="flex items-center gap-1.5">
+          {messages.length > 0 && (
+            <button
+              type="button"
+              onClick={clearMessages}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-ink/40 hover:bg-canvas hover:text-ink transition-colors"
+              title="Reset conversation"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+          )}
           <button
-            onClick={() => setExpanded(true)}
-            className="flex items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-canvas"
+            type="button"
+            onClick={handleFocusOrExpand}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-ink/40 hover:bg-canvas hover:text-ink transition-colors"
+            title="Expand to center view (⌘K)"
           >
-            <div className="min-w-0">
-              <p className="text-[0.82rem] font-medium text-ink">
-                {messages.length} message{messages.length !== 1 ? 's' : ''} in this session
+            <Maximize2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Message Feed / Suggestions */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 scrollbar-slim">
+        {messages.length === 0 ? (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-line/70 bg-canvas/60 p-4">
+              <p className="text-xs font-medium text-ink leading-relaxed">
+                Ask about estate risks, active work orders, complaints, or Living Score trends.
               </p>
-              <p className="mt-0.5 text-[0.75rem] text-ink/50 truncate">
-                {messages[messages.length - 1]?.role === 'user'
-                  ? messages[messages.length - 1].text
-                  : messages[messages.length - 2]?.text ?? 'Continue the conversation'}
+              <p className="mt-1 text-[11px] text-ink-muted">
+                Entering this field expands into a full center-stage dialogue.
               </p>
             </div>
-            <Maximize2 className="h-4 w-4 shrink-0 text-ink/30" />
-          </button>
+
+            <div>
+              <p className="mb-2 text-[10px] font-bold tracking-wider text-ink/40 uppercase">
+                Suggested prompts
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {suggestions.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => handleSend(prompt)}
+                    className="flex items-center justify-between rounded-xl border border-line/80 bg-surface px-3 py-2 text-left text-xs font-medium text-ink/75 hover:border-brand-soft hover:bg-brand-wash/30 hover:text-brand-ink transition-all"
+                  >
+                    <span className="line-clamp-2">{prompt}</span>
+                    <CornerDownLeft className="h-3 w-3 shrink-0 ml-2 text-ink/30" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Active Thread Preview */
+          <div className="space-y-3">
+            <div className="flex items-center justify-between pb-1 border-b border-line/50">
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ink/60">
+                <MessageSquare className="h-3.5 w-3.5 text-brand" />
+                {messages.length} message{messages.length !== 1 ? 's' : ''} in thread
+              </span>
+              <button
+                type="button"
+                onClick={handleFocusOrExpand}
+                className="text-xs font-semibold text-brand hover:underline inline-flex items-center gap-1"
+              >
+                Expand center view <Maximize2 className="h-3 w-3" />
+              </button>
+            </div>
+
+            {messages.slice(-3).map((msg) =>
+              msg.role === 'user' ? (
+                <div key={msg.id} className="flex justify-end">
+                  <p className="max-w-[90%] rounded-xl bg-ink px-3 py-1.5 text-xs text-white">
+                    {msg.content}
+                  </p>
+                </div>
+              ) : (
+                <div key={msg.id} className="rounded-xl border border-line bg-canvas/60 p-3 text-xs">
+                  <FormattedMarkdown content={msg.content.slice(0, 280) + (msg.content.length > 280 ? '…' : '')} />
+                  {msg.streaming && (
+                    <span className="inline-block h-3 w-1 bg-brand animate-pulse ml-1" />
+                  )}
+                </div>
+              )
+            )}
+          </div>
         )}
       </div>
-    </>
+
+      {/* Input Field: Clicking or focusing triggers center expansion */}
+      <div className="shrink-0 border-t border-line px-4 py-3 bg-canvas/30">
+        <div
+          onClick={handleFocusOrExpand}
+          className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 cursor-pointer hover:border-brand-soft hover:ring-2 hover:ring-brand/10 transition-all shadow-sm"
+        >
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputVal}
+            onFocus={handleFocusOrExpand}
+            onChange={(e) => setInputVal(e.target.value)}
+            placeholder="Click to ask VALORA in center view…"
+            className="w-full bg-transparent text-xs text-ink placeholder:text-ink/40 focus:outline-none cursor-pointer"
+            readOnly
+          />
+          <Button
+            size="sm"
+            variant="ink"
+            className="h-7 w-7 p-0 shrink-0 rounded-lg"
+            onClick={handleFocusOrExpand}
+            aria-label="Expand and ask"
+          >
+            <Maximize2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+        <p className="mt-1.5 text-[10px] text-ink/35 text-center">
+          Press ⌘K anywhere to open center view
+        </p>
+      </div>
+    </div>
   );
 }

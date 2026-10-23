@@ -33,6 +33,9 @@ uploads/
 .local/
 frontend/test-results/
 frontend/playwright-report/
+.playwright/
+.playwright-cli/
+frontend/.main-deploy-check/
 
 # Private local handoff/session notes
 /docs/progress/

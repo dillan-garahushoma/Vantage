@@ -1,6 +1,7 @@
 """Grounded operational intelligence: stored facts, estate capability, role-adaptive delivery."""
 from collections.abc import AsyncIterator
 from datetime import datetime, timezone
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -350,7 +351,7 @@ class IntelligenceService:
         )
 
     async def stream_ask_valora(
-        self, estate_id: int, question: str, actor: User
+        self, estate_id: int, question: str, actor: User, history: list[Any] | None = None
     ) -> AsyncIterator[str]:
         access = await self._require_member(actor, estate_id)
         estate = await self._estates.get_by_id(estate_id)
@@ -409,8 +410,18 @@ class IntelligenceService:
             system_prompt = (
                 "You are VALORA, an executive property intelligence assistant for estate managers and HOA boards in South Africa. "
                 "Provide concise, evidence-based, professional operational analysis grounded strictly in the provided estate facts. "
-                "Never invent telemetry or predictive failures."
+                "Format responses cleanly with clear headings and concise bullets. Never invent telemetry or predictive failures."
             )
+
+        full_system = f"{system_prompt}\n\nEstate Operational Context:\n{context}"
+        msg_list: list[dict[str, str]] = [{"role": "system", "content": full_system}]
+        if history:
+            for h in history:
+                role_val = getattr(h, "role", None) or (h.get("role") if isinstance(h, dict) else "user")
+                content_val = getattr(h, "content", None) or (h.get("content") if isinstance(h, dict) else "")
+                if role_val in ("user", "assistant") and content_val:
+                    msg_list.append({"role": role_val, "content": str(content_val)})
+        msg_list.append({"role": "user", "content": question})
 
         user_prompt = f"Context:\n{context}\n\nQuestion: {question}"
 
@@ -418,7 +429,9 @@ class IntelligenceService:
             import json
             try:
                 if settings.AI_ENABLED and hasattr(client, "stream_text"):
-                    async for token in client.stream_text(system=system_prompt, user=user_prompt):
+                    async for token in client.stream_text(
+                        system=full_system, user=question, messages=msg_list
+                    ):
                         yield f"data: {json.dumps({'delta': token})}\n\n"
                     yield "data: [DONE]\n\n"
                 else:

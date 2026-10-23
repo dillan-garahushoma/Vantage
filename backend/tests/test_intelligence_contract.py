@@ -267,3 +267,13 @@ async def test_stream_ask_valora_yields_sse_chunks():
     # Content chunk must parse JSON with delta
     first_data = json.loads(chunks[0].replace("data: ", "").strip())
     assert "delta" in first_data
+
+    # Multi-turn history support
+    history = [
+        {"role": "user", "content": "Hello VALORA"},
+        {"role": "assistant", "content": "Hello! How can I assist you with your estate today?"},
+    ]
+    gen2 = await service.stream_ask_valora(1, "Tell me about noise rules", actor, history=history)
+    chunks2 = [c async for c in gen2]
+    assert len(chunks2) > 0
+    assert chunks2[-1] == "data: [DONE]\n\n"

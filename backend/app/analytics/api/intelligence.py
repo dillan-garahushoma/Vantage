@@ -82,6 +82,7 @@ async def ask_valora_stream_endpoint(
         estate_id=payload.estate_id,
         question=payload.question,
         actor=current_user,
+        history=payload.history,
     )
     return StreamingResponse(generator, media_type="text/event-stream")
 

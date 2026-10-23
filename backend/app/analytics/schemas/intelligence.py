@@ -145,11 +145,17 @@ class EstateIntelligenceResponse(BaseModel):
     provider_view: ProviderIntelligenceView | None = None
 
 
-class AskValoraRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant", "system"]
+    content: str
 
-    question: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=500)]
+
+class AskValoraRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    question: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=2000)]
     estate_id: int = Field(..., gt=0, le=2147483647)
+    history: list[ChatMessage] = Field(default_factory=list)
 
 
 class AskValoraResponse(BaseModel):

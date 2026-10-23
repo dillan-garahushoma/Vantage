@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
+import { ScrollToTop } from './components/ScrollToTop';
 import { LoadingState } from './components/ui';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { EstateProvider } from './context/EstateContext';
@@ -47,6 +48,7 @@ function Protected({ children }) {
 export function App() {
     return (<AuthProvider>
       <EstateProvider>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Landing />}/>
           <Route path="/login" element={<Login />}/>

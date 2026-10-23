@@ -41,9 +41,9 @@ export async function askValora(question, context) {
 
 /**
  * Real-time SSE streaming client for Ask VALORA.
- * Connects directly to POST /api/v1/analytics/intelligence/ask/stream.
+ * Connects directly to POST /api/v1/analytics/intelligence/ask/stream with multi-turn history.
  */
-export async function streamAskValora(question, context, { onToken, onDone, onError }) {
+export async function streamAskValora(question, context, { onToken, onDone, onError }, history = []) {
   if (!context.estateId) {
     const err = new Error('Select an estate before asking VALORA.');
     if (onError) onError(err);
@@ -60,12 +60,20 @@ export async function streamAskValora(question, context, { onToken, onDone, onEr
   }
 
   try {
+    const cleanHistory = (Array.isArray(history) ? history : [])
+      .filter((m) => (m.role === 'user' || m.role === 'assistant') && (m.content || m.text))
+      .map((m) => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: String(m.content || m.text || '').trim(),
+      }));
+
     const response = await fetch(`${API_BASE}/api/v1/analytics/intelligence/ask/stream`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
         question,
         estate_id: context.estateId,
+        history: cleanHistory,
       }),
     });
 
@@ -73,7 +81,15 @@ export async function streamAskValora(question, context, { onToken, onDone, onEr
       let msg = `Request failed (${response.status})`;
       try {
         const errorJson = await response.json();
-        msg = errorJson.detail || errorJson.message || msg;
+        if (typeof errorJson.detail === 'string') {
+          msg = errorJson.detail;
+        } else if (Array.isArray(errorJson.detail)) {
+          msg = errorJson.detail.map((d) => d.msg || d.message || JSON.stringify(d)).join('; ');
+        } else if (errorJson.detail && typeof errorJson.detail === 'object') {
+          msg = errorJson.detail.message || errorJson.detail.code || JSON.stringify(errorJson.detail);
+        } else if (errorJson.message) {
+          msg = errorJson.message;
+        }
       } catch {
         // ignore parse error
       }

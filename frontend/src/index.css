@@ -59,6 +59,14 @@
   /* ----------------------------------------------------------- typography */
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-heading: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /*
+    The display register — public/marketing surfaces only (see DESIGN.md §3).
+    A serif headline over the quiet paper ground is what makes VALORA read as an
+    estate dossier rather than an admin panel; the workspace keeps `font-heading`.
+    Never set a figure in this face: numbers belong to `.num`.
+  */
+  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, monospace;
 
   /* --------------------------------------------------------------- shape */
