@@ -296,7 +296,7 @@ export function ComplaintDrawer({ complaintId, onClose, onChanged, }) {
         workOrders.reload();
         onChanged();
     };
-    return (<Drawer open onClose={onClose} title={complaint ? `Complaint #${complaint.id}` : 'Complaint'} subtitle={complaint ? `${displayLabel(complaint.category)} · unit ${complaint.unit_id}` : undefined}>
+    return (<Drawer open onClose={onClose} side="right" width="sm:max-w-[470px]" title={complaint ? `Issue details · #${complaint.id}` : 'Issue details'} subtitle={complaint ? `${displayLabel(complaint.category)} · Unit ${complaint.unit_id}` : undefined}>
       {detail.loading ? (<LoadingState label="Loading complaint"/>) : detail.error ? (<ErrorState message={detail.error.message} requestId={detail.error.requestId}/>) : complaint ? (<div className="space-y-6">
           <div className="flex flex-wrap items-center gap-2">
             <Chip tone={complaintStatus[status ?? 'submitted']?.tone ?? 'neutral'} glyph={complaintStatus[status ?? 'submitted']?.glyph}>
