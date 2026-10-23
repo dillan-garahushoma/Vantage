@@ -8,7 +8,7 @@ import { useLocation } from 'react-router-dom';
  * routes receive the same behaviour.
  */
 export function ScrollToTop() {
-  const { pathname, hash } = useLocation();
+  const { pathname, search, hash } = useLocation();
 
   useLayoutEffect(() => {
     const root = document.documentElement;
@@ -34,7 +34,7 @@ export function ScrollToTop() {
     } finally {
       root.style.scrollBehavior = previousBehavior;
     }
-  }, [pathname, hash]);
+  }, [pathname, search, hash]);
 
   return null;
 }
