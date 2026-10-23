@@ -42,3 +42,10 @@ frontend/playwright-report/
 /LOCAL_DATABASE.md
 /LOCAL_RUN.md
 /Vantage-handoff-*/
+
+# Temporary test and automation logs
+.playwright/
+.playwright-cli/
+tmp/
+frontend/tmp/
+frontend/.main-deploy-check/

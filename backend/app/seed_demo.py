@@ -535,9 +535,12 @@ async def seed_demo(
             city=cfg["city"],
             province=cfg["province"],
             description=cfg["description"],
-            is_demo=False,
-            is_public=True,
-            show_living_score=True,
+            # Seeded complexes are visual/development fixtures, never live public
+            # estates.  Keeping them out of the public directory prevents their
+            # fictional operational history and scores being represented as real.
+            is_demo=True,
+            is_public=False,
+            show_living_score=False,
             created_at=_ago(anchor, DEMO_HISTORY_DAYS),
         )
         db.add(estate)

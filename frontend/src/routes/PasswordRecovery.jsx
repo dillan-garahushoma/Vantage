@@ -62,9 +62,12 @@ export function PasswordRecovery() {
             {error ? <ErrorState message={error.message} requestId={error.requestId}/> : null}
             {message ? <p role="status" className="rounded-xs bg-accent-wash px-3 py-2.5 text-[13px] text-accent-ink">{message}</p> : null}
             {confirming ? (<>
-                <Field label="New password" hint="At least 8 characters.">
-                  <Input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)}/>
-                </Field>
+                <div>
+                  <Field label="New password">
+                    <Input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)}/>
+                  </Field>
+                  <p className="mt-1 text-[12px] text-ink-muted">At least 8 characters.</p>
+                </div>
                 <Field label="Confirm new password">
                   <Input type="password" autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)}/>
                 </Field>

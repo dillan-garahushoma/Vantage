@@ -10,18 +10,12 @@ export function Mark({ size = 28, className }) {
     </svg>);
 }
 export function Wordmark({ to = '/', compact = false }) {
-    return (<Link to={to} className="flex items-center gap-2.5">
-      <Mark size={compact ? 24 : 30}/>
-      <span className="leading-none">
-        <span className="block text-[17px] font-semibold tracking-[0.14em]">VALORA</span>
-        {!compact ? (
-        // The tagline is desktop-only: on a 390px screen the wordmark plus two
-        // entry buttons is the whole header budget, and the tagline is the
-        // part that can wait for a wider screen.
-        <span className="mt-0.5 hidden text-[10px] tracking-[0.16em] text-ink-muted uppercase sm:block">
-            Property health intelligence
-          </span>) : null}
-      </span>
+    return (<Link to={to} className="flex items-center" aria-label="VALORA home">
+      <img
+        src="/valora-logo.png"
+        alt="VALORA Property & Lifestyle Holdings"
+        className={compact ? 'h-9 w-[60px] object-contain object-left' : 'h-11 w-[76px] object-contain object-left sm:h-14 sm:w-[94px]'}
+      />
     </Link>);
 }
 /**

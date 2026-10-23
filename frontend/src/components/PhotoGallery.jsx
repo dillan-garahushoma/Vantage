@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { IconChevronLeft, IconChevronRight, IconClose, IconExpand } from './Icons';
+import { IconChevronLeft, IconChevronRight, IconClose, IconExpand, IconGrid } from './Icons';
 import { Photo } from './Photo';
 import { EmptyState, cx } from './ui';
 import { photoAlt, publicPhotoUrl } from '../lib/publicDirectory';
@@ -204,13 +204,13 @@ export function PhotoGallery({ estateName, photos }) {
     // `clear` plain tiles, then — only if photographs are left over — one tile
     // that carries the count of them.
     const shown = photos.slice(0, clear);
-    return (<div className="relative">
+    return (<div className="relative overflow-hidden rounded-2xl">
       <div className={grid}>
         {shown.map((photo, index) => (<button key={photo.public_id} type="button" onClick={(event) => {
                 returnFocus.current = event.currentTarget;
                 setOpenIndex(index);
             }} aria-label={`Open photograph ${index + 1} of ${photos.length}: ${photoAlt(estateName, photo.caption)}`} className={cx('group relative block overflow-hidden border border-ink/15 bg-ink/5', tiles[index])}>
-            <Photo 
+            <Photo
         // The lead tile is the widest thing on the page, so it gets the
         // stored full image; the small tiles are inside the thumbnail's
         // 480px long side and never need it.
@@ -223,7 +223,7 @@ export function PhotoGallery({ estateName, photos }) {
                 // first of them rather than sending the visitor back to the start.
                 setOpenIndex(clear);
             }} aria-label={`Show all ${photos.length} photographs, including ${overflow} not shown here`} className={cx('group relative block overflow-hidden border border-ink/15 bg-ink/5', tiles[tiles.length - 1])}>
-            <Photo 
+            <Photo
         // A thumbnail never needs the stored full image, and a blurred
         // one least of all: every tile here is inside the 480px long side.
         src={publicPhotoUrl(photos[clear].public_id, 'thumb')} alt="" width={480} height={320} fallbackLabel="Photographs" className="h-full w-full scale-105 object-cover blur-[3px] transition-transform duration-200 group-hover:scale-[1.08]"/>
@@ -243,11 +243,11 @@ export function PhotoGallery({ estateName, photos }) {
             // Frosted rather than opaque: this control lands on top of a
             // photograph the estate chose, and a translucent panel keeps the
             // picture visible while holding the text legible.
-            'absolute right-3 bottom-3 z-10 inline-flex items-center gap-2 rounded-xs border border-ink/25 bg-surface/80 px-3 py-2 text-[12.5px] font-medium backdrop-blur-md hover:bg-surface', 
+            'absolute right-3.5 bottom-3.5 z-10 inline-flex items-center gap-2 rounded-xl border border-ink/20 bg-surface/90 px-3.5 py-2 text-[13px] font-medium text-ink shadow-sm backdrop-blur-md transition-all hover:bg-surface hover:shadow-md hover:border-ink/40 active:scale-95',
             // At `lg` and up the overflow tile already says this, and once is
             // enough; below `lg` that tile is hidden and this is the only way in.
-            overflow > 0 && 'lg:hidden')}>
-          <IconExpand size={15}/>
+          )}>
+          <IconGrid size={15}/>
           Show all {photos.length} photos
         </button>) : null}
 

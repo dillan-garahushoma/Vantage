@@ -126,7 +126,8 @@ describe('Dashboard — Living Score', () => {
       </MemoryRouter>);
         expect(await screen.findByText('86,4')).toBeVisible();
         expect(screen.queryByText('Demo data')).toBeNull();
-        expect(screen.getByText('Resolution speed')).toBeVisible();
+        expect(screen.getByRole('heading', { name: 'Estate health' })).toBeVisible();
+        expect(screen.queryByText('Resolution speed')).toBeNull();
         expect(mocks.get).toHaveBeenCalledWith('/api/v1/analytics/living-score', {
             estate_id: 1,
         });
@@ -142,10 +143,9 @@ describe('Dashboard — Living Score', () => {
         render(<MemoryRouter initialEntries={['/app']}>
         <Dashboard />
       </MemoryRouter>);
-        expect(await screen.findByText('Not enough data yet')).toBeVisible();
+        expect(await screen.findByText(/not enough data yet/i)).toBeVisible();
         expect(screen.queryByText('86,4')).toBeNull();
-        // The "engine pending" strip is only shown while nothing is stored at all.
-        expect(screen.getByText('What the Living Score needs')).toBeVisible();
+        expect(screen.getByText(/VALORA will show a score only once/i)).toBeVisible();
     });
     it('lets an HOA administrator recalculate, and re-reads the stored score afterwards', async () => {
         mocks.role = 'hoa_admin';

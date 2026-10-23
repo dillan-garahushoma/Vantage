@@ -53,11 +53,13 @@ function renderPage() {
     return render(<MemoryRouter initialEntries={['/estates/1']}>
       <Routes>
         <Route path="/estates/:id" element={<EstatePage />}/>
+        <Route path="/request-access" element={<p>Request access route</p>}/>
       </Routes>
     </MemoryRouter>);
 }
 beforeEach(() => {
     mocks.get.mockReset();
+    window.sessionStorage.clear();
 });
 describe('PublicEstateDetail', () => {
     it('leads with what was published, and invents nothing to fill the gaps', async () => {
@@ -143,5 +145,19 @@ describe('PublicEstateDetail', () => {
         renderPage();
         expect(await screen.findByText(/that complex is not published/i)).toBeVisible();
         expect(screen.getByRole('link', { name: /back to the directory/i })).toBeVisible();
+    });
+    it('carries the selected complex into either access path without treating it as membership', async () => {
+        mocks.get.mockResolvedValue(detail());
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByRole('heading', { level: 1, name: 'Ridge Close' });
+        const requestAccess = screen.getByRole('link', { name: 'Request access' });
+        expect(requestAccess).toHaveAttribute('href', '/request-access');
+        await user.click(requestAccess);
+        expect(screen.getByText('Request access route')).toBeVisible();
+        expect(JSON.parse(window.sessionStorage.getItem('valora.public-estate-selection'))).toMatchObject({
+            estate_id: 1,
+            name: 'Ridge Close',
+        });
     });
 });

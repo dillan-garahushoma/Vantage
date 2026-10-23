@@ -20,6 +20,8 @@ import { Methodology } from './routes/Methodology';
 import { Notifications } from './routes/Notifications';
 import { NotFound } from './routes/NotFound';
 import { Properties } from './routes/Properties';
+import { PublicEstateDetail } from './routes/PublicEstateDetail';
+import { PublicEstates } from './routes/PublicEstates';
 import { PasswordRecovery } from './routes/PasswordRecovery';
 import { ProviderWaiting } from './routes/ProviderWaiting';
 import { ProviderWork } from './routes/ProviderWork';
@@ -54,6 +56,8 @@ export function App() {
           <Route path="/register" element={<Register />}/>
           <Route path="/contact" element={<Contact />}/>
           <Route path="/methodology" element={<Methodology />}/>
+          <Route path="/estates" element={<PublicEstates />}/>
+          <Route path="/estates/:id" element={<PublicEstateDetail />}/>
 
           {/* Onboarding routes: each one decides for itself whether the state
             still applies (a resident who already has an estate is sent to

@@ -38,12 +38,14 @@ class EstateRepository:
     def public_statement(*, q: str | None = None) -> Select:
         """The estates the public directory may show, in a stable order.
 
-        Only ``is_public`` estates, always, and the search term matches the name,
-        suburb or city - never anything that could be used to fish for a private
-        estate's details. A pure function so the rule is testable without a
-        database.
+        Only non-demo ``is_public`` estates, always, and the search term matches
+        the name, suburb or city - never anything that could be used to fish for
+        a private estate's details. A pure function so the rule is testable
+        without a database.
         """
-        stmt = select(Estate).where(Estate.is_public.is_(True))
+        stmt = select(Estate).where(
+            Estate.is_public.is_(True), Estate.is_demo.is_(False)
+        )
         if q:
             pattern = f"%{q.strip()}%"
             stmt = stmt.where(

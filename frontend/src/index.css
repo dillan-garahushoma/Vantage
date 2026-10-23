@@ -1,43 +1,41 @@
 @import 'tailwindcss';
 
 /*
-  VALORA — modern estate workspace.
-  Palette ported from the Base44 design system (see docs/progress/frontend-base44-ui.md):
+  VALORA — editorial property-health workspace.
 
-  - deep ink      #1F1733   text, dark surfaces
-  - primary       #7C3AED   the one brand accent
-  - mint          #2F9E73   healthy / positive
-  - lavender line #E9E3FF   every hairline, the "accent lavender border"
-  - soft canvas   #F7F5FF   the page background
+  - deep ink      #14181C   text and deliberate contrast
+  - VALORA purple #5B3E78   the one navigational accent
+  - warm paper    #F6F4EF   page background
+  - hard line     #DFDDD6   quiet operational grouping
 
   Rules encoded here:
-  - violet is the brand accent; mint/amber/rose carry *meaning* (health, watch, risk)
-  - soft radii, one soft drop shadow (`shadow-soft`), lavender hairlines
+  - purple is the brand accent; mint/ochre/rose carry meaning (health, watch, risk)
+  - square-to-subtle radii and restrained shadows keep records denser than cards
   - a display face for numbers so they align and compare (tabular)
 */
 
 @theme {
   /* ------------------------------------------------------------- neutrals */
-  --color-ink: #1f1733;
-  --color-ink-soft: #4f4866;
-  --color-ink-muted: #6b6480;
-  --color-paper: #f7f5ff;
-  --color-canvas: #f7f5ff;
+  --color-ink: #14181c;
+  --color-ink-soft: #465058;
+  --color-ink-muted: #687078;
+  --color-paper: #f6f4ef;
+  --color-canvas: #f6f4ef;
   --color-surface: #ffffff;
-  --color-line: #e9e3ff;
-  --color-line-soft: #f1eefb;
+  --color-line: #dfddd6;
+  --color-line-soft: #ebe9e3;
 
-  /* ----------------------------------------------------------- brand violet */
-  --color-brand: #7c3aed;
-  --color-brand-soft: #a78bfa;
-  --color-brand-wash: #f1ecff;
-  --color-brand-ink: #6d28d9;
+  /* --------------------------------------------------------- VALORA purple */
+  --color-brand: #5b3e78;
+  --color-brand-soft: #8b6aa6;
+  --color-brand-wash: #eee8f4;
+  --color-brand-ink: #452e5d;
 
   /* `accent` is the historical name for the brand colour and still paints the
      focus ring, active navigation and links. */
-  --color-accent: #7c3aed;
-  --color-accent-ink: #6d28d9;
-  --color-accent-wash: #f1ecff;
+  --color-accent: #5b3e78;
+  --color-accent-ink: #452e5d;
+  --color-accent-wash: #eee8f4;
 
   /* ------------------------------------------------------------- semantics */
   /* positive / healthy */
@@ -63,22 +61,17 @@
 
   /* --------------------------------------------------------------- shape */
   /*
-    The legacy names, repointed at the modern geometry.
-
-    Every screen built before this pass — the public pages, the record drawers, the
-    admin forms — uses `rounded-xs`/`rounded-sm`, so raising the values here brings
-    them onto the same soft-cornered language as the new surfaces without a
-    rewrite of each one. The smallest radius matches `rounded-xl` (12px), which is
-    what a button or a chip carries in the new primitives.
+    Operational surfaces are intentionally close to square. This leaves rounded
+    shapes for status and focus, rather than turning every record into a pill.
   */
-  --radius-xs: 0.75rem;
-  --radius-sm: 1rem;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
 
   /* ------------------------------------------------------------- shadows */
-  --shadow-lift: 0 2px 6px rgba(31, 23, 51, 0.05), 0 28px 56px -24px rgba(124, 58, 237, 0.3);
-  --shadow-soft: 0 1px 2px rgba(31, 23, 51, 0.04), 0 10px 28px -14px rgba(31, 23, 51, 0.12);
-  --shadow-card: 0 1px 2px rgba(31, 23, 51, 0.04), 0 18px 40px -18px rgba(31, 23, 51, 0.16);
-  --shadow-hairline: inset 0 -1px 0 rgba(233, 227, 255, 0.9);
+  --shadow-lift: 2px 2px 0 rgba(20, 24, 28, 0.22);
+  --shadow-soft: 0 1px 2px rgba(20, 24, 28, 0.06);
+  --shadow-card: 0 1px 2px rgba(20, 24, 28, 0.08);
+  --shadow-hairline: inset 0 -1px 0 rgba(223, 221, 214, 0.9);
 
   /* ------------------------------------------------------------- motion */
   --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
@@ -210,22 +203,22 @@
   .glow-ambient {
     background-image: radial-gradient(
       58% 62% at 50% 0%,
-      rgba(167, 139, 250, 0.3) 0%,
-      rgba(247, 245, 255, 0) 72%
+      rgba(139, 106, 166, 0.18) 0%,
+      rgba(246, 244, 239, 0) 72%
     );
   }
 
   .glow-corner {
     background-image: radial-gradient(
       45% 55% at 92% 8%,
-      rgba(124, 58, 237, 0.12) 0%,
-      rgba(247, 245, 255, 0) 70%
+      rgba(91, 62, 120, 0.12) 0%,
+      rgba(246, 244, 239, 0) 70%
     );
   }
 
   .grid-fade {
-    background-image: linear-gradient(rgba(233, 227, 255, 0.6) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(233, 227, 255, 0.6) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(223, 221, 214, 0.75) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(223, 221, 214, 0.75) 1px, transparent 1px);
     background-size: 46px 46px;
   }
 

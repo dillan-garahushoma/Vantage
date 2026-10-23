@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { RequireEstate } from '../components/RequireEstate';
-import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { ErrorState } from '../components/ui';
 import { AskValora } from '../components/valora/AskValora';
@@ -129,84 +128,84 @@ function IntelligenceBody() {
 
   return (
     <div className="space-y-6">
-      {/* ------------------------------------------------ weekly briefing hero */}
-      <div className="relative overflow-hidden rounded-3xl border border-line bg-surface">
-        <SignalField className="absolute inset-x-0 top-0 h-[280px] rounded-none border-0" />
-
-        <div className="relative px-6 py-9 sm:px-10 sm:py-12">
-          <Badge variant="default" className="gap-2 bg-surface/80 px-3.5 py-1.5 tracking-[0.16em] backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5" />
-            {isResident
-              ? 'VALORA Resident Intelligence'
-              : isProvider
-              ? 'VALORA Contractor Intelligence'
-              : 'VALORA Executive Intelligence'}
-            {intelligence?.source === 'n8n' ? (
-              <span className="ml-1 rounded-full bg-mint-wash px-2 py-0.5 text-[0.68rem] font-bold text-mint-ink">
-                Live n8n
+      {/* The briefing is editorial on purpose: it establishes the one operational story before the detail below. */}
+      <section className="overflow-hidden border border-line bg-surface" aria-labelledby="briefing-title">
+        <div className="grid lg:grid-cols-[minmax(12rem,0.34fr)_1fr]">
+          <div className="flex min-h-48 flex-col justify-between bg-brand px-6 py-7 text-white sm:px-8 sm:py-9">
+            <div>
+              <span className="inline-flex h-9 w-9 items-center justify-center border border-white/25 bg-white/10">
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
               </span>
+              <p className="mt-5 text-[0.66rem] font-bold tracking-[0.18em] text-white/75 uppercase">
+                Estate intelligence
+              </p>
+              <p className="mt-2 font-heading text-xl font-bold leading-tight">
+                {isResident ? 'Your estate, in focus.' : isProvider ? 'The work that matters now.' : 'The operating picture.'}
+              </p>
+            </div>
+            <p className="mt-7 text-[0.74rem] leading-relaxed text-white/70">
+              {intelligence?.briefing_id ? 'Saved briefing' : 'Current briefing'} ·{' '}
+              {intelligence?.as_of ? new Date(intelligence.as_of).toLocaleString('en-ZA') : 'Date unavailable'}
+            </p>
+          </div>
+
+          <div className="px-6 py-8 sm:px-10 sm:py-10">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.7rem] font-semibold tracking-[0.12em] text-brand-ink uppercase">
+              <span>{isResident ? 'Resident briefing' : isProvider ? 'Provider briefing' : 'Executive briefing'}</span>
+              <span className="h-1 w-1 rounded-full bg-brand-soft" aria-hidden="true" />
+              <span>{activeBriefing.windowLabel}</span>
+            </div>
+            <h1 id="briefing-title" className="mt-5 max-w-3xl font-heading text-[1.9rem] leading-[1.08] font-extrabold tracking-[-0.03em] text-ink sm:text-[2.65rem]">
+              {activeBriefing.headline}
+            </h1>
+            <p className="mt-4 max-w-2xl text-[0.98rem] leading-relaxed text-ink/65">
+              {activeBriefing.body}
+            </p>
+
+            <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-line pt-4">
+              <span className="text-[0.78rem] font-medium text-ink/55">
+                {activeBriefing.signalsReviewed.toLocaleString('en-ZA')} signals reviewed across {activeBriefing.sources} sources
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[0.78rem] font-semibold text-mint-ink">
+                <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                Every finding traceable to source
+              </span>
+            </div>
+
+            {intelligence?.briefing_id ? (
+              <p className="mt-3 text-xs text-ink/50">
+                Counts are frozen at the briefing date. Ask VALORA reads current records.
+              </p>
             ) : null}
-          </Badge>
-
-          <h1 className="mt-6 max-w-3xl font-heading text-[1.9rem] leading-[1.12] font-extrabold tracking-[-0.025em] text-ink sm:text-[2.5rem]">
-            {activeBriefing.headline}
-          </h1>
-          <p className="mt-4 max-w-2xl text-[1rem] leading-relaxed text-ink/62">
-            {activeBriefing.body}
-          </p>
-          <p className="mt-3 text-sm text-ink/55">
-            {intelligence?.briefing_id ? 'Saved briefing' : 'Current briefing'} ·{' '}
-            {intelligence?.as_of ? new Date(intelligence.as_of).toLocaleString('en-ZA') : 'Date unavailable'}
-          </p>
-          {intelligence?.briefing_id ? (
-            <p className="mt-1 text-xs text-ink/50">
-              Counts are frozen at the briefing date. Ask VALORA reads current records.
-            </p>
-          ) : null}
-
-          {isHoaAdmin ? (
-            <Button
-              className="mt-3"
-              disabled={generating}
-              onClick={async () => {
-                setGenerating(true);
-                setGenerationError(null);
-                try {
-                  await api.post('/api/v1/analytics/intelligence/briefing/generate', {}, { estate_id: estateId });
-                  intelligenceQuery.reload();
-                } catch (cause) {
-                  setGenerationError(cause instanceof Error ? cause.message : 'Could not save the briefing.');
-                } finally {
-                  setGenerating(false);
-                }
-              }}
-            >
-              {generating ? 'Saving…' : 'Save current briefing'}
-            </Button>
-          ) : null}
-
-          {generationError ? <p role="alert">{generationError}</p> : null}
-          {intelligence?.limitations?.map((limitation) => (
-            <p key={limitation} className="mt-1 text-xs text-ink/50">
-              {limitation}
-            </p>
-          ))}
-
-          <div className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-2.5">
-            <span className="text-[0.78rem] font-medium text-ink/45">
-              Briefing window · {activeBriefing.windowLabel}
-            </span>
-            <span className="text-[0.78rem] font-medium text-ink/45">
-              {activeBriefing.signalsReviewed.toLocaleString('en-ZA')} signals reviewed across {activeBriefing.sources}{' '}
-              sources
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-[0.78rem] font-semibold text-mint-ink">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Every finding traceable to source
-            </span>
+            {isHoaAdmin ? (
+              <Button
+                className="mt-5"
+                disabled={generating}
+                onClick={async () => {
+                  setGenerating(true);
+                  setGenerationError(null);
+                  try {
+                    await api.post('/api/v1/analytics/intelligence/briefing/generate', {}, { estate_id: estateId });
+                    intelligenceQuery.reload();
+                  } catch (cause) {
+                    setGenerationError(cause instanceof Error ? cause.message : 'Could not save the briefing.');
+                  } finally {
+                    setGenerating(false);
+                  }
+                }}
+              >
+                {generating ? 'Saving…' : 'Save current briefing'}
+              </Button>
+            ) : null}
+            {generationError ? <p role="alert" className="mt-3 text-sm text-rose-700">{generationError}</p> : null}
+            {intelligence?.limitations?.map((limitation) => (
+              <p key={limitation} className="mt-2 text-xs text-ink/50">
+                {limitation}
+              </p>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* -------------------- Resident View -------------------- */}
       {isResident ? (
@@ -244,25 +243,23 @@ function IntelligenceBody() {
               )}
             </Surface>
 
-            <Surface>
-              <div className="border-b border-line pb-3">
-                <h2 className="font-heading text-[1.05rem] font-bold text-ink">
-                  Community Living Guidelines & Notices
-                </h2>
-              </div>
-              <ul className="mt-3 space-y-2 text-sm text-ink/75">
-                {(intelligence?.resident_view?.community_notices ?? [
-                  'Quiet hours: 22:00 - 06:00 daily.',
-                  'Refuse collection scheduled every Tuesday morning.',
-                  'Visitor access codes can be generated via the Resident portal.',
-                ]).map((notice, idx) => (
-                  <li key={idx} className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-brand-soft" />
-                    {notice}
-                  </li>
-                ))}
-              </ul>
-            </Surface>
+            {(intelligence?.resident_view?.community_notices ?? []).length > 0 ? (
+              <Surface>
+                <div className="border-b border-line pb-3">
+                  <h2 className="font-heading text-[1.05rem] font-bold text-ink">
+                    Community living notices
+                  </h2>
+                </div>
+                <ul className="mt-3 space-y-2 text-sm text-ink/75">
+                  {intelligence.resident_view.community_notices.map((notice, idx) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-brand-soft" />
+                      {notice}
+                    </li>
+                  ))}
+                </ul>
+              </Surface>
+            ) : null}
 
             <Surface>
               <div className="flex items-start gap-3">

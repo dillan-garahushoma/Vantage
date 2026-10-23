@@ -9,7 +9,7 @@ export function AttentionPanel({ items, onSelect, className }) {
           <h3 className="font-heading text-[1rem] font-bold text-ink">Needs attention</h3>
           <p className="mt-0.5 text-[0.78rem] text-ink-muted">Ordered by urgency and cost exposure</p>
         </div>
-        <span className="num rounded-full bg-ochre-wash px-2.5 py-1 text-[0.7rem] font-bold text-ochre">
+        <span className="num rounded-xs bg-ochre-wash px-2.5 py-1 text-[0.7rem] font-bold text-ochre">
           {items.length}
         </span>
       </div>

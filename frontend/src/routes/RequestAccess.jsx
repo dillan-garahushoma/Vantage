@@ -8,6 +8,7 @@ import { useEstate } from '../context/EstateContext';
 import { ApiError } from '../lib/api';
 import { fullDate } from '../lib/format';
 import { listPublicEstates } from '../lib/publicDirectory';
+import { clearSelectedPublicEstate, selectedPublicEstate } from '../lib/publicEstateSelection';
 import { asResidencyStatus, listMyResidencyRequests, RESIDENCY_STATUS, submitResidencyRequest, } from '../lib/residency';
 import { useAsync } from '../lib/useAsync';
 function location(item) {
@@ -28,7 +29,7 @@ export function RequestAccess() {
     const { reload: reloadEstates } = useEstate();
     const [query, setQuery] = useState('');
     const [committed, setCommitted] = useState('');
-    const [picked, setPicked] = useState(null);
+    const [picked, setPicked] = useState(() => selectedPublicEstate());
     const [unitNo, setUnitNo] = useState('');
     const [note, setNote] = useState('');
     const [busy, setBusy] = useState(false);
@@ -65,6 +66,7 @@ export function RequestAccess() {
             });
             setSubmitted(picked.name);
             setPicked(null);
+            clearSelectedPublicEstate();
             setUnitNo('');
             setNote('');
             // The request may have just been approved for a unit that was already

@@ -15,7 +15,8 @@ test('the landing page renders without console errors', async ({ page }) => {
     });
     page.on('pageerror', (error) => consoleErrors.push(error.message));
     await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1, name: /know what a property costs/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /understand how your complex is being cared for/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /find your complex/i })).toBeVisible();
     expect(consoleErrors).toEqual([]);
 });
 test('the sign-in route renders its form', async ({ page }) => {
