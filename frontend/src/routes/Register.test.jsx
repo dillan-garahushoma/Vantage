@@ -5,7 +5,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { registrationPayload, Register } from './Register';
 
-const mocks = vi.hoisted(() => ({ register: vi.fn(), logout: vi.fn() }));
+const mocks = vi.hoisted(() => ({ register: vi.fn(), logout: vi.fn(), listPublic: vi.fn() }));
+vi.mock('../lib/publicDirectory', () => ({ listPublicEstates: mocks.listPublic }));
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({ user: null, register: mocks.register, logout: mocks.logout }),
 }));
@@ -13,6 +14,18 @@ vi.mock('../context/AuthContext', () => ({
 beforeEach(() => {
   mocks.register.mockReset();
   mocks.logout.mockReset();
+  mocks.listPublic.mockReset();
+  mocks.listPublic.mockResolvedValue({
+    items: [
+      { estate_id: 4, name: 'Ridge Close Estate', suburb: 'Centurion', city: 'Tshwane', province: 'Gauteng', unit_count: 24 },
+      { estate_id: 5, name: 'Silverleaf Reserve', suburb: 'Constantia', city: 'Cape Town', province: 'Western Cape', unit_count: 40 },
+    ],
+    total: 2,
+    page: 1,
+    size: 6,
+    pages: 1,
+  });
+  window.sessionStorage.clear();
 });
 
 function renderRegister() {
@@ -96,5 +109,73 @@ describe('Register — role paths and safe permissions', () => {
     await user.click(screen.getByRole('radio', { name: /^resident/i }));
     expect(screen.getByRole('button', { name: /create resident account/i })).toBeVisible();
     expect(screen.getByRole('textbox', { name: /full name/i })).toBeVisible();
+  });
+});
+
+
+describe('Register — estate discovery and context', () => {
+  it('loads published estates from the directory endpoint and lets a resident select one', async () => {
+    const user = userEvent.setup();
+    renderRegister();
+
+    expect(await screen.findByRole('button', { name: /ridge close estate/i })).toBeVisible();
+    expect(mocks.listPublic).toHaveBeenCalledWith({ q: '', page: 1, page_size: 6 });
+
+    await user.click(screen.getByRole('button', { name: /silverleaf reserve/i }));
+    expect(screen.getByText('Silverleaf Reserve')).toBeVisible();
+    expect(screen.getByText(/you will confirm your unit and request access after creating your account/i)).toBeVisible();
+  });
+
+  it('searches the public directory and requires a unit when the resident picked a complex', async () => {
+    mocks.listPublic.mockImplementation(async ({ q }) => ({
+      items: q.toLowerCase().includes('ridge')
+        ? [{ estate_id: 4, name: 'Ridge Close Estate', suburb: 'Centurion', city: 'Tshwane', province: 'Gauteng', unit_count: 24 }]
+        : [],
+      total: q.toLowerCase().includes('ridge') ? 1 : 0,
+      page: 1,
+      size: 6,
+      pages: 1,
+    }));
+    const user = userEvent.setup();
+    renderRegister();
+
+    await user.clear(screen.getByRole('textbox', { name: /search published complexes/i }));
+    await user.type(screen.getByRole('textbox', { name: /search published complexes/i }), 'Ridge');
+    await user.click(screen.getByRole('button', { name: /^search$/i }));
+    await user.click(await screen.findByRole('button', { name: /ridge close estate/i }));
+
+    await user.type(screen.getByRole('textbox', { name: /full name/i }), 'Thandi Nkosi');
+    await user.type(screen.getByRole('textbox', { name: /email address/i }), 'thandi@example.co.za');
+    await user.type(screen.getByLabelText(/password/i), 'aGoodPassword1');
+    await user.click(screen.getByRole('button', { name: /create resident account/i }));
+
+    expect(await screen.findByText(/enter the unit number for the complex you selected/i)).toBeVisible();
+    expect(mocks.register).not.toHaveBeenCalled();
+  });
+
+  it('keeps estate and unit as onboarding context, not an authorization field in the account payload', async () => {
+    mocks.register.mockResolvedValue({});
+    const user = userEvent.setup();
+    renderRegister();
+
+    await user.click(await screen.findByRole('button', { name: /ridge close estate/i }));
+    await user.type(screen.getByRole('textbox', { name: /full name/i }), 'Thandi Nkosi');
+    await user.type(screen.getByRole('textbox', { name: /email address/i }), 'thandi@example.co.za');
+    await user.type(screen.getByLabelText(/password/i), 'aGoodPassword1');
+    await user.type(screen.getByRole('textbox', { name: /unit number/i }), ' A-101 ');
+    await user.click(screen.getByRole('button', { name: /create resident account/i }));
+
+    expect(mocks.register).toHaveBeenCalledWith({
+      full_name: 'Thandi Nkosi',
+      email: 'thandi@example.co.za',
+      password: 'aGoodPassword1',
+      account_type: 'resident',
+      unit_no: 'A-101',
+    });
+    expect(JSON.parse(window.sessionStorage.getItem('valora.public-estate-selection'))).toMatchObject({
+      estate_id: 4,
+      name: 'Ridge Close Estate',
+      unit_no: 'A-101',
+    });
   });
 });
