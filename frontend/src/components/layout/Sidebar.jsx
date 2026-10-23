@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronDown, ChevronRight, LogOut, MoreHorizontal } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -98,6 +98,10 @@ export function SidebarNav({ onNavigate }) {
     .map((group) => ({ ...group, items: group.items.filter((item) => !primarySet.has(item.to)) }))
     .filter((group) => group.items.length > 0);
   const [moreOpen, setMoreOpen] = useState(() => !primaryPaths.includes(pathname));
+
+  useEffect(() => {
+    if (!primaryPaths.includes(pathname)) setMoreOpen(true);
+  }, [pathname, user?.role]);
 
   return (
     <nav className="scrollbar-slim flex-1 overflow-y-auto px-3 pb-4 pt-2" aria-label="Workspace navigation">
