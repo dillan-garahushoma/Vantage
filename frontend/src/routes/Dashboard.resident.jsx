@@ -2,6 +2,7 @@ import { ArrowRight, Bell, CalendarDays, CheckCircle2, Clock3, HeartPulse, Plus,
 import { Link } from 'react-router-dom';
 import { Chip, EmptyState, ErrorState, LoadingState } from '../components/ui';
 import { useEstateScope } from '../context/EstateContext';
+import { useAuth } from '../context/AuthContext';
 import { getLivingScore } from '../lib/analytics';
 import { api } from '../lib/api';
 import { complaintStatus, pillarBand } from '../lib/display';
@@ -111,7 +112,7 @@ function EstateHealthSummary({ snapshot, loading, error }) {
         </div>
       ) : (
         <p className="mt-2 max-w-md text-sm leading-relaxed text-ink-soft">
-          There is not enough measured information for a published Living Score yet.
+          Not enough data yet for a published Living Score. The score appears when there is sufficient measured operational information.
         </p>
       )}
       <Link to="/app/health" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink hover:underline">
@@ -123,6 +124,7 @@ function EstateHealthSummary({ snapshot, loading, error }) {
 
 export function ResidentDashboard() {
   const { estateId, estate, loading: estateLoading } = useEstateScope();
+  const { user } = useAuth();
   const complaints = useAsync(
     () => estateId === null ? Promise.resolve({ items: [], total: 0 }) : api.get('/api/v1/complaints', { estate_id: estateId, size: 10, sort: '-created_at' }),
     [estateId],
@@ -132,11 +134,14 @@ export function ResidentDashboard() {
     [estateId],
   );
   const score = useAsync(
-    () => estateId === null ? Promise.resolve(null) : getLivingScore(estateId),
+    () => estateId === null ? Promise.resolve(null) : getLivingScore(estateId).catch((error) => {
+      if (error?.status === 404) return null;
+      throw error;
+    }),
     [estateId],
   );
 
-  const firstName = (estate?.estate_name ? 'there' : 'there');
+  const firstName = user?.full_name?.trim().split(/\\s+/)[0] || 'there';
   const openRequests = (complaints.data?.items ?? []).filter((item) => !TERMINAL_STATUSES.has(item.status ?? ''));
   const notices = announcements.data?.items ?? [];
 
