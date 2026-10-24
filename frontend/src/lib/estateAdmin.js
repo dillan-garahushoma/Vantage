@@ -107,9 +107,18 @@ export function transferEstateMemberUnit(estateId, membershipId, propertyId) {
 export function listEstateProperties(estateId) {
     return api.get('/api/v1/properties', { estate_id: estateId, page: 1, size: 100 });
 }
-/** Add a service provider who has registered, by email. One uniform 404 if not. */
-export function addProviderMember(estateId, email) {
-    return api.post('/api/v1/memberships/providers', { email: email.trim() }, { estate_id: estateId });
+export function listProviderApplications(estateId, status) {
+    return api.get('/api/v1/provider-applications', { estate_id: estateId, status });
+}
+export function approveProviderApplication(estateId, applicationId) {
+    return api.post(`/api/v1/provider-applications/${applicationId}/approve`, {}, {
+        estate_id: estateId,
+    });
+}
+export function rejectProviderApplication(estateId, applicationId) {
+    return api.post(`/api/v1/provider-applications/${applicationId}/reject`, {}, {
+        estate_id: estateId,
+    });
 }
 /* -------------------------------------------------------------- join codes */
 export function currentJoinCode(estateId) {

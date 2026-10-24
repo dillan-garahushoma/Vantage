@@ -50,7 +50,19 @@ export function AuthProvider({ children }) {
         setUser(auth.user);
         return auth.user;
     }, []);
-    const value = useMemo(() => ({ user, checking, login, register, logout }), [user, checking, login, register, logout]);
+    const registerEstate = useCallback(async (payload) => {
+        const auth = await api.registerEstate(payload);
+        session.save(auth);
+        setUser(auth.user);
+        return auth.user;
+    }, []);
+    const acceptProviderInvitation = useCallback(async (token, password) => {
+        const auth = await api.acceptProviderInvitation(token, password);
+        session.save(auth);
+        setUser(auth.user);
+        return auth.user;
+    }, []);
+    const value = useMemo(() => ({ user, checking, login, register, registerEstate, acceptProviderInvitation, logout }), [user, checking, login, register, registerEstate, acceptProviderInvitation, logout]);
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 export function useAuth() {

@@ -26,6 +26,28 @@ const ACCOUNT_TYPES = [
     label: 'Service provider',
     blurb: 'I complete maintenance work assigned by an estate.',
   },
+  {
+    value: 'estate_admin',
+    label: 'HOA / estate manager',
+    description: 'Create a private workspace for a new estate you manage.',
+  },
+  {
+    value: 'service_provider',
+    label: 'Service provider',
+    description: 'Apply to an estate. Its HOA reviews your details before account setup.',
+  },
+];
+
+const PROVINCES = [
+  'Eastern Cape',
+  'Free State',
+  'Gauteng',
+  'KwaZulu-Natal',
+  'Limpopo',
+  'Mpumalanga',
+  'North West',
+  'Northern Cape',
+  'Western Cape',
 ];
 
 const EMPTY = {
@@ -35,6 +57,11 @@ const EMPTY = {
   password: '',
   phoneno: '',
   unit_no: '',
+  estateName: '',
+  estateSuburb: '',
+  estateCity: '',
+  estateProvince: 'Gauteng',
+  estateDescription: '',
 };
 
 function validate(form, selectedEstate = null) {
@@ -226,6 +253,14 @@ export function Register() {
 
   function update(key, value) {
     setForm((previous) => ({ ...previous, [key]: value }));
+    setErrors((previous) => ({ ...previous, [key]: undefined }));
+    setError(null);
+  }
+
+  function switchAccount() {
+    logout();
+    setSwitchingAccount(true);
+    setError(null);
   }
 
   function clearEstate() {

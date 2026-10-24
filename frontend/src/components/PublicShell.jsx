@@ -22,10 +22,10 @@ export function PublicShell({ children }) {
             <LinkButton to="/estates" variant="ghost" className="hidden sm:inline-flex">
               Find a complex
             </LinkButton>
-            <LinkButton to="/login" variant="ghost">
+            <LinkButton to="/login" variant="ghost" className="min-h-11 whitespace-nowrap px-2.5 sm:px-3.5">
               Sign in
             </LinkButton>
-            <LinkButton to="/register" variant="primary">
+            <LinkButton to="/register" variant="primary" className="min-h-11 whitespace-nowrap px-2.5 sm:px-3.5">
               Create account
             </LinkButton>
           </nav>

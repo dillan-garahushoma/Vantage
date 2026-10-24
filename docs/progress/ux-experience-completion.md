@@ -1,65 +1,49 @@
-# VALORA — UX Experience Completion Report
+# VALORA — UX experience completion report
 
-**Session Date:** 2026-10-23  
-**Branch:** `codex/valora-experience-completion`  
-**Assigned Batch:** `batches/ux-experience-completion.md`  
-**Authority:** `docs/CODEX_UX_REDESIGN_BRIEF.md` and `AGENTS.md`  
+## Status
 
----
+Implementation and local validation are complete. No deployment was attempted; live estate data was not changed.
 
-## 1. Executive Summary
+## Done
 
-We executed `batches/ux-experience-completion.md` as the single assigned implementation batch on branch `codex/valora-experience-completion`. The work unified the disconnected Ask VALORA functionality into the VALORA Intelligence page, eliminated the redundant global sidebar Living Score widget, fixed server-side public directory filtering by province, and refined the resident, HOA, and provider role journeys within the established light-purple VALORA visual identity.
+- Kept public account registration resident-only and added dedicated HOA estate signup: the HOA self-registers, creates a private estate, and continues onboarding.
+- Replaced provider self-signup/direct email provisioning with public applications, estate-scoped HOA review, one-time setup links, and provider account/membership creation only after approval.
+- Allowed an existing provider account without membership in the target estate to apply and join on approval without resetting their password.
+- Added an additive provider-application/invitation migration and estate authorization on HOA review operations.
+- Added blurred estate imagery to shared sign-in, registration, and recovery surfaces.
+- Changed the homepage to use the estate image as a full-bleed hero blended behind its copy.
+- Corrected the four-photo estate mosaic to use the full available width and added a focused layout test.
+- Removed the obsolete direct provider-add endpoint so only the reviewed application flow can create provider membership.
+- Preserved live estate data. The owner clarified that the deployed estate listing is expected; Musgrave Heights is no longer an active issue.
 
----
+## Tests and checks run
 
-## 2. Implemented Changes
+- Backend focused suites: `54 passed, 20 skipped`. The skipped tests require `TEST_DATABASE_URL`; it was not configured, so database-backed integration assertions were not executed.
+- Frontend focused suites: `4 files passed, 31 tests passed`.
+- Frontend production build: passed. Vite reported the existing large-chunk warning.
+- Backend `compileall`: passed.
+- Backend fatal-error Flake8 selection: passed (`0` findings).
+- Alembic head check: `c5a7d9e1f3b2 (head)`.
+- Alembic offline upgrade SQL generation: passed.
+- `git diff --check`: passed after correcting this report's trailing blank line.
 
-### A. Ask VALORA & VALORA Intelligence Unification
-- **Single Intentional Entry Point:** Removed the global top-bar Ask VALORA spotlight launcher button from `frontend/src/components/layout/TopBar.jsx` and detached `AskValoraSpotlight` from `frontend/src/components/AppShell.jsx`. Ask VALORA is now anchored in its dedicated workspace: VALORA Intelligence (`/intelligence` and `/app/intelligence`).
-- **Real SSE Streaming Integration:** Rewrote `frontend/src/components/valora/AskValora.jsx` to stream real tokens via `streamAskValora` from `frontend/src/lib/intelligence.js` (`POST /api/v1/analytics/intelligence/ask/stream`), supporting multi-turn conversation history.
-- **Role-Aware Context & Grounding:**
-  - Automatically adapts suggestions from `rolePrompts[role]` (`hoa_admin`, `resident`, `service_provider`).
-  - For HOA admins: `"What is the operational risk summary for this week?"`, `"Which work orders are currently overdue?"`, `"Summarise open complaints and contractor performance."`
-  - For residents: quiet hours, maintenance request status, Living Score meaning.
-  - For providers: assigned jobs, gate access hours, SLA deadlines.
-- **Structured Output Presentation (`AiAnswerRenderer`):**
-  - Model outputs render with semantic typography (headings, tables, lists, code, citation badges, action cards) with zero raw markdown markers (`**bold**`, `#`, or asterisks).
-  - Contextual follow-up chips (`ROLE_FOLLOW_UPS[role]`) allow continuous dialogue with one click.
-  - Native copy-to-clipboard button with visual feedback.
-  - Reset / "New session" control to start a fresh conversation.
-  - Clear privacy guarantee: reads operational records only, never private resident data.
-- **Resilient Page Architecture:** Decoupled Ask VALORA and the resident/provider queues from briefing generation errors so that an unavailable briefing does not blank out or disable the chat workspace.
-- **Keyboard & Modal Focus:** Added expandable focus modal (`role="dialog" aria-label="Ask VALORA Intelligence"`) with backdrop blur and Escape / close handlers, whilst supporting inline conversation.
+## Written but not run
 
-### B. Removed Duplicate Sidebar Living Score
-- **Sidebar De-cluttering (`frontend/src/components/layout/Sidebar.jsx`):** Removed `LivingScoreWidget` and associated imports (`Sparkline`, `useEstate`). The Living Score is no longer repeated in the left rail on every single screen.
-- **Dedicated Health Authority:** Detailed Living Score analysis, rolling 90-day trajectory, and individual component pillars remain authoritatively hosted in Estate Health (`/app/health`), with compact, decision-relevant summaries on role dashboards.
+- Database-backed integration tests against PostgreSQL (`TEST_DATABASE_URL` is unset).
+- Real-browser inspection of the new local auth, hero, and collage rendering.
+- Live deployment verification. The user asked to push to `main` and review; no deployment was requested.
 
-### C. Correct Estate Data Flow & Public Directory Search
-- **Server-Side Province Search (`backend/app/property/repositories/estate_repository.py`):**
-  - Updated `EstateRepository.public_statement` to include `Estate.province.ilike(pattern)` alongside name, suburb, and city.
-  - Updated `backend/app/property/api/public.py` query documentation to reflect province search.
-  - Fixes regional filtering so clicking province filter pills (`Western Cape`, `Gauteng`, `KwaZulu-Natal`) queries the entire database server-side instead of filtering only the first page in memory.
-- **Landing Page Catalogue (`frontend/src/routes/Landing.jsx`):**
-  - Wired `FeaturedEstates` to pass `q: selectedRegion` directly to `listPublicEstates`.
-  - Updated "Explore full directory" link to preserve the selected region in URL search parameters (`/estates?q=...`).
-- **Data Integrity & Musgrave Tracing:**
-  - Traced public directory SQL queries: strictly filtered by `Estate.is_public.is_(True)` and `Estate.is_demo.is_(False)`.
-  - No client-side exclusion hack (e.g. `!name.includes("Musgrave")`) was introduced.
-  - Production database verification requirement documented below.
+## Remaining
 
-### D. Resident, HOA & Service Provider Workspaces
-- **Resident Workspace (`Dashboard.resident.jsx`):** Clear estate context and linked unit counts, prominent maintenance issue reporting CTA, "Your active requests" queue with status chips and relative timestamps, official announcements, and compact Living Score indicator.
-- **HOA Administrator Workspace (`Dashboard.admin.jsx`):** Leads with triage banner for unassigned complaints requiring contractor dispatch, operational KPI row (complaints, resolution rate %, average resolution hours, work orders in flight), compact Living Score snapshot, and needs-attention queue.
-- **Service Provider Workspace (`ProviderWork.jsx` & routing):** Automatic routing from `DashboardRouter` to `/provider/work` (`My work`), preventing access to resident or HOA dashboards.
-- **Router Navigation (`App.jsx`):** Added redirect route `/app/intelligence` -> `/intelligence`.
+- Await the user's review on `main`; do not deploy without a separate request.
 
----
+## Deviations and external limits
 
-## 3. Automated Validation Results
+- Did not investigate or modify live estate listings after the owner clarified they are correct.
+- Did not inspect or alter a production database.
+- Browser tooling was unavailable during this work session; visual changes are source/build/test verified, not screenshot verified.
 
-All checks were executed locally against the codebase:
+## Exact validation commands and results
 
 | Check / Command | Result | Details |
 |---|---|---|

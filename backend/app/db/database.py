@@ -12,6 +12,8 @@ from app.identity.models.estate_membership import EstateMembership  # noqa: F401
 from app.identity.models.estate_join_code import EstateJoinCode  # noqa: F401
 from app.identity.models.estate_membership_event import EstateMembershipEvent  # noqa: F401
 from app.identity.models.estate_residency_request import EstateResidencyRequest  # noqa: F401
+from app.identity.models.provider_application import ProviderApplication  # noqa: F401
+from app.identity.models.provider_invitation import ProviderInvitation  # noqa: F401
 from app.identity.models.user import User  # noqa: F401
 from app.identity.models.account_support import AccountPreference, OperationalNotification, RecoveryGrant  # noqa: F401
 from app.identity.models.session import Session  # noqa: F401
@@ -51,4 +53,3 @@ from app.analytics.models.living_score_snapshot import LivingScoreSnapshot  # no
 
 # Contact domain
 from app.contact.models.contact_message import ContactMessage  # noqa: F401
-
