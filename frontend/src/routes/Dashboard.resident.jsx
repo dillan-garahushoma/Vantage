@@ -161,29 +161,31 @@ export function ResidentDashboard() {
   const notices = announcements.data?.items ?? [];
 
   return (
-    <div className="space-y-6 pb-5">
+    <div className="space-y-7 pb-5">
       {estateLoading ? <LoadingState label="Loading your estate" /> : null}
-      <CommunityHero estate={estate} />
 
-      <header className="flex flex-col justify-between gap-4 border-b border-brand/10 pb-5 sm:flex-row sm:items-end">
-        <div className="min-w-0">
-          <p className="text-[0.65rem] font-bold uppercase tracking-[0.17em] text-brand-ink">{greeting()}</p>
-          <h1 className="mt-1 font-heading text-3xl font-semibold leading-tight tracking-[-0.045em] text-ink sm:text-[2.7rem]">
-            {firstName}
-          </h1>
-          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-ink/60">
-            Your estate, your home. Here's what's happening at {estate?.estate_name ?? 'your community'}.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onLogComplaint}
-          disabled={!onLogComplaint}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 self-start bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-ink disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:self-auto"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" /> Report an issue <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </button>
-      </header>
+      <section className="grid gap-5 lg:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)] lg:items-stretch" aria-label="Resident welcome">
+        <header className="flex min-w-0 flex-col items-start justify-center gap-4 border-b border-brand/10 pb-5 lg:border-b-0 lg:py-5">
+          <div>
+            <p className="text-[0.65rem] font-bold uppercase tracking-[0.17em] text-brand-ink">{greeting()}</p>
+            <h1 className="mt-1 font-heading text-3xl font-semibold leading-tight tracking-[-0.045em] text-ink sm:text-[2.7rem]">
+              {firstName}
+            </h1>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-ink/60">
+              Your estate, your home. Here's what's happening at {estate?.estate_name ?? 'your community'}.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onLogComplaint}
+            disabled={!onLogComplaint}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-ink disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" /> Report an issue <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </header>
+        <CommunityHero estate={estate} />
+      </section>
 
       <section aria-labelledby="requests-heading">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-brand/15 pb-3">
