@@ -9,12 +9,7 @@ import { getMyProviderProfile } from '../lib/estateAdmin';
 import { displayLabel } from '../lib/format';
 import { useAsync } from '../lib/useAsync';
 /**
- * A service provider with no estate yet.
- *
- * This is the one onboarding state that cannot be finished by the person in it:
- * a provider may register themselves, but only an estate administrator can add
- * them (by email). So the screen says exactly who to talk to and what will
- * happen, and offers the only useful action — check again.
+ * Legacy provider accounts with no estate membership can still view this screen.
  */
 export function ProviderWaiting() {
     const { user, logout } = useAuth();
@@ -31,15 +26,17 @@ export function ProviderWaiting() {
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xs bg-ochre-wash text-ochre-ink">
             <IconClock size={19}/>
           </span>
-          <h1 className="mt-4 text-[24px] font-semibold">Waiting to be added to an estate</h1>
+          <h1 className="mt-4 text-[24px] font-semibold">No estate access yet</h1>
           <p className="mt-2 text-[14px] text-ink-soft">
-            Your provider account is active and your trade profile is on record. An estate
-            administrator now has to add you to their estate by email
+            An estate administrator must approve your application before provider access is granted
             {user.email ? (<>
-                : <span className="num font-medium text-ink">{user.email}</span>
+                . Applications use <span className="num font-medium text-ink">{user.email}</span>
               </>) : null}
             .
           </p>
+          <Button variant="secondary" onClick={() => navigate('/provider/apply')}>
+            Apply to an estate
+          </Button>
 
           <Keyline className="my-5"/>
 

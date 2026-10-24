@@ -2,6 +2,7 @@
 
 Provides:
   POST /api/v1/auth/register  — user registration
+  POST /api/v1/auth/register-estate — a new estate and its first HOA administrator
   POST /api/v1/auth/login     — user login + JWT issuance
   GET  /api/v1/auth/me        — authenticated user profile
   GET  /api/v1/auth/estates   — the estates the caller may act inside
@@ -16,10 +17,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.identity.api.dependencies import CurrentUser, require_roles
 from app.identity.models.user import User
-from app.identity.schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserResponse, ProvisionAccountRequest
+from app.identity.schemas.auth import (
+    AuthResponse,
+    EstateRegistrationRequest,
+    LoginRequest,
+    ProvisionAccountRequest,
+    RegisterRequest,
+    UserResponse,
+)
 from app.identity.schemas.estate_access import EstateAccessListResponse, EstateAccessResponse
+from app.identity.schemas.provider_invitation import (
+    ProviderInvitationAcceptRequest,
+)
 from app.identity.services.auth_service import AuthService
 from app.identity.services.estate_authorization_service import EstateAuthorizationService
+from app.identity.services.provider_application_service import ProviderApplicationService
 
 router = APIRouter(prefix="/auth", tags=["identity"])
 
@@ -40,6 +52,24 @@ async def register(
 ) -> AuthResponse:
     """Register a new user and return a JWT."""
     return await AuthService(db).register(payload)
+
+
+@router.post("/register-estate", response_model=AuthResponse, status_code=201)
+async def register_estate(
+    payload: EstateRegistrationRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> AuthResponse:
+    """Create a new private estate and its first HOA administrator."""
+    return await AuthService(db).register_estate(payload)
+
+
+@router.post("/provider-invitations/accept", response_model=AuthResponse)
+async def accept_provider_invitation(
+    payload: ProviderInvitationAcceptRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> AuthResponse:
+    """Create a provider account and its invited estate membership."""
+    return await ProviderApplicationService(db).accept(payload)
 
 
 @router.post("/login", response_model=AuthResponse)

@@ -25,6 +25,8 @@ import { PublicEstateDetail } from './routes/PublicEstateDetail';
 import { PublicEstates } from './routes/PublicEstates';
 import { PasswordRecovery } from './routes/PasswordRecovery';
 import { ProviderWaiting } from './routes/ProviderWaiting';
+import { ProviderApply } from './routes/ProviderApply';
+import { ProviderAcceptInvitation } from './routes/ProviderAcceptInvitation';
 import { ProviderWork } from './routes/ProviderWork';
 import { Providers } from './routes/Providers';
 import { Register } from './routes/Register';
@@ -56,6 +58,8 @@ export function App() {
           <Route path="/login" element={<Login />}/>
           <Route path="/password-recovery" element={<PasswordRecovery />}/>
           <Route path="/register" element={<Register />}/>
+          <Route path="/provider/apply" element={<ProviderApply />}/>
+          <Route path="/provider/accept-invitation" element={<ProviderAcceptInvitation />}/>
           <Route path="/contact" element={<Contact />}/>
           <Route path="/methodology" element={<Methodology />}/>
           <Route path="/estates" element={<PublicEstates />}/>

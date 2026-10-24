@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { RequireEstate } from '../components/RequireEstate';
-import { IconPlus, IconUsers } from '../components/Icons';
-import { Button, Card, Chip, Drawer, EmptyState, ErrorState, Field, Input, LoadingState, SectionTitle, Select, TableShell, Td, Th, } from '../components/ui';
+import { IconUsers } from '../components/Icons';
+import { Button, Card, Chip, Drawer, EmptyState, ErrorState, Field, LoadingState, SectionTitle, Select, TableShell, Td, Th, } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { useEstateScope } from '../context/EstateContext';
 import { ApiError } from '../lib/api';
-import { addProviderMember, listEstateMembers, listEstateProperties, removeEstateMember, transferEstateMemberUnit } from '../lib/estateAdmin';
+import { approveProviderApplication, listEstateMembers, listEstateProperties, listProviderApplications, rejectProviderApplication, removeEstateMember, transferEstateMemberUnit } from '../lib/estateAdmin';
 import { roleLabels } from '../lib/display';
 import { fullDate, relativeDays } from '../lib/format';
 import { useAsync } from '../lib/useAsync';
@@ -21,60 +21,63 @@ function roleTone(role) {
         return 'warn';
     return 'neutral';
 }
-/* ------------------------------------------------------- add a provider */
-function AddProviderCard({ estateId, onAdded }) {
-    const [email, setEmail] = useState('');
-    const [busy, setBusy] = useState(false);
+/* ------------------------------------------------ review provider applicants */
+function ProviderApplications({ estateId }) {
+    const [busyId, setBusyId] = useState(null);
     const [error, setError] = useState(null);
-    const [added, setAdded] = useState(null);
-    async function submit(event) {
-        event.preventDefault();
+    const [notice, setNotice] = useState('');
+    const applications = useAsync(() => listProviderApplications(estateId, 'pending'), [estateId]);
+    async function decide(applicationId, decision) {
         setError(null);
-        setAdded(null);
-        setBusy(true);
+        setNotice('');
+        setBusyId(applicationId);
         try {
-            const member = await addProviderMember(estateId, email);
-            setAdded(member.full_name ?? member.email ?? email);
-            setEmail('');
-            onAdded();
+            if (decision === 'approve')
+                await approveProviderApplication(estateId, applicationId);
+            else
+                await rejectProviderApplication(estateId, applicationId);
+            setNotice(decision === 'approve'
+                ? 'Setup link sent to the applicant.'
+                : 'Application declined.');
+            applications.reload();
         }
         catch (cause) {
-            setError(cause instanceof ApiError ? cause : new ApiError(0, 'Could not add that provider.'));
+            setError(cause instanceof ApiError ? cause : new ApiError(0, 'Could not review this application.'));
         }
         finally {
-            setBusy(false);
+            setBusyId(null);
         }
     }
-    const title = error?.status === 409
-        ? 'That provider is already a member'
-        : error?.status === 429
-            ? 'Too many lookup attempts'
-            : error?.status === 404
-                ? 'No registered provider with that email'
-                : 'Could not add that provider';
-    return (<Card as="section" className="p-5">
-      <SectionTitle title="Add a service provider" hint="An operator provisions their account; you link it to this estate by email."/>
-      <form onSubmit={submit} className="space-y-3">
-        {error ? (<ErrorState title={title} message={error.status === 404
-                ? `${error.message} A provider must first be provisioned by an operator, with a trade profile. Residents are not added here — they request access for approval, or join with a code.`
-                : error.message} requestId={error.requestId}/>) : null}
-        {added ? (<p className="text-[13px] text-accent-ink">
-            {added} can now be assigned work in this estate.
-          </p>) : null}
-
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="min-w-[16rem] flex-1">
-            <Field label="Provider email" hint="Only an operator-provisioned provider account with a trade profile can be added.">
-              <Input name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="plumber@example.co.za" autoComplete="off"/>
-            </Field>
-          </div>
-          <Button type="submit" variant="primary" disabled={busy || email.trim().length === 0}>
-            <IconPlus size={16}/>
-            {busy ? 'Adding…' : 'Add provider'}
-          </Button>
-        </div>
-      </form>
-    </Card>);
+    const items = applications.data ?? [];
+    return (
+      <Card as="section" className="p-5">
+        <SectionTitle title="Provider applications" hint="Approve an applicant to email a secure account-setup link." />
+        {notice ? <p className="mb-3 text-sm text-ink-soft" role="status">{notice}</p> : null}
+        {error ? <ErrorState title="Could not review application" message={error.message} requestId={error.requestId} /> : null}
+        {applications.loading ? <LoadingState label="Loading provider applications" />
+          : applications.error ? <ErrorState title="Could not load applications" message={applications.error.message} requestId={applications.error.requestId} action={<Button variant="secondary" onClick={applications.reload}>Try again</Button>} />
+            : items.length === 0 ? <EmptyState title="No applications awaiting review" body="Provider applications for this estate will appear here." />
+              : <ul className="divide-y divide-ink/10">
+                {items.map((application) => (
+                  <li key={application.application_id} className="flex flex-wrap items-start justify-between gap-4 py-4 first:pt-2">
+                    <div className="min-w-0">
+                      <p className="font-medium">{application.full_name}</p>
+                      <p className="text-[13px] text-ink-muted">{application.email} · {application.trade} · {application.phone}</p>
+                      {application.note ? <p className="mt-2 max-w-2xl text-[13px] text-ink-soft">{application.note}</p> : null}
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <Button variant="secondary" disabled={busyId !== null} onClick={() => decide(application.application_id, 'reject')}>
+                        {busyId === application.application_id ? 'Saving…' : 'Decline'}
+                      </Button>
+                      <Button variant="primary" disabled={busyId !== null} onClick={() => decide(application.application_id, 'approve')}>
+                      {busyId === application.application_id ? 'Sending…' : 'Approve and send setup link'}
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>}
+      </Card>
+    );
 }
 /* --------------------------------------------------------------- removal */
 function RemoveMemberDrawer({ target, estateName, busy, error, onCancel, onConfirm, }) {
@@ -186,7 +189,8 @@ function MembersBody() {
         <h1 className="mt-2 text-[26px] leading-tight font-semibold">Members</h1>
         <p className="mt-1 max-w-2xl text-[13.5px] text-ink-muted">
           Who may act inside this estate. Residents join through approval or a live join code;
-          operator-provisioned providers are linked here by email. Moving someone out revokes estate access.
+          service providers apply and receive account access only after HOA approval.
+          Moving someone out revokes estate access.
         </p>
       </header>
 
@@ -213,7 +217,7 @@ function MembersBody() {
               Try again
             </Button>}/>) : items.length === 0 ? (<EmptyState title={role ? 'Nobody holds that role yet' : 'This estate has no members yet'} body={role
                 ? 'Clear the role filter to see everyone on the register.'
-                : 'Issue a join code so residents can join, or add a service provider by email.'}/>) : (<>
+                : 'Issue a join code so residents can join, or review provider applications.'}/>) : (<>
           <TableShell>
             <thead>
               <tr>
@@ -276,11 +280,7 @@ function MembersBody() {
           </div>
         </>)}
 
-      <AddProviderCard estateId={scope} onAdded={() => {
-            setRole('');
-            setPage(1);
-            members.reload();
-        }}/>
+      <ProviderApplications estateId={scope} />
 
       <Card as="section" className="p-5">
         <div className="flex items-start gap-3">
@@ -296,8 +296,8 @@ function MembersBody() {
                 instant. Both produce the same membership.
               </li>
               <li>
-                <span className="font-medium">Service providers</span> are provisioned by an operator,
-                then you add their email here. Only then can they be assigned work.
+                <span className="font-medium">Service providers</span> apply to an estate. The HOA
+                reviews each application and approves account setup before work can be assigned.
               </li>
               <li>
                 <span className="font-medium">Managers</span> are provisioned by an operator and hold

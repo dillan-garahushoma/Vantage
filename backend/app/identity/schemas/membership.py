@@ -7,7 +7,7 @@ none carries a join code anywhere except the join request itself.
 """
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class MembershipJoinRequest(BaseModel):
@@ -26,20 +26,6 @@ class MembershipJoinRequest(BaseModel):
     @classmethod
     def strip_whitespace(cls, value: object) -> object:
         return value.strip() if isinstance(value, str) else value
-
-
-class MembershipProviderAddRequest(BaseModel):
-    """An estate admin adding a registered service provider to their estate.
-
-    The email is the only input: the estate comes from ``?estate_id=`` and the
-    provider's own account and profile already exist (they registered
-    themselves). A ``user_id`` or ``provider_id`` here would let an admin bind
-    the wrong account.
-    """
-
-    email: EmailStr
-
-    model_config = ConfigDict(extra="forbid")
 
 
 class MembershipJoinResponse(BaseModel):

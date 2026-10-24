@@ -1,101 +1,63 @@
-# VALORA — UX Experience Completion Report
+# VALORA — UX experience completion report
 
-**Session Date:** 2026-10-23  
-**Branch:** `codex/valora-experience-completion`  
-**Assigned Batch:** `batches/ux-experience-completion.md`  
-**Authority:** `docs/CODEX_UX_REDESIGN_BRIEF.md` and `AGENTS.md`  
+## Status
 
----
+Implementation and local validation are complete. No deployment was attempted; live estate data was not changed.
 
-## 1. Executive Summary
+## Done
 
-We executed `batches/ux-experience-completion.md` as the single assigned implementation batch on branch `codex/valora-experience-completion`. The work unified the disconnected Ask VALORA functionality into the VALORA Intelligence page, eliminated the redundant global sidebar Living Score widget, fixed server-side public directory filtering by province, and refined the resident, HOA, and provider role journeys within the established light-purple VALORA visual identity.
+- Kept public account registration resident-only and added dedicated HOA estate signup: the HOA self-registers, creates a private estate, and continues onboarding.
+- Replaced provider self-signup/direct email provisioning with public applications, estate-scoped HOA review, one-time setup links, and provider account/membership creation only after approval.
+- Allowed an existing provider account without membership in the target estate to apply and join on approval without resetting their password.
+- Added an additive provider-application/invitation migration and estate authorization on HOA review operations.
+- Added blurred estate imagery to shared sign-in, registration, and recovery surfaces.
+- Changed the homepage to use the estate image as a full-bleed hero blended behind its copy.
+- Corrected the four-photo estate mosaic to use the full available width and added a focused layout test.
+- Removed the obsolete direct provider-add endpoint so only the reviewed application flow can create provider membership.
+- Preserved live estate data. The owner clarified that the deployed estate listing is expected; Musgrave Heights is no longer an active issue.
 
----
+## Tests and checks run
 
-## 2. Implemented Changes
+- Backend focused suites: `54 passed, 20 skipped`. The skipped tests require `TEST_DATABASE_URL`; it was not configured, so database-backed integration assertions were not executed.
+- Frontend focused suites: `4 files passed, 31 tests passed`.
+- Frontend production build: passed. Vite reported the existing large-chunk warning.
+- Backend `compileall`: passed.
+- Backend fatal-error Flake8 selection: passed (`0` findings).
+- Alembic head check: `c5a7d9e1f3b2 (head)`.
+- Alembic offline upgrade SQL generation: passed.
+- `git diff --check`: passed after correcting this report's trailing blank line.
 
-### A. Ask VALORA & VALORA Intelligence Unification
-- **Single Intentional Entry Point:** Removed the global top-bar Ask VALORA spotlight launcher button from `frontend/src/components/layout/TopBar.jsx` and detached `AskValoraSpotlight` from `frontend/src/components/AppShell.jsx`. Ask VALORA is now anchored in its dedicated workspace: VALORA Intelligence (`/intelligence` and `/app/intelligence`).
-- **Real SSE Streaming Integration:** Rewrote `frontend/src/components/valora/AskValora.jsx` to stream real tokens via `streamAskValora` from `frontend/src/lib/intelligence.js` (`POST /api/v1/analytics/intelligence/ask/stream`), supporting multi-turn conversation history.
-- **Role-Aware Context & Grounding:**
-  - Automatically adapts suggestions from `rolePrompts[role]` (`hoa_admin`, `resident`, `service_provider`).
-  - For HOA admins: `"What is the operational risk summary for this week?"`, `"Which work orders are currently overdue?"`, `"Summarise open complaints and contractor performance."`
-  - For residents: quiet hours, maintenance request status, Living Score meaning.
-  - For providers: assigned jobs, gate access hours, SLA deadlines.
-- **Structured Output Presentation (`AiAnswerRenderer`):**
-  - Model outputs render with semantic typography (headings, tables, lists, code, citation badges, action cards) with zero raw markdown markers (`**bold**`, `#`, or asterisks).
-  - Contextual follow-up chips (`ROLE_FOLLOW_UPS[role]`) allow continuous dialogue with one click.
-  - Native copy-to-clipboard button with visual feedback.
-  - Reset / "New session" control to start a fresh conversation.
-  - Clear privacy guarantee: reads operational records only, never private resident data.
-- **Resilient Page Architecture:** Decoupled Ask VALORA and the resident/provider queues from briefing generation errors so that an unavailable briefing does not blank out or disable the chat workspace.
-- **Keyboard & Modal Focus:** Added expandable focus modal (`role="dialog" aria-label="Ask VALORA Intelligence"`) with backdrop blur and Escape / close handlers, whilst supporting inline conversation.
+## Written but not run
 
-### B. Removed Duplicate Sidebar Living Score
-- **Sidebar De-cluttering (`frontend/src/components/layout/Sidebar.jsx`):** Removed `LivingScoreWidget` and associated imports (`Sparkline`, `useEstate`). The Living Score is no longer repeated in the left rail on every single screen.
-- **Dedicated Health Authority:** Detailed Living Score analysis, rolling 90-day trajectory, and individual component pillars remain authoritatively hosted in Estate Health (`/app/health`), with compact, decision-relevant summaries on role dashboards.
+- Database-backed integration tests against PostgreSQL (`TEST_DATABASE_URL` is unset).
+- Real-browser inspection of the new local auth, hero, and collage rendering.
+- Live deployment verification. The user asked to push to `main` and review; no deployment was requested.
 
-### C. Correct Estate Data Flow & Public Directory Search
-- **Server-Side Province Search (`backend/app/property/repositories/estate_repository.py`):**
-  - Updated `EstateRepository.public_statement` to include `Estate.province.ilike(pattern)` alongside name, suburb, and city.
-  - Updated `backend/app/property/api/public.py` query documentation to reflect province search.
-  - Fixes regional filtering so clicking province filter pills (`Western Cape`, `Gauteng`, `KwaZulu-Natal`) queries the entire database server-side instead of filtering only the first page in memory.
-- **Landing Page Catalogue (`frontend/src/routes/Landing.jsx`):**
-  - Wired `FeaturedEstates` to pass `q: selectedRegion` directly to `listPublicEstates`.
-  - Updated "Explore full directory" link to preserve the selected region in URL search parameters (`/estates?q=...`).
-- **Data Integrity & Musgrave Tracing:**
-  - Traced public directory SQL queries: strictly filtered by `Estate.is_public.is_(True)` and `Estate.is_demo.is_(False)`.
-  - No client-side exclusion hack (e.g. `!name.includes("Musgrave")`) was introduced.
-  - Production database verification requirement documented below.
+## Remaining
 
-### D. Resident, HOA & Service Provider Workspaces
-- **Resident Workspace (`Dashboard.resident.jsx`):** Clear estate context and linked unit counts, prominent maintenance issue reporting CTA, "Your active requests" queue with status chips and relative timestamps, official announcements, and compact Living Score indicator.
-- **HOA Administrator Workspace (`Dashboard.admin.jsx`):** Leads with triage banner for unassigned complaints requiring contractor dispatch, operational KPI row (complaints, resolution rate %, average resolution hours, work orders in flight), compact Living Score snapshot, and needs-attention queue.
-- **Service Provider Workspace (`ProviderWork.jsx` & routing):** Automatic routing from `DashboardRouter` to `/provider/work` (`My work`), preventing access to resident or HOA dashboards.
-- **Router Navigation (`App.jsx`):** Added redirect route `/app/intelligence` -> `/intelligence`.
+- Await the user's review on `main`; do not deploy without a separate request.
 
----
+## Deviations and external limits
 
-## 3. Automated Validation Results
+- Did not investigate or modify live estate listings after the owner clarified they are correct.
+- Did not inspect or alter a production database.
+- Browser tooling was unavailable during this work session; visual changes are source/build/test verified, not screenshot verified.
 
-All checks were executed locally against the codebase:
+## Exact validation commands and results
 
-| Check / Command | Result | Details |
-|---|---|---|
-| `backend\venv\Scripts\python.exe -m compileall -q backend/app` | **Pass (0 errors)** | Backend Python compiles cleanly |
-| `backend\venv\Scripts\python.exe -m flake8 backend/app backend/tests --count --select=E9,F63,F7,F82 --show-source --statistics` | **Pass (0 errors)** | Python lint passed with 0 violations |
-| `git diff --check` | **Pass (0 errors)** | No whitespace or merge marker issues |
-| `cmd /c "cd frontend && npx vitest run src/routes/Intelligence.test.jsx src/components/valora/AiAnswerRenderer.test.jsx src/components/valora/AskValoraSpotlight.test.jsx src/App.routes.test.jsx"` | **Pass (17/17 tests passed)** | 8 tests in `Intelligence.test.jsx`, 4 in `AiAnswerRenderer.test.jsx`, 3 in `AskValoraSpotlight.test.jsx`, 2 in `App.routes.test.jsx` |
-| `npm.cmd --prefix frontend run build` | **Pass (0 errors)** | Vite production bundle built successfully in 1m 4s (`dist/assets/index-Ws4J8mWg.js`) |
-| `backend\venv\Scripts\python.exe -m pytest backend/tests/test_onb_master_p2_photos_and_public.py -q` | **Pass (16 passed, 8 skipped)** | Public directory API tests passed (8 skipped due to absence of live test database URL) |
-
----
-
-## 4. Tests Written, Not Run & External Verification
-
-- **Full Playwright E2E Suite:** Not run to conserve session token and execution budget per batch instructions.
-- **Production Database Read-Only Query (Musgrave):**
-  - If an unwanted record (e.g. seeded during development) appears in a live deployment, run the following read-only query to inspect the database row before any modification:
-    ```sql
-    SELECT estate_id, name, suburb, city, province, is_public, is_demo, created_at
-    FROM estates
-    WHERE suburb ILIKE '%Musgrave%' OR name ILIKE '%Musgrave%';
-    ```
-  - If the estate is a test or seed fixture, ensure its flags are set to `is_demo = true` and `is_public = false`, rather than deleting operational history.
-- **Live AI Provider Credentials:** The local test suite validated SSE streaming with mocked generator fixtures. External verification against the live Gemini / LLM provider requires production API credentials (`GEMINI_API_KEY` or configured gateway).
-
----
-
-## 5. Files Changed
-
-1. `backend/app/property/repositories/estate_repository.py` — added province matching to `public_statement`
-2. `backend/app/property/api/public.py` — updated query parameter documentation for province support
-3. `frontend/src/components/layout/Sidebar.jsx` — removed duplicate `LivingScoreWidget`
-4. `frontend/src/components/layout/TopBar.jsx` — removed global Ask VALORA spotlight launcher
-5. `frontend/src/components/AppShell.jsx` — removed global `AskValoraSpotlight` modal mount and unused chat context
-6. `frontend/src/components/valora/AskValora.jsx` — full streaming LLM client, role suggestions, history, `AiAnswerRenderer`, copy, reset, and modal focus
-7. `frontend/src/components/valora/AskValoraSpotlight.jsx` — updated aria-label to match test contract
-8. `frontend/src/routes/Landing.jsx` — server-side province filtering for published catalogue
-9. `frontend/src/App.jsx` — added `/app/intelligence` alias route to `/intelligence`
-10. `docs/progress/ux-experience-completion.md` — this completion report
+1. `Push-Location backend; .\venv\Scripts\python.exe -m pytest tests\test_provider_invitations.py tests\test_onb1_role_scoped_signup.py tests\test_onb_master_p1_journey.py -q; Pop-Location`
+   - `54 passed, 20 skipped, 4 warnings`.
+2. `Push-Location backend; .\venv\Scripts\python.exe -m compileall -q app tests; Pop-Location`
+   - Passed.
+3. `Push-Location backend; .\venv\Scripts\python.exe -m flake8 app tests --count --select=E9,F63,F7,F82 --show-source --statistics; Pop-Location`
+   - Passed; `0` findings.
+4. `Push-Location frontend; .\node_modules\.bin\vitest.cmd run src\routes\Register.test.jsx src\routes\Login.test.jsx src\routes\Members.test.jsx src\components\PhotoGallery.test.jsx --maxWorkers=1 --no-isolate; Pop-Location`
+   - `4 files passed, 31 tests passed`.
+5. `Push-Location frontend; npm.cmd run build; Pop-Location`
+   - Passed; Vite emitted a chunk-size advisory.
+6. `Push-Location backend; .\venv\Scripts\python.exe -m alembic -c alembic.ini heads; Pop-Location`
+   - `c5a7d9e1f3b2 (head)`.
+7. `Push-Location backend; .\venv\Scripts\python.exe -m alembic -c alembic.ini upgrade head --sql; Pop-Location`
+   - Passed with local offline validation settings.
+8. `git diff --check`
+   - Passed after correcting the trailing blank line found on the first run.

@@ -22,7 +22,6 @@ from app.identity.models.user import User
 from app.identity.schemas.membership import (
     MembershipJoinRequest,
     MembershipJoinResponse,
-    MembershipProviderAddRequest,
     MembershipResponse,
     MembershipUnitUpdate,
 )
@@ -74,24 +73,6 @@ async def join_estate(
     minutes is a 429.
     """
     return await MembershipService(db).join_with_code(resident, payload)
-
-
-@router.post("/providers", response_model=MembershipResponse, status_code=201)
-async def add_provider_member(
-    payload: MembershipProviderAddRequest,
-    db: Annotated[AsyncSession, Depends(get_db)],
-    admin: AdminOnly,
-    estate_id: Annotated[int, Query(gt=0)],
-) -> MembershipResponse:
-    """Add an already-registered service provider to this estate, by email.
-
-    The service owns the one commit (membership + ``joined`` event) and answers a
-    single uniform 404 for every email that is not a registered provider, 409
-    when they are already a member, and 429 after five failed lookups.
-    """
-    return await MembershipService(db).add_provider_by_email(
-        admin, estate_id=estate_id, email=str(payload.email)
-    )
 
 
 @router.delete("/{membership_id}", status_code=204)

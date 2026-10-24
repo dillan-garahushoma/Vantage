@@ -48,6 +48,16 @@ describe('mosaic — the tile arithmetic', () => {
             expect(overflow, `count=${count}`).toBe(0);
         }
     });
+    it('uses a complete two-by-two collage when four photographs are published', () => {
+        renderGallery(4);
+        for (let index = 1; index <= 4; index += 1) {
+            expect(screen.getByRole('button', {
+                name: new RegExp(`open photograph ${index} of 4`, 'i'),
+            })).toBeVisible();
+        }
+        expect(screen.getByRole('button', { name: /open photograph 1 of 4/i }).parentElement)
+            .toHaveClass('grid', 'w-full', 'grid-cols-2');
+    });
     it('keeps the 1 + 4 arrangement and conceals the rest', () => {
         // Five slots, so four stay clear and the fifth tile carries what is left.
         expect(mosaic(6)).toMatchObject({ clear: 4, overflow: 2 });

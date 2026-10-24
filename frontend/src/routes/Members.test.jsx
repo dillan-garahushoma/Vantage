@@ -15,16 +15,20 @@ import { Members } from './Members';
 const mocks = vi.hoisted(() => ({
     list: vi.fn(),
     remove: vi.fn(),
-    addProvider: vi.fn(),
     transfer: vi.fn(),
     properties: vi.fn(),
+    listApplications: vi.fn(),
+    approveApplication: vi.fn(),
+    rejectApplication: vi.fn(),
 }));
 vi.mock('../lib/estateAdmin', () => ({
     listEstateMembers: mocks.list,
     removeEstateMember: mocks.remove,
-    addProviderMember: mocks.addProvider,
     transferEstateMemberUnit: mocks.transfer,
     listEstateProperties: mocks.properties,
+    listProviderApplications: mocks.listApplications,
+    approveProviderApplication: mocks.approveApplication,
+    rejectProviderApplication: mocks.rejectApplication,
 }));
 let role = 'hoa_admin';
 vi.mock('../context/AuthContext', () => ({
@@ -86,10 +90,13 @@ beforeEach(() => {
     role = 'hoa_admin';
     mocks.list.mockReset();
     mocks.remove.mockReset();
-    mocks.addProvider.mockReset();
     mocks.transfer.mockReset();
     mocks.properties.mockReset();
+    mocks.listApplications.mockReset();
+    mocks.approveApplication.mockReset();
+    mocks.rejectApplication.mockReset();
     mocks.list.mockResolvedValue(pageOf(MEMBERS));
+    mocks.listApplications.mockResolvedValue([]);
     mocks.properties.mockResolvedValue(pageOf([
         { id: 1, unit_no: 'A-101', street_address: '1 Ridge Close' },
         { id: 2, unit_no: 'B-202', street_address: '2 Ridge Close' },
@@ -221,34 +228,43 @@ describe('Members — resident transfers', () => {
         await waitFor(() => expect(mocks.transfer).toHaveBeenCalledWith(1, 11, 2));
     });
 });
-describe('Members — adding a provider', () => {
-    it('explains a 404 as "they must register first", and that residents cannot be added here', async () => {
-        mocks.addProvider.mockRejectedValue(new ApiError(404, 'No registered service provider with that email.', 'RESOURCE_NOT_FOUND'));
-        const user = userEvent.setup();
-        renderMembers();
-        await screen.findByText('Thandi Nkosi');
-        await user.type(screen.getByLabelText(/provider email/i), 'nobody@example.co.za');
-        await user.click(screen.getByRole('button', { name: /add provider/i }));
-        expect(await screen.findByText(/no registered provider with that email/i)).toBeVisible();
-        expect(screen.getByText(/must first be provisioned by an operator/i)).toBeVisible();
-        expect(screen.getByText(/residents are not added here/i)).toBeVisible();
-    });
-    it('adds a provider by email and reports it in the estate’s terms', async () => {
-        mocks.addProvider.mockResolvedValue({
-            membership_id: 21,
-            role: 'service_provider',
+describe('Members — reviewing provider applications', () => {
+    it('shows applicants to the HOA and provisions an account only after approval', async () => {
+        mocks.listApplications.mockResolvedValue([{
+            application_id: 31,
+            estate_id: 1,
             full_name: 'Sipho Mokoena',
             email: 'sipho@example.co.za',
-            unit_no: null,
-            joined_at: '2026-10-12T08:00:00Z',
-        });
+            trade: 'plumbing',
+            phone: '082 123 4567',
+            note: 'Available weekdays.',
+            status: 'pending',
+        }]);
+        mocks.approveApplication.mockResolvedValue({ status: 'approved' });
         const user = userEvent.setup();
         renderMembers();
-        await screen.findByText('Thandi Nkosi');
-        await user.type(screen.getByLabelText(/provider email/i), 'sipho@example.co.za');
-        await user.click(screen.getByRole('button', { name: /add provider/i }));
-        expect(mocks.addProvider).toHaveBeenCalledWith(1, 'sipho@example.co.za');
-        expect(await screen.findByText(/can now be assigned work in this estate/i)).toBeVisible();
-        expect(mocks.list).toHaveBeenCalledTimes(2);
+        expect(await screen.findAllByText('Sipho Mokoena')).toHaveLength(2);
+        expect(screen.getByText(/available weekdays/i)).toBeVisible();
+        await user.click(screen.getByRole('button', { name: /approve and send setup link/i }));
+        await waitFor(() => expect(mocks.approveApplication).toHaveBeenCalledWith(1, 31));
+        expect(await screen.findByRole('status')).toHaveTextContent(/setup link sent/i);
+        expect(mocks.listApplications).toHaveBeenCalledWith(1, 'pending');
+    });
+
+    it('lets the HOA decline an application without provisioning an account', async () => {
+        mocks.listApplications.mockResolvedValue([{
+            application_id: 32,
+            estate_id: 1,
+            full_name: 'Lerato Contractor',
+            email: 'lerato@example.co.za',
+            trade: 'electrical',
+            phone: '082 111 2222',
+            status: 'pending',
+        }]);
+        mocks.rejectApplication.mockResolvedValue({ status: 'rejected' });
+        const user = userEvent.setup();
+        renderMembers();
+        await user.click(await screen.findByRole('button', { name: /decline/i }));
+        await waitFor(() => expect(mocks.rejectApplication).toHaveBeenCalledWith(1, 32));
     });
 });

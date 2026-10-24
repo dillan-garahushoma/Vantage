@@ -82,6 +82,25 @@ class RegisterRequest(ProvisionAccountRequest):
     provider: None = None
 
 
+class EstateRegistrationRequest(BaseModel):
+    """Public onboarding for a new estate and its first HOA administrator."""
+
+    full_name: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    phoneno: str | None = None
+    estate: EstateSignup
+
+    model_config = ConfigDict(extra="forbid")
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_length(cls, value: str) -> str:
+        if len(value.encode("utf-8")) > 72:
+            raise ValueError("Password must not exceed 72 bytes.")
+        return value
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
