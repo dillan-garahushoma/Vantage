@@ -263,32 +263,42 @@ export function AdminDashboard() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="space-y-6 pb-6">
-      <header className="flex flex-col justify-between gap-3 border-b border-brand/10 pb-5 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-brand-ink">Welcome back</p>
-          <h1 className="mt-1 font-heading text-3xl font-semibold leading-tight tracking-[-0.045em] text-ink sm:text-[2.65rem]">
-            {greeting}, <span className="text-brand-ink">{firstName}</span>
-          </h1>
-          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-ink/55">
-            Here's the current status for {estate?.estate_name ?? 'your estate'}.
-          </p>
-        </div>
-      </header>
+    <div className="space-y-7 pb-6">
+      <section className="grid gap-5 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-stretch" aria-label="Estate overview">
+        <header className="flex min-w-0 flex-col justify-center gap-3 border-b border-brand/10 pb-5 lg:border-b-0 lg:py-5">
+          <div>
+            <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-brand-ink">Welcome back</p>
+            <h1 className="mt-1 font-heading text-3xl font-semibold leading-tight tracking-[-0.045em] text-ink sm:text-[2.65rem]">
+              {greeting}, <span className="text-brand-ink">{firstName}</span>
+            </h1>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-ink/55">
+              Here's the current status for {estate?.estate_name ?? 'your estate'}.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Link to="/app/complaints" className="inline-flex min-h-10 items-center gap-2 bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-ink">
+              <ShieldAlert className="h-4 w-4" aria-hidden="true" /> Review issues <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+            <Link to="/app/work-orders" className="inline-flex min-h-10 items-center gap-2 border border-brand/15 px-4 py-2 text-sm font-semibold text-ink/70 transition-colors hover:bg-brand-wash">
+              <Wrench className="h-4 w-4" aria-hidden="true" /> Work orders
+            </Link>
+          </div>
+        </header>
 
-      <section className="grid gap-0 overflow-hidden border border-brand/10 bg-white md:grid-cols-[1.12fr_0.88fr]" aria-label="Estate summary">
-        <EstateContextHero estate={estate} />
-        <div className="flex items-center px-5 py-5 sm:px-6">
-          <ScoreSummary
-            snapshot={score.data}
-            history={scoreHistory.data}
-            loading={score.loading || scoreHistory.loading}
-            error={score.error || scoreHistory.error}
-            onRecalculate={recalculateScore}
-            recalculating={recalculating}
-            recalculateError={recalculateError}
-          />
-        </div>
+        <section className="flex min-w-0 flex-col overflow-hidden border border-brand/10 bg-white" aria-label="Selected estate and Living Score">
+          <EstateContextHero estate={estate} />
+          <div className="flex flex-1 items-center px-5 py-4 sm:px-6">
+            <ScoreSummary
+              snapshot={score.data}
+              history={scoreHistory.data}
+              loading={score.loading || scoreHistory.loading}
+              error={score.error || scoreHistory.error}
+              onRecalculate={recalculateScore}
+              recalculating={recalculating}
+              recalculateError={recalculateError}
+            />
+          </div>
+        </section>
       </section>
 
       <section className="grid grid-cols-2 gap-x-5 gap-y-4 border-y border-brand/15 py-4 sm:grid-cols-4 sm:gap-0" aria-label="Operational summary">

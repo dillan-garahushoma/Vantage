@@ -162,7 +162,7 @@ export function SidebarHeader() {
 /** Desktop rail. The mobile sheet reuses the same header and navigation. */
 export function Sidebar() {
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-[232px] flex-col border-r border-brand/10 bg-[#F8F6FD] lg:flex">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-[260px] flex-col border-r border-brand/10 bg-[#F8F6FD] lg:flex">
       <SidebarHeader />
       <SidebarNav />
       <UserPill />
