@@ -28,7 +28,7 @@ export function AppShell() {
     <div className="min-h-screen bg-paper">
       <Sidebar />
 
-      <div className="lg:pl-[232px]">
+      <div className="lg:pl-[260px]">
         <TopBar
           onOpenNav={() => setNavOpen(true)}
           onCreateWorkOrder={user.role === 'hoa_admin' ? () => setCreatingWorkOrder(true) : undefined}
