@@ -185,6 +185,24 @@ export function ResidentDashboard() {
         </button>
       </header>
 
+      <section className="grid gap-4 border-y border-brand/15 py-4 sm:grid-cols-3 sm:gap-0" aria-label="Estate at a glance">
+        <div className="sm:border-r sm:border-brand/10 sm:pr-5">
+          <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-brand-ink">Your open requests</p>
+          <p className="num mt-1 text-2xl font-semibold leading-none text-ink">{complaints.loading ? '—' : openRequests.length}</p>
+          <Link to="/app/complaints" className="mt-1 inline-flex min-h-8 items-center text-xs font-semibold text-brand-ink hover:underline">Track progress <ArrowRight className="ml-1 h-3 w-3" aria-hidden="true" /></Link>
+        </div>
+        <div className="sm:border-r sm:border-brand/10 sm:px-5">
+          <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-brand-ink">Estate health</p>
+          <p className="num mt-1 text-2xl font-semibold leading-none text-ink">{score.loading || score.error ? '—' : (score.data?.overall_score ?? '—')}</p>
+          <Link to="/app/health" className="mt-1 inline-flex min-h-8 items-center text-xs font-semibold text-brand-ink hover:underline">View measured health <ArrowRight className="ml-1 h-3 w-3" aria-hidden="true" /></Link>
+        </div>
+        <div className="sm:pl-5">
+          <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-brand-ink">Latest community update</p>
+          <p className="mt-1 line-clamp-1 text-sm font-semibold text-ink">{notices[0]?.title ?? 'No updates yet'}</p>
+          <Link to="/app/announcements" className="mt-1 inline-flex min-h-8 items-center text-xs font-semibold text-brand-ink hover:underline">Read announcements <ArrowRight className="ml-1 h-3 w-3" aria-hidden="true" /></Link>
+        </div>
+      </section>
+
       <section aria-labelledby="requests-heading">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-brand/15 pb-3">
           <div>

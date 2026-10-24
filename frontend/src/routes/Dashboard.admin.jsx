@@ -257,9 +257,6 @@ export function AdminDashboard() {
           Number(stats.data.by_status?.closed ?? 0),
       )
     : activeComplaints.length;
-  const needsReview = stats.data
-    ? Number(stats.data.by_status?.submitted ?? 0) + Number(stats.data.by_status?.reviewed ?? 0)
-    : activeComplaints.filter((item) => ['submitted', 'reviewed'].includes(item.status ?? '')).length;
   const urgentCount = activeComplaints.filter((item) => ['urgent', 'high'].includes((item.priority ?? '').toLowerCase())).length;
   const firstName = user?.full_name?.trim().split(' ').filter(Boolean)[0] || 'there';
   const hour = new Date().getHours();
@@ -291,6 +288,25 @@ export function AdminDashboard() {
             recalculating={recalculating}
             recalculateError={recalculateError}
           />
+        </div>
+      </section>
+
+      <section className="grid grid-cols-2 gap-x-5 gap-y-4 border-y border-brand/15 py-4 sm:grid-cols-4 sm:gap-0" aria-label="Operational summary">
+        <div className="sm:border-r sm:border-brand/10 sm:pr-4">
+          <p className="text-[0.62rem] font-bold uppercase tracking-[0.12em] text-ink/55">Open requests</p>
+          <p className="num mt-1 text-2xl font-semibold leading-none text-ink">{stats.loading || stats.error ? '—' : openComplaintCount}</p>
+        </div>
+        <div className="sm:border-r sm:border-brand/10 sm:px-4">
+          <p className="text-[0.62rem] font-bold uppercase tracking-[0.12em] text-signal-ink">Urgent &amp; high</p>
+          <p className="num mt-1 text-2xl font-semibold leading-none text-ink">{complaints.loading || complaints.error ? '—' : urgentCount}</p>
+        </div>
+        <div className="sm:border-r sm:border-brand/10 sm:px-4">
+          <p className="text-[0.62rem] font-bold uppercase tracking-[0.12em] text-ink/55">Work in progress</p>
+          <p className="num mt-1 text-2xl font-semibold leading-none text-ink">{workOrders.loading || workOrders.error ? '—' : workOrdersInFlight.length}</p>
+        </div>
+        <div className="sm:pl-4">
+          <p className="text-[0.62rem] font-bold uppercase tracking-[0.12em] text-ink/55">Resolution rate</p>
+          <p className="num mt-1 text-2xl font-semibold leading-none text-ink">{stats.loading || stats.error || resolutionRate == null ? '—' : `${Number(resolutionRate).toFixed(0)}%`}</p>
         </div>
       </section>
 
@@ -341,24 +357,6 @@ export function AdminDashboard() {
                 <p className="mt-1 text-xs text-ink/50">Latest measurements from stored estate records.</p>
               </div>
               <Link to="/app/health" className="text-xs font-semibold text-brand-ink hover:underline">Estate health <ArrowRight className="ml-1 inline h-3 w-3" aria-hidden="true" /></Link>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-4 border-y border-brand/10 py-4 sm:grid-cols-4 sm:gap-0">
-              <div className="sm:border-r sm:border-brand/10 sm:pr-4">
-                <p className="flex items-center gap-2 text-[0.68rem] text-ink/55"><span className="h-2 w-2 rounded-full bg-signal" />Open complaints</p>
-                <p className="num mt-1 text-2xl font-semibold text-ink">{stats.loading || stats.error ? '—' : openComplaintCount}</p>
-              </div>
-              <div className="sm:border-r sm:border-brand/10 sm:px-4">
-                <p className="flex items-center gap-2 text-[0.68rem] text-ink/55"><span className="h-2 w-2 rounded-full bg-brand" />Work in progress</p>
-                <p className="num mt-1 text-2xl font-semibold text-ink">{workOrders.loading || workOrders.error ? '—' : workOrdersInFlight.length}</p>
-              </div>
-              <div className="sm:border-r sm:border-brand/10 sm:px-4">
-                <p className="flex items-center gap-2 text-[0.68rem] text-ink/55"><span className="h-2 w-2 rounded-full bg-ochre" />Awaiting review</p>
-                <p className="num mt-1 text-2xl font-semibold text-ink">{stats.loading || stats.error ? '—' : needsReview}</p>
-              </div>
-              <div className="sm:pl-4">
-                <p className="flex items-center gap-2 text-[0.68rem] text-ink/55"><span className="h-2 w-2 rounded-full bg-mint" />Resolution rate</p>
-                <p className="num mt-1 text-2xl font-semibold text-ink">{stats.loading || stats.error || resolutionRate == null ? '—' : String(Number(resolutionRate).toFixed(0)) + '%'}</p>
-              </div>
             </div>
             {complaints.loading || workOrders.loading ? <div className="mt-3"><LoadingState label="Loading recent activity" /></div> : complaints.error && workOrders.error ? (
               <p className="py-3 text-xs text-ink/50">Recent activity is unavailable.</p>
