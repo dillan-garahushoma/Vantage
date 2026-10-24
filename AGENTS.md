@@ -2,7 +2,7 @@
 
 VALORA is a South African private-estate property-health platform: FastAPI modular monolith, async SQLAlchemy, PostgreSQL, Alembic. The React frontend lives in `frontend/`; the backend root is `backend/`. The tenant boundary is the **estate**.
 
-Read these first, in order: `CLAUDE_README.md`, `ARCHITECTURE_AND_DOMAIN.md`, `EXECUTION_ROADMAP.md`, `DEVELOPMENT_AND_VALIDATION.md`, then every file in `docs/progress/`.
+Read these first, in order: `README.md`, `HANDOFF_FRONTEND.md`, `HANDOFF_BACKEND.md`, `docs/EXECUTION_ROADMAP.md`, `frontend/DESIGN.md`, then the most relevant recent files in `docs/progress/`. Some historical filenames referenced by older instructions are absent from this branch; do not block work looking for them. Record the mismatch once and continue using the available documents.
 
 ## How work is given to you
 - Work arrives as **one batch per session**, as a file under `batches/` (for example `batches/phase1/phase1__batch-A.md`). Do only that batch. Do not start another, even if you have budget left.
@@ -10,12 +10,12 @@ Read these first, in order: `CLAUDE_README.md`, `ARCHITECTURE_AND_DOMAIN.md`, `E
 - If something in the batch is already done or does not match the real code, say so and do the smallest correct thing. Do not redesign.
 
 ### Product UX redesign exception
-When the task is the explicitly approved VALORA frontend experience redesign, read `docs/CODEX_UX_REDESIGN_BRIEF.md` before editing and treat it as the source of truth for UX, content hierarchy, role-specific dashboards, AI answer presentation, visual direction and acceptance criteria. In that scoped frontend redesign, the general “Do not redesign” and “keep edits small and additive” guidance does not prohibit deliberate layout/component refactors; refactor only what is necessary, preserve domain/API/security behaviour, and deliver in the brief’s staged phases. Do not extend the redesign into unrelated backend architecture.
+When the task is the explicitly approved VALORA frontend experience redesign, read `docs/CODEX_UX_REDESIGN_BRIEF.md` and `docs/UX_SYSTEM_WIDE_REDESIGN_BRIEF.md` before editing and follow the active batch. The system-wide brief is the source of truth for full-product UX, route coverage, role-specific portals, AI presentation, visual direction and acceptance criteria. In this scoped redesign, deliberate layout/component refactors are permitted when necessary; preserve domain/API/security behaviour and the already-improved Overview pages unless browser evidence identifies a defect. Do not extend the redesign into unrelated backend architecture.
 
 
-## Current owner-approved task — complete VALORA experience
+## Current owner-approved task — system-wide VALORA UX redesign
 
-For the current task on branch `codex/valora-experience-completion`, execute `batches/ux-experience-completion.md` as the single session batch. It supplements `docs/CODEX_UX_REDESIGN_BRIEF.md` with the owner's complete experience expectations, confirmed integration issues, acceptance criteria, and a token-conscious implementation protocol. Read it before editing. Do not stop at a plan; implement the batch and write its final progress report. Do not start unrelated batches.
+The active execution branch is `ux/full-system-redesign`, based on the latest `main` commit at the time the task was prepared. Execute `batches/ux-system-wide-redesign.md` and follow `docs/UX_SYSTEM_WIDE_REDESIGN_BRIEF.md`. Do not follow the historical task section in `batches/ux-experience-completion.md` unless the owner explicitly switches tasks. Preserve the current Overview improvements. Do not merge or rewrite history; implement the agreed scope, update the progress report, and keep the work in reviewable commits/PRs.
 
 ## Environment (Windows)
 Use the repo interpreter explicitly. A bare `python` is not reliably on PATH.
