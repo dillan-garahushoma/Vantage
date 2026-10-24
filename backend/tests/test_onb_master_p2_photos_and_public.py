@@ -30,6 +30,7 @@ from app.core.exceptions import (
     BadRequestException,
     ConflictException,
     ForbiddenException,
+    NotFoundException,
     PayloadTooLargeException,
 )
 from app.property.domain.photo_pipeline import (
@@ -54,6 +55,7 @@ from app.property.services.estate_photo_service import (
     MAX_PHOTOS_PER_ESTATE,
     EstatePhotoService,
 )
+from app.property.services.public_directory_service import PublicDirectoryService
 
 BASE = "/api/v1"
 PASSWORD = "correct-horse-battery-9"
@@ -302,18 +304,67 @@ def test_estate_profile_update_rejects_the_name_and_unknown_fields() -> None:
     assert parsed.description is None
 
 
-def test_public_statement_selects_only_published_non_demo_estates() -> None:
+def test_public_statement_selects_estates_by_explicit_publication() -> None:
     sql = str(
         EstateRepository.public_statement(q="centurion").compile(
             dialect=postgresql.dialect()
         )
     )
-    assert "estates.is_public IS true" in sql
-    assert "estates.is_demo IS false" in sql
+    where_clause = sql.split("WHERE ", 1)[1].split(" ORDER BY", 1)[0]
+    assert "estates.is_public IS true" in where_clause
+    assert "estates.is_demo IS false" not in where_clause
     # PostgreSQL keeps ILIKE native rather than lowering both sides.
     assert "estates.name ILIKE" in sql
     assert "estates.suburb ILIKE" in sql and "estates.city ILIKE" in sql
     assert "ORDER BY estates.name ASC, estates.estate_id ASC" in sql
+
+
+@pytest.mark.asyncio
+async def test_public_detail_allows_explicitly_published_demo_classified_estate() -> None:
+    service = PublicDirectoryService(db=object())
+    service._estates = SimpleNamespace(
+        get_by_id=AsyncMock(
+            return_value=SimpleNamespace(
+                estate_id=7,
+                name="Genuine Estate",
+                suburb="Pinetown",
+                city="Durban",
+                province="KwaZulu-Natal",
+                description=None,
+                is_public=True,
+                is_demo=True,
+                show_living_score=False,
+            )
+        )
+    )
+    service._photos = SimpleNamespace(list_for_estate=AsyncMock(return_value=[]))
+    service._properties = SimpleNamespace(count=AsyncMock(return_value=8))
+
+    detail = await service.get_estate(7)
+
+    assert detail.estate_id == 7
+    assert detail.unit_count == 8
+
+
+@pytest.mark.asyncio
+async def test_public_detail_still_hides_private_demo_estate() -> None:
+    service = PublicDirectoryService(db=object())
+    service._estates = SimpleNamespace(
+        get_by_id=AsyncMock(
+            return_value=SimpleNamespace(
+                estate_id=7,
+                name="Private Estate",
+                is_public=False,
+                is_demo=True,
+            )
+        )
+    )
+    service._photos = SimpleNamespace(list_for_estate=AsyncMock())
+
+    with pytest.raises(NotFoundException):
+        await service.get_estate(7)
+
+    service._photos.list_for_estate.assert_not_awaited()
 
 
 def test_public_dtos_are_allow_lists() -> None:

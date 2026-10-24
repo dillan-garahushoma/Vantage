@@ -131,3 +131,25 @@ All checks were executed locally against the codebase:
 ### Delivery state
 
 The changes are pushed to `codex/valora-experience-completion` and available in draft pull request #2. They are **not merged to `main` and not deployed**. Browser/production acceptance is still required before a release.
+
+## 7. Follow-up — restore explicitly published estates
+
+**Follow-up session:** 2026-10-24
+**Owner clarification:** The first five previously listed estates are genuine properties, not demo estates.
+
+### Diagnosis and changes
+
+- Read the deployed public directory endpoint. It returned one item (`musgrave`, estate ID 7; `total: 1`), matching the supplied screenshots. The frontend is rendering the backend response; there is no hardcoded Musgrave entry.
+- Commit `12bf2f8` added `is_demo = false` as a second public-visibility gate in the repository and detail service. That condition hid estates explicitly published with `is_public = true`. Publication is now controlled by `is_public`; `is_demo` remains the score-data-origin flag. Seeded demo fixtures remain private because their seeder sets `is_public = false`.
+- Added regression coverage proving explicitly published demo-classified estates can appear in the public list/detail, while unpublished demo estates remain hidden.
+- Updated the deployment guide to document the explicit publication rule and the need to verify the configured database/record flags. No production database rows were changed.
+
+### Validation and remaining
+
+- `C:\Users\garah\AppData\Local\Programs\Python\Python312\python.exe -m pytest backend\tests\test_onb_master_p2_photos_and_public.py -k "public_statement_selects_estates_by_explicit_publication or public_detail_allows_explicitly_published_demo_classified_estate or public_detail_still_hides_private_demo_estate" -q` — **3 passed**.
+- `C:\Users\garah\AppData\Local\Programs\Python\Python312\python.exe -m pytest backend\tests\test_onb_master_p2_photos_and_public.py -q` — **18 passed, 8 skipped**; skipped tests require the configured test database.
+- `C:\Users\garah\AppData\Local\Programs\Python\Python312\python.exe -m compileall -q backend\app` — **passed**.
+- `C:\Users\garah\AppData\Local\Programs\Python\Python312\python.exe -m flake8 backend\app\property\repositories\estate_repository.py backend\app\property\services\public_directory_service.py backend\tests\test_onb_master_p2_photos_and_public.py --count --select=E9,F63,F7,F82 --show-source --statistics` — **passed, 0 selected violations**.
+- `git diff --check` — **passed**.
+- The repository-configured `backend\venv\Scripts\python.exe` was absent; validation used the installed Python 3.12 interpreter instead.
+- The live database's flags for the five estates could not be read without database access, and production was not changed or redeployed. Deploy the backend change, then verify `/api/v1/public/estates?page=1&page_size=12` returns the five intended public records. If it does not, inspect the exact estate identities and `is_public` values read-only before any data repair.

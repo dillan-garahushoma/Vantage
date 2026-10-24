@@ -32,11 +32,11 @@ GET https://<actual-api-host>/api/v1/public/estates?page=1&page_size=6
 A healthy response is JSON with `items`, `total`, `page`, and `size`. Check:
 
 - A connection failure or CORS rejection: check `VITE_API_BASE_URL`, FastAPI availability, and `CORS_ORIGINS`.
-- `items: []` and `total: 0`: the API is reachable, but no estates qualify for public listing in that database/environment. The public query intentionally returns only `is_public = true` and `is_demo = false` estates.
+- `items: []` and `total: 0`: the API is reachable, but no estates qualify for public listing in that database/environment. The public query returns estates explicitly marked `is_public = true`. `is_demo` describes score-data origin and does not override publication.
 - A small nonzero `total`: the homepage shows the first few featured published estates; **Find a complex** opens the paginated directory for the full published set.
-- Estates exist in Neon but are absent from the public endpoint: verify the target Render service is connected to the correct Neon database and have an authorised HOA admin publish each intended estate using the app's estate setup/publishing workflow. Do not remove the `is_demo` or `is_public` restrictions in client code and do not delete estate rows to resolve this.
+- Estates exist in Neon but are absent from the public endpoint: verify the target Render service is connected to the correct Neon database and that each intended estate is explicitly published. Do not change production flags or delete estate rows without first verifying the exact estate identities and publication intent.
 
-The public list is not meant to expose every database row: unpublished private estates and demonstration data are deliberately excluded. A resident who chooses an estate in signup uses it as onboarding context only; the backend still validates the estate and unit and the HOA must approve the membership.
+The public list is not meant to expose every database row: unpublished estates are excluded. Seeded demonstration fixtures remain private by setting `is_public = false`. A resident who chooses an estate in signup uses it as onboarding context only; the backend still validates the estate and unit and the HOA must approve the membership.
 
 ## Smoke-check after deployment
 
