@@ -4,7 +4,12 @@
 **Execution branch:** `ux/full-system-redesign`  
 **Status:** Owner-approved implementation brief  
 **Source of truth:** This document plus `batches/ux-system-wide-redesign.md`  
-**Visual reference:** The supplied full-system VALORA concept image is directional inspiration. Attach it to the coding-agent session or place a local copy at `docs/design-references/valora-system-redesign-reference.png`. Do not treat its illustrative data as real.
+**Visual references:** These generated images are design direction only. Attach the images to the VS Code agent session or save local copies in the repository at the paths below:
+- Full-system concept: `docs/design-references/valora-system-redesign-reference.png`
+- VALORA Intelligence concept: `docs/design-references/valora-intelligence-reference.png`
+- Estate Health concept: `docs/design-references/valora-estate-health-reference.png`
+
+The images are not currently tracked by GitHub just because they were generated in chat. If a reference image is not available in the coding-agent session, continue using this brief and the existing `frontend/DESIGN.md`; do not block implementation. All figures, records, estate names and charts shown in reference images are illustrative, never production facts.
 
 ## Mission
 
