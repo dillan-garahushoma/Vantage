@@ -175,6 +175,14 @@ The changes are pushed to `codex/valora-experience-completion` and available in 
 
 ### Remaining
 
-- Changes are uncommitted and not pushed.
 - The full-page inspector findings remain outside this follow-up's scoped hero/gallery change.
-- Production deployment and live estate/API verification are still separate and unverified.
+- See §9 for the final publication and live API verification.
+
+## 9. Deployment verification — 2026-10-24
+
+- Commit `f402f12` (`feat(ui): finish homepage hero and estate photo collage`) was pushed to `main`.
+- GitHub Actions run `40080964086` completed successfully, including the frontend build/tests and backend lint/tests.
+- Cloudflare Pages now serves `/assets/index-DBNa-qhF.js`; the deployed bundle contains the full-bleed hero, its image scrim, and the revised four-photo collage layout.
+- `GET https://valora-api-rk9q.onrender.com/api/v1/public/estates?page=1&page_size=50` returned all five expected published estates: Eastbank Court, Lakeside Gardens, Quarry View Flats, Silverleaf Reserve, and Willowbrook Mews. The obsolete Musgrave listing was absent.
+- Local focused verification: `vitest run src/components/PhotoGallery.test.jsx` — **10 passed**; `npm run build` — **passed** (with the existing large-chunk advisory).
+- The broader full-page inspector findings remain outside this focused visual follow-up.
