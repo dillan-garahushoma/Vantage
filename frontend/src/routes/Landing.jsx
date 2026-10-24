@@ -356,78 +356,55 @@ export function Landing() {
   return (
     <PublicShell>
       {/* ------------------------------------------------------------ hero */}
-      <section className="relative border-b border-ink/15 bg-surface">
-        <div className="mx-auto grid max-w-[1200px] gap-10 px-5 py-12 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:py-20">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent-wash px-3 py-1 text-[11px] font-semibold tracking-wide text-accent-ink uppercase">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              Property health intelligence
-            </div>
+      <section className="relative isolate flex min-h-[620px] items-center overflow-hidden bg-ink sm:min-h-[660px] lg:min-h-[720px]">
+        <img
+          src="/estate-hero.jpg"
+          alt=""
+          aria-hidden="true"
+          fetchPriority="high"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div aria-hidden="true" className="absolute inset-0 bg-ink/55" />
 
-            <h1 className="mt-5 text-[40px] leading-[1.04] font-semibold tracking-tight text-ink sm:text-[56px]">
-              Understand how your complex is being cared for.
+        <div className="relative mx-auto w-full max-w-[1200px] px-5 py-16 sm:py-20 lg:py-24">
+          <div className="max-w-[960px]">
+            <h1 className="font-display text-[40px] leading-[1.04] font-semibold tracking-tight text-white sm:text-[52px] lg:text-[60px]">
+              See how your estate is cared for.
             </h1>
 
-            <p className="mt-5 max-w-lg text-[16px] leading-relaxed text-ink-soft">
+            <p className="mt-5 max-w-[660px] text-[16px] leading-relaxed text-white/90 sm:text-[18px]">
               VALORA turns maintenance complaints, resolution times, contractor performance and resident feedback into one accountable operational record—so estate teams and residents see what needs attention and what has changed.
             </p>
 
-            {/* Quick Search Bar (inspired by Airbnb search widget) */}
-            <form onSubmit={handleHeroSearch} className="mt-8 flex max-w-md items-center gap-2 rounded-full border border-ink/20 bg-paper p-1.5 shadow-sm transition-all focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20">
+            <form onSubmit={handleHeroSearch} className="mt-8 flex max-w-[580px] items-center gap-2 rounded-full border border-ink/20 bg-paper p-1.5 shadow-sm transition-all focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30">
               <div className="flex flex-1 items-center gap-2.5 pl-3">
                 <IconSearch size={17} className="text-ink-muted" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search complex name, suburb or city..."
-                  className="w-full bg-transparent text-[13.5px] text-ink placeholder:text-ink-muted/70 focus:outline-none"
+                  placeholder="Search estates by name or location..."
+                  aria-label="Search estates by name or location"
+                  className="w-full bg-transparent py-2 text-[15px] text-ink placeholder:text-ink-muted/70 focus:outline-none sm:text-[16px]"
                 />
               </div>
               <button
                 type="submit"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-xs transition-opacity hover:opacity-90"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 aria-label="Search complexes"
               >
                 <IconArrowRight size={16} />
               </button>
             </form>
 
-            <div className="mt-4 flex flex-wrap items-center gap-5 text-[13px] text-ink-soft">
-              <Link to="/estates" className="font-medium text-accent-ink hover:underline">
-                Browse all complexes →
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-[14px] text-white/90">
+              <Link to="/estates" className="font-medium text-white underline decoration-white/50 underline-offset-4 hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+                Browse all complexes
               </Link>
-              <span className="text-ink/20">·</span>
-              <Link to="/login" className="hover:text-ink hover:underline">
+              <Link to="/login" className="hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
                 Already registered? Sign in
               </Link>
             </div>
-          </div>
-
-          {/* Architectural Hero Frame — with room for Antigravity-generated hero visual */}
-          <div className="relative">
-            <figure className="group overflow-hidden rounded-2xl border border-ink/15 bg-paper shadow-lg">
-              <div className="relative aspect-[4/3] overflow-hidden bg-ink/5">
-                <img
-                  src="/estate-hero.jpg"
-                  alt="Architectural residential complex setting"
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent opacity-80" />
-                <div className="absolute bottom-4 left-4 right-4 text-white">
-                  <p className="text-[11px] font-semibold tracking-wider text-paper/80 uppercase">
-                    Audited Living Record
-                  </p>
-                  <p className="mt-0.5 text-[15px] font-medium text-paper">
-                    Real operational data. Measured estate health. Provable maintenance.
-                  </p>
-                </div>
-              </div>
-              <figcaption className="flex items-center justify-between border-t border-ink/15 bg-surface px-4 py-3 text-[12px] text-ink-muted">
-                <span>Accountable South African residential communities.</span>
-                <span className="font-medium text-accent-ink">VALORA Platform</span>
-              </figcaption>
-            </figure>
           </div>
         </div>
       </section>

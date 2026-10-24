@@ -52,22 +52,22 @@ function arrangement(count) {
     }
     if (count === 3) {
         return {
-            grid: 'grid grid-cols-1 gap-2 lg:grid-cols-3 lg:grid-rows-2',
+            grid: 'grid grid-cols-1 gap-2 lg:grid-cols-2 lg:grid-rows-2',
             tiles: [
-                'aspect-[3/2] lg:aspect-auto lg:col-span-2 lg:row-span-2',
-                'aspect-[3/2] hidden lg:block',
-                'aspect-[3/2] hidden lg:block',
+                'aspect-[3/2] lg:aspect-auto lg:row-span-2',
+                'aspect-[3/2] hidden lg:col-start-2 lg:row-start-1 lg:block',
+                'aspect-[3/2] hidden lg:col-start-2 lg:row-start-2 lg:block',
             ],
         };
     }
     if (count === 4) {
         return {
-            grid: 'grid grid-cols-1 gap-2 lg:grid-cols-3 lg:grid-rows-2',
+            grid: 'grid grid-cols-1 gap-2 lg:grid-cols-4 lg:grid-rows-2',
             tiles: [
-                'aspect-[3/2] lg:aspect-auto lg:col-span-2',
-                'aspect-[4/3] hidden lg:block',
-                'aspect-[4/3] hidden lg:block lg:col-span-2',
-                'aspect-[4/3] hidden lg:block',
+                'aspect-[3/2] lg:aspect-auto lg:col-span-2 lg:row-span-2',
+                'aspect-[4/3] hidden lg:col-start-3 lg:row-start-1 lg:block',
+                'aspect-[4/3] hidden lg:col-start-4 lg:row-start-1 lg:block',
+                'aspect-[4/3] hidden lg:col-span-2 lg:row-start-2 lg:block',
             ],
         };
     }
@@ -204,7 +204,10 @@ export function PhotoGallery({ estateName, photos }) {
     // `clear` plain tiles, then — only if photographs are left over — one tile
     // that carries the count of them.
     const shown = photos.slice(0, clear);
-    return (<div className="relative overflow-hidden rounded-2xl">
+    return (<div className={cx(
+        'relative overflow-hidden rounded-2xl',
+        photos.length >= 3 && 'lg:h-[320px] xl:h-[380px]',
+    )}>
       <div className={grid}>
         {shown.map((photo, index) => (<button key={photo.public_id} type="button" onClick={(event) => {
                 returnFocus.current = event.currentTarget;

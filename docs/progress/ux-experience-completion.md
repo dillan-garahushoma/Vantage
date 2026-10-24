@@ -154,3 +154,27 @@ The changes are pushed to `codex/valora-experience-completion` and available in 
 - `git diff --check` — **passed**.
 - The repository `backend\venv\Scripts\python.exe` and dedicated migration-safety skill were absent; validation used installed Python 3.12 and source-level migration tests.
 - The live migration, production deployment, and browser verification remain unrun. Once deployed, verify `/api/v1/public/estates?page=1&page_size=12` lists the five intended estates, excludes Musgrave, and that the five details open successfully.
+
+## 8. Follow-up — estate photo mosaic and landing hero
+
+**Follow-up session:** 2026-10-24
+**Scope:** Match the public estate photo collage to the supplied property-gallery reference and make the landing image a full-bleed background behind the hero content.
+
+### Changes
+
+- `frontend/src/components/PhotoGallery.jsx`: Rebalanced the three- and four-photo desktop layouts around a large lead image and supporting tiles, and reserved consistent 320px/380px desktop collage heights. The existing photo count, overflow, viewer, and mobile behavior remain intact.
+- `frontend/src/components/PhotoGallery.test.jsx`: Added checks for the lead/supporting tile geometry and reserved desktop height.
+- `frontend/src/routes/Landing.jsx`: Changed the bounded split hero into a full-width architectural image with a legibility scrim behind the copy, search, directory and sign-in actions. Shortened the heading so it fits in two lines or fewer at mobile widths, and shortened the search placeholder.
+
+### Validation
+
+- From `frontend\`, `.\node_modules\.bin\vitest.cmd run src/components/PhotoGallery.test.jsx` — **passed, 10 tests**.
+- From `frontend\`, `npm.cmd run build` — **passed**. Vite emitted its existing advisory that the main JavaScript chunk exceeds 500 kB.
+- `git diff --check` — **passed**.
+- The design-taste inspector ran at 1440px, 768px and 390px and screenshots were reviewed at each listed viewport. The hero headline measured one line on desktop and tablet, two lines on mobile. The full page still reports **17 FAIL / 7 WARN**, including unrelated existing page patterns and another mobile headline; the full-page gate is not considered passed by this focused hero/gallery change.
+
+### Remaining
+
+- Changes are uncommitted and not pushed.
+- The full-page inspector findings remain outside this follow-up's scoped hero/gallery change.
+- Production deployment and live estate/API verification are still separate and unverified.
