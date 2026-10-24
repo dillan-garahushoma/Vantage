@@ -62,9 +62,9 @@ function arrangement(count) {
     }
     if (count === 4) {
         return {
-            grid: 'grid grid-cols-1 gap-2 lg:grid-cols-4 lg:grid-rows-2',
+            grid: 'grid w-full grid-cols-2 gap-2 lg:grid-cols-4 lg:grid-rows-2',
             tiles: [
-                'aspect-[3/2] lg:aspect-auto lg:col-span-2 lg:row-span-2',
+                'col-span-2 aspect-[3/2] lg:aspect-auto lg:col-span-2 lg:row-span-2',
                 'aspect-[4/3] hidden lg:col-start-3 lg:row-start-1 lg:block',
                 'aspect-[4/3] hidden lg:col-start-4 lg:row-start-1 lg:block',
                 'aspect-[4/3] hidden lg:col-span-2 lg:row-start-2 lg:block',
@@ -208,7 +208,7 @@ export function PhotoGallery({ estateName, photos }) {
         'relative overflow-hidden rounded-2xl',
         photos.length >= 3 && 'lg:h-[320px] xl:h-[380px]',
     )}>
-      <div className={grid}>
+      <div className={cx(grid, photos.length >= 3 && 'h-full')}>
         {shown.map((photo, index) => (<button key={photo.public_id} type="button" onClick={(event) => {
                 returnFocus.current = event.currentTarget;
                 setOpenIndex(index);

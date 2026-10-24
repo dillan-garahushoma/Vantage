@@ -5,14 +5,25 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { registrationPayload, Register } from './Register';
 
-const mocks = vi.hoisted(() => ({ register: vi.fn(), logout: vi.fn(), listPublic: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  register: vi.fn(),
+  registerEstate: vi.fn(),
+  logout: vi.fn(),
+  listPublic: vi.fn(),
+}));
 vi.mock('../lib/publicDirectory', () => ({ listPublicEstates: mocks.listPublic }));
 vi.mock('../context/AuthContext', () => ({
-  useAuth: () => ({ user: null, register: mocks.register, logout: mocks.logout }),
+  useAuth: () => ({
+    user: null,
+    register: mocks.register,
+    registerEstate: mocks.registerEstate,
+    logout: mocks.logout,
+  }),
 }));
 
 beforeEach(() => {
   mocks.register.mockReset();
+  mocks.registerEstate.mockReset();
   mocks.logout.mockReset();
   mocks.listPublic.mockReset();
   mocks.listPublic.mockResolvedValue({
@@ -58,7 +69,6 @@ describe('registrationPayload', () => {
       password: 'aGoodPassword1',
       phoneno: '082 000 0000',
       account_type: 'resident',
-      unit_no: 'A-101',
     });
     expect(payload).not.toHaveProperty('estate');
     expect(payload).not.toHaveProperty('provider');
@@ -89,18 +99,43 @@ describe('Register — role paths and safe permissions', () => {
     expect(screen.getByRole('radio', { name: /service provider/i })).toBeVisible();
   });
 
-  it('explains trusted provisioning rather than granting elevated roles', async () => {
+  it('offers direct HOA estate onboarding without requiring operator provisioning', async () => {
     const user = userEvent.setup();
     renderRegister();
     await user.click(screen.getByRole('radio', { name: /hoa \/ estate manager/i }));
-    expect(screen.getByText(/must be provisioned and attached to its estate/i)).toBeVisible();
-    expect(screen.getByRole('link', { name: /contact valora/i })).toBeVisible();
-    expect(screen.queryByRole('button', { name: /create resident account/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /create estate and hoa account/i })).toBeVisible();
+    expect(screen.getByRole('textbox', { name: /estate name/i })).toBeVisible();
 
     await user.click(screen.getByRole('radio', { name: /service provider/i }));
-    expect(screen.getByText(/linked to an approved provider profile and estate membership/i)).toBeVisible();
-    expect(screen.queryByRole('button', { name: /create resident account/i })).toBeNull();
+    expect(screen.getByRole('link', { name: /apply to work at an estate/i })).toBeVisible();
   });
+
+  it('creates the HOA account and estate through the public estate-registration contract', async () => {
+    mocks.registerEstate.mockResolvedValue({});
+    const user = userEvent.setup();
+    renderRegister();
+    await user.click(screen.getByRole('radio', { name: /hoa \/ estate manager/i }));
+    await user.type(screen.getByRole('textbox', { name: /your full name/i }), 'Lerato Mokoena');
+    await user.type(screen.getByRole('textbox', { name: /email address/i }), 'lerato@example.co.za');
+    await user.type(screen.getByLabelText(/password/i), 'aGoodPassword1');
+    await user.type(screen.getByRole('textbox', { name: /estate name/i }), 'Ridge Close');
+    await user.type(screen.getByRole('textbox', { name: /suburb/i }), 'Centurion');
+    await user.type(screen.getByRole('textbox', { name: /city/i }), 'Tshwane');
+    await user.click(screen.getByRole('button', { name: /create estate and hoa account/i }));
+
+    expect(mocks.registerEstate).toHaveBeenCalledWith({
+      full_name: 'Lerato Mokoena',
+      email: 'lerato@example.co.za',
+      password: 'aGoodPassword1',
+      estate: {
+        name: 'Ridge Close',
+        suburb: 'Centurion',
+        city: 'Tshwane',
+        province: 'Gauteng',
+      },
+    });
+    expect(mocks.register).not.toHaveBeenCalled();
+  }, 30000);
 
   it('restores resident registration when the resident path is selected again', async () => {
     const user = userEvent.setup();
@@ -123,10 +158,11 @@ describe('Register — estate discovery and context', () => {
 
     await user.click(screen.getByRole('button', { name: /silverleaf reserve/i }));
     expect(screen.getByText('Silverleaf Reserve')).toBeVisible();
-    expect(screen.getByText(/you will confirm your unit and request access after creating your account/i)).toBeVisible();
+    expect(screen.getByText(/you can request access after creating your account/i)).toBeVisible();
   });
 
-  it('searches the public directory and requires a unit when the resident picked a complex', async () => {
+  it('lets a resident create an account and request access without a unit number', async () => {
+    mocks.register.mockResolvedValue({});
     mocks.listPublic.mockImplementation(async ({ q }) => ({
       items: q.toLowerCase().includes('ridge')
         ? [{ estate_id: 4, name: 'Ridge Close Estate', suburb: 'Centurion', city: 'Tshwane', province: 'Gauteng', unit_count: 24 }]
@@ -149,11 +185,20 @@ describe('Register — estate discovery and context', () => {
     await user.type(screen.getByLabelText(/password/i), 'aGoodPassword1');
     await user.click(screen.getByRole('button', { name: /create resident account/i }));
 
-    expect(await screen.findByText(/enter the unit number for the complex you selected/i)).toBeVisible();
-    expect(mocks.register).not.toHaveBeenCalled();
+    expect(screen.queryByRole('textbox', { name: /unit number/i })).toBeNull();
+    expect(mocks.register).toHaveBeenCalledWith({
+      full_name: 'Thandi Nkosi',
+      email: 'thandi@example.co.za',
+      password: 'aGoodPassword1',
+      account_type: 'resident',
+    });
+    expect(JSON.parse(window.sessionStorage.getItem('valora.public-estate-selection'))).toMatchObject({
+      estate_id: 4,
+      name: 'Ridge Close Estate',
+    });
   });
 
-  it('keeps estate and unit as onboarding context, not an authorization field in the account payload', async () => {
+  it('keeps only the selected estate as access-request context, never a unit in signup', async () => {
     mocks.register.mockResolvedValue({});
     const user = userEvent.setup();
     renderRegister();
@@ -162,7 +207,6 @@ describe('Register — estate discovery and context', () => {
     await user.type(screen.getByRole('textbox', { name: /full name/i }), 'Thandi Nkosi');
     await user.type(screen.getByRole('textbox', { name: /email address/i }), 'thandi@example.co.za');
     await user.type(screen.getByLabelText(/password/i), 'aGoodPassword1');
-    await user.type(screen.getByRole('textbox', { name: /unit number/i }), ' A-101 ');
     await user.click(screen.getByRole('button', { name: /create resident account/i }));
 
     expect(mocks.register).toHaveBeenCalledWith({
@@ -170,12 +214,10 @@ describe('Register — estate discovery and context', () => {
       email: 'thandi@example.co.za',
       password: 'aGoodPassword1',
       account_type: 'resident',
-      unit_no: 'A-101',
     });
     expect(JSON.parse(window.sessionStorage.getItem('valora.public-estate-selection'))).toMatchObject({
       estate_id: 4,
       name: 'Ridge Close Estate',
-      unit_no: 'A-101',
     });
   });
 });

@@ -76,9 +76,7 @@ export function App() {
               </Protected>}/>
           {/* The approval-based resident path. A join code remains available
             beside it for an estate office that prefers to hand one out. */}
-          <Route path="/request-access" element={<Protected>
-                <RequestAccess />
-              </Protected>}/>
+          <Route path="/request-access" element={<RequestAccess />}/>
           <Route path="/welcome-success" element={<Protected>
                 <WelcomeSuccess />
               </Protected>}/>
