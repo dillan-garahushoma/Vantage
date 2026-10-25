@@ -564,6 +564,7 @@ export function Register() {
                 <Field label="Province" error={errors.estateProvince}>
                   <Select name="estate_province" value={form.estateProvince}
                     onChange={(event) => update('estateProvince', event.target.value)} required>
+                    <option value="">Select a province</option>
                     {PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
                   </Select>
                 </Field>

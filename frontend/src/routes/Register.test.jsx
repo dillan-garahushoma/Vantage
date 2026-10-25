@@ -95,7 +95,7 @@ describe('Register — role paths and safe permissions', () => {
   it('requires an HOA manager to choose the province instead of assuming a location', async () => {
     const user = userEvent.setup();
     renderRegister();
-    await user.click(screen.getByRole('radio', { name: 'HOA / estate manager', exact: true }));
+    await user.click(screen.getByRole('radio', { name: /hoa \/ estate manager/i }));
     await user.type(screen.getByRole('textbox', { name: /your full name/i }), 'Lerato Mokoena');
     await user.type(screen.getByRole('textbox', { name: /email address/i }), 'lerato@example.co.za');
     await user.type(screen.getByLabelText(/password/i), 'aGoodPassword1');
@@ -177,6 +177,7 @@ describe('Register — role paths and safe permissions', () => {
 
     await user.type(screen.getByRole('textbox', { name: /suburb/i }), 'Centurion');
     await user.type(screen.getByRole('textbox', { name: /city/i }), 'Tshwane');
+    await user.selectOptions(screen.getByRole('combobox', { name: /^Province/ }), 'Gauteng');
     await user.click(screen.getByRole('button', { name: /review estate details/i }));
     await user.click(screen.getByRole('button', { name: /edit account details/i }));
     expect(screen.getByRole('textbox', { name: /your full name/i })).toHaveValue('Lerato Mokoena');
