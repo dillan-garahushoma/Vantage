@@ -1,5 +1,20 @@
-import { Fragment } from 'react';
-import { ArrowRight, CheckCircle2, ChevronRight, FileText, Link2, Sparkles } from 'lucide-react';
+import { Fragment, useState } from 'react';
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  FileText,
+  HelpCircle,
+  Share2,
+  ShieldCheck,
+  Sparkles,
+  ThumbsDown,
+  ThumbsUp,
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 /**
  * Strips raw markdown syntax characters that shouldn't leak to users.
@@ -17,7 +32,6 @@ function cleanRawMarkers(value) {
  */
 function Inline({ children }) {
   const text = String(children ?? '');
-  // Match bold (**text** or __text__), code (`code`), citations ([WO-123]), and links ([text](url))
   const parts = text.split(
     /(\*\*[^*]+\*\*|__[^_]+__|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^\s)]+\)|\[(?:WO-?\d+|Complaint\s*#?\d+|Record:[^\]]+)\])/g
   );
@@ -25,13 +39,11 @@ function Inline({ children }) {
   return parts.map((part, index) => {
     if (!part) return null;
 
-    // Bold (**text** or __text__)
     if ((part.startsWith('**') && part.endsWith('**')) || (part.startsWith('__') && part.endsWith('__'))) {
       const inner = part.slice(2, -2);
       return <strong key={index} className="font-semibold text-ink">{cleanRawMarkers(inner)}</strong>;
     }
 
-    // Inline code (`code`)
     if (part.startsWith('`') && part.endsWith('`')) {
       return (
         <code key={index} className="rounded-xs bg-ink/5 px-1 font-mono text-[0.9em] text-ink">
@@ -40,7 +52,6 @@ function Inline({ children }) {
       );
     }
 
-    // Markdown link [label](url)
     const linkMatch = /^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/.exec(part);
     if (linkMatch) {
       return (
@@ -56,7 +67,6 @@ function Inline({ children }) {
       );
     }
 
-    // Citation badge [WO-0042] or [Complaint #7]
     const citeMatch = /^\[((?:WO-?\d+|Complaint\s*#?\d+|Record:[^\]]+))\]$/.exec(part);
     if (citeMatch) {
       return (
@@ -82,15 +92,76 @@ function isTableDivider(line) {
 }
 
 /**
- * Citation Chip Component
+ * Citation Chip Component with role-based deep linking
  */
-export function CitationChip({ citation, onClick }) {
+function sourceDestination(citation, role) {
   const text = typeof citation === 'string' ? citation : citation?.label ?? citation?.title ?? '';
+  const workOrder = /\b(?:WO-?(\d+)|(?:assigned\s+)?work\s+order\s+#?(\d+))\b/i.exec(text);
+  if (workOrder && (role === 'hoa_admin' || role === 'service_provider')) {
+    const id = Number(workOrder[1] ?? workOrder[2]);
+    if (Number.isSafeInteger(id) && id > 0) {
+      return { to: '/app/work-orders', state: { focusWorkOrderId: id }, label: 'work order', id };
+    }
+  }
+
+  const complaint = /\bcomplaint\s+#?(\d+)\b/i.exec(text);
+  if (complaint && (role === 'hoa_admin' || role === 'resident')) {
+    const id = Number(complaint[1]);
+    if (Number.isSafeInteger(id) && id > 0) {
+      return { to: '/app/complaints', state: { focusComplaintId: id }, label: 'complaint', id };
+    }
+  }
+  return null;
+}
+
+export function CitationChip({ citation, role }) {
+  const text = typeof citation === 'string' ? citation : citation?.label ?? citation?.title ?? '';
+  const destination = sourceDestination(citation, role);
+  const className = 'inline-flex items-center gap-1 rounded-sm border border-line bg-canvas px-2 py-1 text-[0.76rem] font-medium text-ink-soft';
+
+  if (destination) {
+    return (
+      <Link
+        to={destination.to}
+        state={destination.state}
+        aria-label={`Open ${destination.label} ${destination.id}`}
+        className={`${className} transition-colors hover:border-brand-soft hover:text-brand-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand`}
+      >
+        <FileText className="h-3 w-3 text-ink-muted" />
+        <Inline>{text}</Inline>
+        <ChevronRight className="h-3 w-3 text-ink/45" />
+      </Link>
+    );
+  }
   return (
-    <span className="inline-flex items-center gap-1 rounded-sm border border-line/80 bg-canvas px-2 py-0.5 text-[0.76rem] font-medium text-ink-soft">
+    <span className={className}>
       <FileText className="h-3 w-3 text-ink-muted" />
       <Inline>{text}</Inline>
     </span>
+  );
+}
+
+/**
+ * Key Finding Callout Box
+ */
+export function KeyFindingCallout({ summary }) {
+  if (!summary) return null;
+  return (
+    <div className="rounded-xl border border-rose-200/80 bg-rose-50/60 p-4 transition-all">
+      <div className="flex items-start gap-2.5">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-700">
+          <AlertTriangle className="h-3.5 w-3.5" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[0.72rem] font-bold tracking-wider text-rose-900 uppercase">
+            Key finding
+          </p>
+          <div className="mt-1 text-[0.9rem] font-medium leading-relaxed text-ink">
+            <Inline>{summary}</Inline>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -100,12 +171,12 @@ export function CitationChip({ citation, onClick }) {
 export function ActionCard({ action, onAct }) {
   if (!action) return null;
   return (
-    <div className="rounded-md border border-brand/25 bg-brand-wash/30 p-3.5">
-      <p className="flex items-center gap-1.5 text-[0.68rem] font-semibold tracking-wider text-brand-ink uppercase">
+    <div className="rounded-xl border border-brand/25 bg-brand-wash/30 p-4">
+      <p className="flex items-center gap-1.5 text-[0.7rem] font-bold tracking-wider text-brand-ink uppercase">
         <CheckCircle2 className="h-3.5 w-3.5" />
         Recommended next action
       </p>
-      <div className="mt-1.5 text-[0.85rem] leading-relaxed text-ink/80">
+      <div className="mt-1.5 text-[0.88rem] leading-relaxed text-ink/85">
         <Inline>{action}</Inline>
       </div>
     </div>
@@ -113,23 +184,23 @@ export function ActionCard({ action, onAct }) {
 }
 
 /**
- * Contextual Follow-up Prompts
+ * Contextual Follow-up Chips ("Explore further")
  */
 export function ContextualFollowUps({ followUps = [], onSelect }) {
   if (!followUps || followUps.length === 0) return null;
   return (
     <div className="pt-2">
-      <p className="mb-1.5 flex items-center gap-1 text-[0.66rem] font-semibold tracking-wider text-ink/45 uppercase">
-        <Sparkles className="h-3 w-3" />
-        Suggested follow-up
+      <p className="mb-2 flex items-center gap-1.5 text-[0.7rem] font-bold tracking-wider text-ink/45 uppercase">
+        <HelpCircle className="h-3.5 w-3.5 text-brand" />
+        Explore further
       </p>
-      <div className="flex flex-wrap gap-1.5">
-        {followUps.slice(0, 3).map((prompt) => (
+      <div className="flex flex-wrap gap-2">
+        {followUps.slice(0, 4).map((prompt) => (
           <button
             key={prompt}
             type="button"
             onClick={() => onSelect?.(prompt)}
-            className="inline-flex items-center gap-1 rounded border border-line bg-surface px-2.5 py-1 text-left text-[0.76rem] font-medium text-ink/70 transition-all hover:border-brand-soft hover:bg-canvas hover:text-brand-ink"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-left text-[0.78rem] font-medium text-ink/75 transition-all hover:border-brand-soft hover:bg-canvas hover:text-brand-ink hover:shadow-xs active:scale-98"
           >
             <span>{prompt}</span>
             <ChevronRight className="h-3 w-3 text-ink/40" />
@@ -141,13 +212,111 @@ export function ContextualFollowUps({ followUps = [], onSelect }) {
 }
 
 /**
+ * Action Toolbar: Feedback, Copy, Sources Accordion
+ */
+export function AnswerToolbar({ answerText, evidence = [], role }) {
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+
+  async function handleCopy() {
+    if (!navigator.clipboard?.writeText) return;
+    try {
+      await navigator.clipboard.writeText(answerText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  }
+
+  function handleFeedback(type) {
+    setFeedback((prev) => (prev === type ? null : type));
+  }
+
+  return (
+    <div className="mt-4 border-t border-line/60 pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {/* Left: Feedback buttons */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => handleFeedback('up')}
+            aria-label="Mark answer as helpful"
+            className={`flex h-7 w-7 items-center justify-center rounded-md border text-xs transition-colors ${
+              feedback === 'up'
+                ? 'border-brand bg-brand-wash text-brand-ink'
+                : 'border-line/70 text-ink/45 hover:border-ink/30 hover:text-ink'
+            }`}
+          >
+            <ThumbsUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleFeedback('down')}
+            aria-label="Mark answer as unhelpful"
+            className={`flex h-7 w-7 items-center justify-center rounded-md border text-xs transition-colors ${
+              feedback === 'down'
+                ? 'border-rose-400 bg-rose-50 text-rose-700'
+                : 'border-line/70 text-ink/45 hover:border-ink/30 hover:text-ink'
+            }`}
+          >
+            <ThumbsDown className="h-3.5 w-3.5" />
+          </button>
+          {feedback ? (
+            <span className="ml-1 text-[11px] font-medium text-mint-ink">
+              Feedback received
+            </span>
+          ) : null}
+        </div>
+
+        {/* Right: Copy & Sources toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="inline-flex items-center gap-1 rounded-md border border-line/70 bg-surface px-2.5 py-1 text-[0.74rem] font-medium text-ink/65 transition-colors hover:border-ink/30 hover:text-ink"
+            aria-label="Copy answer text"
+          >
+            {copied ? <Check className="h-3.5 w-3.5 text-mint-ink" /> : <Copy className="h-3.5 w-3.5" />}
+            <span>{copied ? 'Copied' : 'Copy'}</span>
+          </button>
+
+          {evidence.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setSourcesOpen((o) => !o)}
+              className="inline-flex items-center gap-1 rounded-md border border-line/70 bg-surface px-2.5 py-1 text-[0.74rem] font-medium text-ink/65 transition-colors hover:border-ink/30 hover:text-ink"
+              aria-label={`Toggle sources, ${evidence.length} citations available`}
+              aria-expanded={sourcesOpen}
+            >
+              <FileText className="h-3.5 w-3.5 text-brand" />
+              <span>Sources ({evidence.length})</span>
+              <ChevronDown className={`h-3 w-3 transition-transform ${sourcesOpen ? 'rotate-180' : ''}`} />
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Expandable Sources Accordion */}
+      {sourcesOpen && evidence.length > 0 ? (
+        <div className="mt-3 rounded-xl border border-line bg-canvas p-3.5">
+          <p className="text-[0.68rem] font-bold tracking-wider text-ink/40 uppercase">
+            Traceable Source Records
+          </p>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {evidence.map((item, idx) => (
+              <CitationChip key={idx} citation={item} role={role} />
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
  * Structured AI Answer Renderer.
- * Supports:
- * - Direct takeaway / key finding at top
- * - Evidence & record citations
- * - Recommended next action card
- * - Contextual follow-up chips
- * - Safe markdown formatting with ZERO raw markdown markers (**bold**, ###, etc.)
  */
 export function AiAnswerRenderer({
   content,
@@ -156,9 +325,9 @@ export function AiAnswerRenderer({
   recommendation,
   related = [],
   onFollowUp,
+  role,
   className = '',
 }) {
-  // If content is an object (e.g. AskValoraResponse schema), extract its structured properties
   let structuredSummary = summary;
   let structuredEvidence = evidence;
   let structuredRecommendation = recommendation;
@@ -175,7 +344,6 @@ export function AiAnswerRenderer({
     rawText = String(content ?? '');
   }
 
-  // Parse markdown lines for textual content
   const lines = rawText.replace(/\r\n?/g, '\n').split('\n');
   const blocks = [];
   let index = 0;
@@ -187,7 +355,6 @@ export function AiAnswerRenderer({
       continue;
     }
 
-    // Markdown tables
     if (index + 1 < lines.length && line.includes('|') && isTableDivider(lines[index + 1])) {
       const headers = tableCells(line);
       const rows = [];
@@ -225,7 +392,6 @@ export function AiAnswerRenderer({
       continue;
     }
 
-    // Headings (##, ###)
     const heading = /^(#{1,4})\s+(.+)$/.exec(line);
     if (heading) {
       const level = Math.min(4, heading[1].length + 1);
@@ -244,7 +410,6 @@ export function AiAnswerRenderer({
       continue;
     }
 
-    // Blockquote
     const quote = /^>\s?(.+)$/.exec(line);
     if (quote) {
       blocks.push(
@@ -259,7 +424,6 @@ export function AiAnswerRenderer({
       continue;
     }
 
-    // Lists (bullet and numbered)
     const bullet = /^[-*+]\s+(.+)$/.exec(line);
     const ordered = /^\d+[.)]\s+(.+)$/.exec(line);
     if (bullet || ordered) {
@@ -289,7 +453,6 @@ export function AiAnswerRenderer({
       continue;
     }
 
-    // Paragraph
     const paragraph = [line];
     index += 1;
     while (
@@ -307,27 +470,33 @@ export function AiAnswerRenderer({
     );
   }
 
+  const plainAnswerText = [
+    structuredSummary,
+    rawText,
+    structuredRecommendation ? `Recommended action: ${structuredRecommendation}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+
   return (
     <div className={`space-y-3.5 text-[0.88rem] leading-relaxed text-ink/80 ${className}`}>
-      {/* 1. Direct takeaway / Structured summary at top */}
+      {/* 1. Key finding callout at top */}
       {structuredSummary ? (
-        <div className="rounded-md border border-line/70 bg-canvas/60 p-3 font-medium text-ink">
-          <Inline>{structuredSummary}</Inline>
-        </div>
+        <KeyFindingCallout summary={structuredSummary} />
       ) : null}
 
       {/* Main rendered text blocks */}
       {blocks}
 
-      {/* 2. Evidence / Record Citation Chips */}
+      {/* 2. Evidence citation chips */}
       {structuredEvidence && structuredEvidence.length > 0 ? (
         <div className="pt-1">
-          <p className="mb-1.5 flex items-center gap-1.5 text-[0.66rem] font-semibold tracking-wider text-ink/45 uppercase">
-            <FileText className="h-3 w-3" /> Evidence & Records
+          <p className="mb-1.5 flex items-center gap-1.5 text-[0.68rem] font-bold tracking-wider text-ink/45 uppercase">
+            <FileText className="h-3 w-3 text-brand" /> Evidence & Records
           </p>
           <div className="flex flex-wrap gap-1.5">
             {structuredEvidence.map((item, idx) => (
-              <CitationChip key={idx} citation={item} />
+              <CitationChip key={idx} citation={item} role={role} />
             ))}
           </div>
         </div>
@@ -338,10 +507,17 @@ export function AiAnswerRenderer({
         <ActionCard action={structuredRecommendation} />
       ) : null}
 
-      {/* 4. Contextual Follow-up Chips */}
+      {/* 4. Contextual Follow-up Chips ("Explore further") */}
       {structuredRelated && structuredRelated.length > 0 ? (
         <ContextualFollowUps followUps={structuredRelated} onSelect={onFollowUp} />
       ) : null}
+
+      {/* 5. Interactive Action Toolbar (Feedback, Copy, Sources) */}
+      <AnswerToolbar
+        answerText={plainAnswerText}
+        evidence={structuredEvidence ?? []}
+        role={role}
+      />
     </div>
   );
 }

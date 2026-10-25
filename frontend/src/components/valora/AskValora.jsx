@@ -50,7 +50,7 @@ function ChatBody({
   suggestions,
   followUps,
 }) {
-  const bottomRef = useRef(null);
+  const messageViewportRef = useRef(null);
   const [copiedId, setCopiedId] = useState(null);
   const [copyError, setCopyError] = useState(null);
 
@@ -61,7 +61,8 @@ function ChatBody({
       : 'Personal estate assistant';
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView?.({ behavior: 'smooth' });
+    const viewport = messageViewportRef.current;
+    if (viewport) viewport.scrollTop = viewport.scrollHeight;
   }, [messages, streaming]);
 
   async function copyAnswer(id, text) {
@@ -81,7 +82,7 @@ function ChatBody({
 
   return (
     <>
-      <div className="scrollbar-slim flex-1 space-y-4 overflow-y-auto px-5 py-5">
+      <div ref={messageViewportRef} className="scrollbar-slim flex-1 space-y-4 overflow-y-auto px-5 py-5">
         {messages.length === 0 ? (
           <div className="py-1">
             <h2 className="font-heading text-sm font-semibold text-ink">
@@ -160,6 +161,7 @@ function ChatBody({
                   content={msg.text}
                   evidence={msg.evidence ?? []}
                   related={msg.related ?? []}
+                  role={role}
                   onFollowUp={onAsk}
                 />
                 {copyError ? <p role="alert" className="mt-2 text-xs text-rose-700">{copyError}</p> : null}
@@ -194,7 +196,6 @@ function ChatBody({
         ) : null}
 
         {streaming && messages.every((m) => !m.streaming) ? <AnalysingState role={role} /> : null}
-        <div ref={bottomRef} />
       </div>
 
       <div className="border-t border-line/60 bg-surface px-5 py-3.5">
@@ -222,7 +223,7 @@ function ChatBody({
           <Button
             onClick={() => onAsk()}
             disabled={streaming || !value.trim()}
-            variant="default"
+            variant="ink"
             size="icon"
             className="h-10 w-10 shrink-0"
             aria-label="Send question"
@@ -318,6 +319,7 @@ export function AskValora({ className, estateId: pageEstateId, role: pageRole })
 
     setValue('');
     setError(null);
+    setExpanded(true);
     streamingRef.current = true;
     setStreaming(true);
 
@@ -424,7 +426,7 @@ export function AskValora({ className, estateId: pageEstateId, role: pageRole })
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="vl-overlay fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm" />
           <DialogPrimitive.Content
-            className="vl-dialog fixed left-[50%] top-[50%] z-50 flex w-[calc(100vw-2rem)] h-[85vh] max-h-[800px] translate-x-[-50%] translate-y-[-50%] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-lift focus:outline-none sm:max-w-[760px]"
+            className="vl-dialog fixed left-[50%] top-[50%] z-50 flex w-[calc(100vw-2rem)] h-[85vh] max-h-[800px] translate-x-[-50%] translate-y-[-50%] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-lift focus:outline-none sm:max-w-[840px] md:max-w-[900px]"
             role="dialog"
             aria-label="Ask VALORA Intelligence"
           >
@@ -472,7 +474,7 @@ export function AskValora({ className, estateId: pageEstateId, role: pageRole })
       {/* ---- Inline card ---- */}
       <div
         className={cn(
-          'flex max-h-[780px] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-soft',
+          'flex flex-col h-full overflow-hidden rounded-2xl border border-line bg-surface shadow-soft',
           className
         )}
       >

@@ -1,43 +1,71 @@
-# Implementation Plan: VALORA Core Operational Intelligence MVP
+# Implementation Plan: VALORA Experience Completion & Intelligence UI Overhaul
 
-## Overview
+## 1. Overview & Objective
 
-Deliver the approved estate-scoped operational intelligence loop in thin vertical slices. The migration and authorization foundation comes first; all subsequent backend and frontend work depends on it. The plan keeps legacy listings and AI-analytic scaffolding untouched unless an isolated compatibility issue requires removal from the active API.
+Deliver the completed VALORA experience by integrating and finalizing the upgrades from the active feature worktrees while preserving VALORA's established South African private-estate visual identity:
+1. **Multi-step Estate Onboarding Flow**: Complete 3-step registration for HOA administrators (Step 1: Account credentials, Step 2: Estate details, Step 3: Review & confirmation).
+2. **VALORA Intelligence UI Overhaul**: Implement the approved high-fidelity 3-column AI workbench matching the design reference (`valora-intelligence-design-reference.png`).
+3. **Core UX & Interaction Fixes**:
+   - Resolve message click / Enter auto-scroll defect by constraining scroll to the chat viewport container instead of scrolling the whole window.
+   - Eliminate frame cut-off and clipping by using a full-height flex-col workspace layout.
+   - Automatic full-view mode transition on Enter press or question submit.
+   - Rich interactive AI features: Key finding callouts, 2-column Evidence vs. Impact breakdown, numbered actionable next steps, interactive "Explore further" follow-up prompt chips, feedback actions (helpful / not helpful), copy-to-clipboard, and expandable Sources (N) citations linking to estate records.
+   - Contextual sidebars: Left sidebar for Recent Conversations & deep insights teaser; Right sidebar for Live Estate Context (KPIs, Living Score deltas, and Related Documents).
 
-## Architecture decisions
+---
 
-- Evolve the existing modular FastAPI monolith instead of replacing it. Routers remain thin; services own workflow transitions; repositories own query/persistence work.
-- Introduce `Estate` and membership as the tenant/authorization boundary. Existing property records remain the property/unit aggregate to avoid duplicate entities.
-- Use append-only events and snapshots for historical operational signals. Mutable current state remains on complaint/work-order rows for simple querying.
-- Use an estate-level deterministic Living Score `v1.0.0`, rather than the existing property-only score.
-- Build a Vite React application in `frontend/` with a typed API client and no frontend business rules.
+## 2. Architectural & Component Breakdown
 
-## Delivery sequence
+```
+VALORA Intelligence Experience
+ ├── Top Hero Header: Banner, Title, Estate panorama thumbnail, "Powered by AI" badge
+ ├── 3-Column Workbench Layout:
+ │    ├── Left Sidebar (280px):
+ │    │    ├── "Recent conversations" thread list (active state, time ago, title, preview)
+ │    │    └── "Get deeper insights" prompt/sample teaser card
+ │    │
+ │    ├── Center Conversational Canvas (Flexible):
+ │    │    ├── Active Question Header / Box with context & estate selector
+ │    │    ├── Interactive AI Response Stream:
+ │    │    │    ├── Key Finding Callout (highlight banner with alert icon)
+ │    │    │    ├── 2-Column Matrix ("What the evidence shows" & "Why it matters")
+ │    │    │    ├── Recommended Next Steps (numbered actionable items)
+ │    │    │    ├── Explore Further (clickable interactive query prompt pills)
+ │    │    │    ├── Feedback & Action Toolbar (thumbs up, thumbs down, copy, share)
+ │    │    │    └── Sources (N) Drawer / Accordion (underlying WO/Complaint/Score citations)
+ │    │    └── Sticky / Fixed Bottom Input Bar (Sparkle prompt input, attachment trigger, send)
+ │    │
+ │    └── Right Intelligence Context Drawer (300px):
+ │         ├── Tabs: [Context] [Evidence] [Related]
+ │         ├── Active Estate Profile Card (photo, name, suburb/city, status, unit count)
+ │         ├── Key Operational Metrics Card (Living Score, Open Complaints, Work Orders with deltas)
+ │         ├── Related Documents Quick Links (Work orders, Complaint logs, Maintenance plans)
+ │         └── "Need something else?" New Chat trigger card
+```
 
-1. Establish test tooling and security-safe configuration.
-2. Add estate tenancy, memberships, and property context migration/contract.
-3. Make authentication and authorization estate-aware.
-4. Build complaint event lifecycle and HOA review endpoint.
-5. Build provider account linkage, work-order assignment/progress, and rating flow.
-6. Add security incidents and Living Score calculations/snapshots/history.
-7. Add deterministic seed data and integration tests for the core backend journey.
-8. Build the frontend shell, authentication, and public screens.
-9. Build resident, HOA, and provider product flows against the real API.
-10. Run browser, security, performance, code-review, and documentation quality gates.
+---
 
-## Risks and mitigations
+## 3. Worktree Integration Strategy
 
-| Risk | Impact | Mitigation |
-| --- | --- | --- |
-| Existing database has no estate keys | High | Use an additive migration with nullable backfill strategy for legacy data; seed only after migration. |
-| Current authentication permits role escalation | High | Restrict public registration before exposing new endpoints; cover it with API tests. |
-| Docker daemon is unavailable locally | Medium | Validate code and client builds locally where possible; document Docker verification as pending if daemon remains unavailable. |
-| Frontend has no base tooling | Medium | Use a small Vite/React dependency surface and committed lockfile. |
-| Historical score requirement is easy to fake | High | Implement and test persisted snapshots, version string, cut-off filtering, and repeatable calculations. |
+1. **`estate-onboarding-multistep-flow`**:
+   - Step 1: HOA account details (name, email, password, phone).
+   - Step 2: Estate profile (name, suburb, city, province dropdown with empty placeholder option, description).
+   - Step 3: Review card & confirm creation.
+   - Integration status: Tested and validated on `main-publish` (`Register.test.jsx` 12 passed).
 
-## Quality checkpoints
+2. **`valora-intelligence-redesign-ux`**:
+   - Replaces window `scrollIntoView` with viewport `scrollTop = scrollHeight`.
+   - Passes role context to AI renderer for role-safe operational suggestions.
+   - Integrate into unified `Intelligence.jsx` route.
 
-- Foundation: migration and authorization tests pass before operational endpoints are added.
-- Backend vertical slice: seeded resident/HOA/provider workflow passes integration tests.
-- Frontend vertical slice: browser journey has no console/network errors at desktop and mobile widths.
-- Release gate: security, performance, documentation, and code review findings are resolved or recorded.
+3. **`requesting-help-assistance`**:
+   - Ensure clean merge without regressing live estate migrations or non-compulsory unit access requests.
+
+---
+
+## 4. Quality & Verification Gates
+
+- **Frontend Tests**: `npx vitest run src/routes/Intelligence.test.jsx src/routes/Register.test.jsx src/routes/RequestAccess.test.jsx`
+- **Backend Tests**: `pytest backend/tests -q`
+- **Compile & Lint**: `flake8 backend/app backend/tests` and `compileall -q backend/app`
+- **Browser Verification**: Real headless browser check of Intelligence workbench, Enter full-view trigger, and interactive pill clicks.
