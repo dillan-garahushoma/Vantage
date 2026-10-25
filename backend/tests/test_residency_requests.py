@@ -68,6 +68,15 @@ def test_create_dto_strips_whitespace_and_forbids_extra_fields() -> None:
         ResidencyRequestCreate.model_validate({"estate_id": 4, "unit_no": "X" * 11})
 
 
+def test_create_dto_accepts_estate_access_without_a_unit_number() -> None:
+    payload = ResidencyRequestCreate.model_validate(
+        {"estate_id": 4, "note": "Please confirm my residency."}
+    )
+    assert payload.estate_id == 4
+    assert payload.unit_no is None
+    assert payload.note == "Please confirm my residency."
+
+
 def test_reject_dto_only_carries_a_note_and_forbids_a_status() -> None:
     assert ResidencyRequestReject.model_validate({}).note is None
     assert ResidencyRequestReject.model_validate({"note": " not on the lease "}).note == "not on the lease"
@@ -356,6 +365,26 @@ def test_submit_records_a_pending_request_and_creates_no_membership(monkeypatch)
     assert session.commits == 2
 
 
+def test_submit_without_unit_records_pending_estate_access_request(monkeypatch) -> None:
+    requests = FakeRequestRepo()
+    service = _service(
+        monkeypatch,
+        requests=requests,
+        memberships=FakeMembershipRepo(),
+        events=FakeEventRepo(),
+        estates=FakeEstateRepo(estate=_estate()),
+        properties=FakePropertyRepo(None),
+    )
+
+    result = asyncio.run(service.submit(_resident(), ResidencyRequestCreate(estate_id=4)))
+
+    assert requests.added is not None
+    assert requests.added["property_id"] is None
+    assert requests.added["unit_no"] is None
+    assert result.status == ResidencyRequestStatus.pending.value
+    assert result.unit_no is None
+
+
 def test_submit_unknown_estate_is_a_404_and_is_rate_limited(monkeypatch) -> None:
     from app.identity.services.join_attempt_limiter import JoinAttemptLimiter
 
@@ -541,6 +570,28 @@ def test_approve_creates_the_membership_event_and_stamps_the_decision(monkeypatc
     assert result.status == ResidencyRequestStatus.approved.value
     # The row is read with a lock so concurrent decisions cannot both win.
     assert service._requests.lock_calls == [True]
+
+
+def test_approve_grants_estate_membership_when_no_unit_was_submitted(monkeypatch) -> None:
+    membership_repo = FakeMembershipRepo()
+    events = FakeEventRepo()
+    request = _request_row(property_id=None, unit_no=None)
+    service = _approve_service(
+        monkeypatch, request=request, memberships=membership_repo, events=events
+    )
+
+    result = asyncio.run(service.approve(_admin(), estate_id=4, request_id=31))
+
+    assert membership_repo.added == [
+        {
+            "user_id": 8,
+            "estate_id": 4,
+            "property_id": None,
+            "membership_role": UserRole.resident.value,
+        }
+    ]
+    assert events.records[0]["property_id"] is None
+    assert result.status == ResidencyRequestStatus.approved.value
 
 
 def test_approve_requires_estate_admin_and_grants_nothing_when_refused(monkeypatch) -> None:

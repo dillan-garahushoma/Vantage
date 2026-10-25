@@ -22,7 +22,7 @@ NOTE_MAX_LENGTH = 500
 
 
 class EstateResidencyRequest(Base):
-    """A resident's request to be admitted to one unit of one estate.
+    """A resident's request to be admitted to one estate, optionally one unit.
 
     This is the approval-based counterpart to redeeming a join code. A resident
     submits it, an ``hoa_admin`` of the same estate decides it, and only an
@@ -85,7 +85,7 @@ class EstateResidencyRequest(Base):
     )
     # The unit number as submitted, kept as text so the request still reads
     # correctly if the unit row is later removed or renamed.
-    unit_no = Column(String(UNIT_NO_MAX_LENGTH), nullable=False)
+    unit_no = Column(String(UNIT_NO_MAX_LENGTH), nullable=True)
     status = Column(String(16), nullable=False, server_default="pending")
 
     # The applicant's identity at submission time. Read by the HOA notification

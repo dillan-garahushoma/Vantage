@@ -11,7 +11,7 @@ export function Logo({ size = 28, withWordmark = true, className }) {
         style={{ width: size, height: size }}
       />
     </span>);
-    const width = Math.round(size * 1.8);
+    const width = Math.round(size * 3.8);
     return (<span className={cn('flex select-none items-center', className)}>
       <img
         src="/valora-logo.png"

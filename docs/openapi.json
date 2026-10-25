@@ -159,7 +159,6 @@
         "type": "object"
       },
       "AskValoraRequest": {
-        "additionalProperties": false,
         "properties": {
           "estate_id": {
             "exclusiveMinimum": 0.0,
@@ -167,8 +166,15 @@
             "title": "Estate Id",
             "type": "integer"
           },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "title": "History",
+            "type": "array"
+          },
           "question": {
-            "maxLength": 500,
+            "maxLength": 2000,
             "minLength": 3,
             "title": "Question",
             "type": "string"
@@ -760,6 +766,29 @@
           "units"
         ],
         "title": "BulkUnitsRequest",
+        "type": "object"
+      },
+      "ChatMessage": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "user",
+              "assistant",
+              "system"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ChatMessage",
         "type": "object"
       },
       "ComplaintCreate": {
@@ -1390,7 +1419,25 @@
             "type": "array"
           },
           "operational_signals": {
-            "$ref": "#/components/schemas/OperationalSignalCounts"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperationalSignalCounts"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "provider_view": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProviderIntelligenceView"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "recommendations": {
             "items": {
@@ -1398,6 +1445,21 @@
             },
             "title": "Recommendations",
             "type": "array"
+          },
+          "resident_view": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResidentIntelligenceView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "role": {
+            "default": "hoa_admin",
+            "title": "Role",
+            "type": "string"
           },
           "source": {
             "enum": [
@@ -1421,7 +1483,6 @@
           "as_of",
           "briefing",
           "recommendations",
-          "operational_signals",
           "source"
         ],
         "title": "EstateIntelligenceResponse",
@@ -3710,6 +3771,34 @@
         "title": "PropertyUpdate",
         "type": "object"
       },
+      "ProviderIntelligenceView": {
+        "properties": {
+          "assigned_work_orders": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderWorkOrderSummary"
+            },
+            "title": "Assigned Work Orders",
+            "type": "array"
+          },
+          "instructions": {
+            "default": "",
+            "title": "Instructions",
+            "type": "string"
+          },
+          "pending_count": {
+            "default": 0,
+            "title": "Pending Count",
+            "type": "integer"
+          },
+          "urgent_count": {
+            "default": 0,
+            "title": "Urgent Count",
+            "type": "integer"
+          }
+        },
+        "title": "ProviderIntelligenceView",
+        "type": "object"
+      },
       "ProviderSignup": {
         "additionalProperties": false,
         "description": "The minimal provider profile created alongside a service_provider account.\n\nThe profile's email and full name are the account's, so they are not accepted\nhere; ``verified`` is always false and only a platform admin may change it.",
@@ -3732,6 +3821,57 @@
           "phone"
         ],
         "title": "ProviderSignup",
+        "type": "object"
+      },
+      "ProviderWorkOrderSummary": {
+        "properties": {
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Id"
+          },
+          "location": {
+            "title": "Location",
+            "type": "string"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "priority",
+          "status",
+          "location"
+        ],
+        "title": "ProviderWorkOrderSummary",
         "type": "object"
       },
       "ProvisionAccountRequest": {
@@ -4306,6 +4446,76 @@
         ],
         "title": "ResidencyRequestStatus",
         "type": "string"
+      },
+      "ResidentIntelligenceView": {
+        "properties": {
+          "community_notices": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Community Notices",
+            "type": "array"
+          },
+          "living_score_label": {
+            "default": "Good",
+            "title": "Living Score Label",
+            "type": "string"
+          },
+          "living_score_summary": {
+            "default": "",
+            "title": "Living Score Summary",
+            "type": "string"
+          },
+          "unit_issues": {
+            "items": {
+              "$ref": "#/components/schemas/ResidentUnitIssue"
+            },
+            "title": "Unit Issues",
+            "type": "array"
+          }
+        },
+        "title": "ResidentIntelligenceView",
+        "type": "object"
+      },
+      "ResidentUnitIssue": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Id"
+          },
+          "logged_date": {
+            "title": "Logged Date",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "logged_date",
+          "category"
+        ],
+        "title": "ResidentUnitIssue",
+        "type": "object"
       },
       "ServiceProviderResponse": {
         "properties": {
@@ -5591,6 +5801,52 @@
           }
         ],
         "summary": "Ask Valora Endpoint",
+        "tags": [
+          "analytics",
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/intelligence/ask/stream": {
+      "post": {
+        "description": "Stream real-time answers to natural language questions scoped to the estate and role.",
+        "operationId": "analytics_ask_valora_stream_endpoint",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskValoraRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Ask Valora Stream Endpoint",
         "tags": [
           "analytics",
           "analytics"
@@ -9493,7 +9749,7 @@
             }
           },
           {
-            "description": "name, suburb or city",
+            "description": "name, suburb, city or province",
             "in": "query",
             "name": "q",
             "required": false,
@@ -9507,7 +9763,7 @@
                   "type": "null"
                 }
               ],
-              "description": "name, suburb or city",
+              "description": "name, suburb, city or province",
               "title": "Q"
             }
           }

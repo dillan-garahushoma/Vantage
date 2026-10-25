@@ -89,7 +89,7 @@ class ResidencyNotifier:
                 "A new resident registration is waiting for your decision.",
                 "",
                 f"Estate:   {estate_name}",
-                f"Unit:     {request.unit_no}",
+                f"Unit:     {request.unit_no or 'to be assigned by the estate office'}",
                 f"Applicant: {request.applicant_name}",
                 f"Email:    {request.applicant_email}",
                 f"Phone:    {request.applicant_phone or 'not supplied'}",
@@ -97,7 +97,7 @@ class ResidencyNotifier:
                 "",
                 f"Review it in the VALORA admin dashboard: {self._review_link(request)}",
                 "",
-                "Approve to grant the applicant resident access to this unit, or",
+                "Approve to grant the applicant resident access to this estate, or",
                 "reject to decline it. No action is taken until you decide.",
             ]
         )
@@ -131,7 +131,8 @@ class ResidencyNotifier:
         if approved:
             outcome = (
                 "Your registration was approved. You now have resident access to "
-                "this unit and can sign in to VALORA."
+                "this estate and can sign in to VALORA. Use the Enter estate link in "
+                "your VALORA account to continue."
             )
         else:
             outcome = (
@@ -144,7 +145,7 @@ class ResidencyNotifier:
             outcome,
             "",
             f"Estate:   {estate_name}",
-            f"Unit:     {request.unit_no}",
+            f"Unit:     {request.unit_no or 'to be assigned by the estate office'}",
             f"Decided:  {_format_timestamp(request.decided_at)}",
         ]
         if request.decision_note:

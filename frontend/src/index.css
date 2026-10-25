@@ -3,10 +3,10 @@
 /*
   VALORA — editorial property-health workspace.
 
-  - deep ink      #14181C   text and deliberate contrast
-  - VALORA purple #5B3E78   the one navigational accent
-  - warm paper    #F6F4EF   page background
-  - hard line     #DFDDD6   quiet operational grouping
+  - deep ink      #211A30   text and deliberate contrast
+  - VALORA violet #7041D8   navigational and action accent
+  - lavender      #FBFAFF   page background
+  - soft lilac    #E7E0F2   quiet operational grouping
 
   Rules encoded here:
   - purple is the brand accent; mint/ochre/rose carry meaning (health, watch, risk)
@@ -16,26 +16,26 @@
 
 @theme {
   /* ------------------------------------------------------------- neutrals */
-  --color-ink: #14181c;
-  --color-ink-soft: #465058;
-  --color-ink-muted: #687078;
-  --color-paper: #f6f4ef;
-  --color-canvas: #f6f4ef;
+  --color-ink: #211a30;
+  --color-ink-soft: #5e566e;
+  --color-ink-muted: #837b92;
+  --color-paper: #fbfaff;
+  --color-canvas: #f7f5fc;
   --color-surface: #ffffff;
-  --color-line: #dfddd6;
-  --color-line-soft: #ebe9e3;
+  --color-line: #e7e0f2;
+  --color-line-soft: #f0ecf7;
 
   /* --------------------------------------------------------- VALORA purple */
-  --color-brand: #5b3e78;
-  --color-brand-soft: #8b6aa6;
-  --color-brand-wash: #eee8f4;
-  --color-brand-ink: #452e5d;
+  --color-brand: #7041d8;
+  --color-brand-soft: #a88bea;
+  --color-brand-wash: #f0ebfc;
+  --color-brand-ink: #4f2fa9;
 
   /* `accent` is the historical name for the brand colour and still paints the
      focus ring, active navigation and links. */
-  --color-accent: #5b3e78;
-  --color-accent-ink: #452e5d;
-  --color-accent-wash: #eee8f4;
+  --color-accent: #7041d8;
+  --color-accent-ink: #4f2fa9;
+  --color-accent-wash: #f0ebfc;
 
   /* ------------------------------------------------------------- semantics */
   /* positive / healthy */
@@ -72,8 +72,8 @@
     Operational surfaces are intentionally close to square. This leaves rounded
     shapes for status and focus, rather than turning every record into a pill.
   */
-  --radius-xs: 2px;
-  --radius-sm: 4px;
+  --radius-xs: 5px;
+  --radius-sm: 8px;
 
   /* ------------------------------------------------------------- shadows */
   --shadow-lift: 2px 2px 0 rgba(20, 24, 28, 0.22);

@@ -38,14 +38,12 @@ class EstateRepository:
     def public_statement(*, q: str | None = None) -> Select:
         """The estates the public directory may show, in a stable order.
 
-        Only non-demo ``is_public`` estates, always, and the search term matches
-        the name, suburb or city - never anything that could be used to fish for
-        a private estate's details. A pure function so the rule is testable
-        without a database.
+        Explicit publication is the visibility gate. ``is_demo`` describes the
+        origin of score data; it must not hide an estate its administrator has
+        published. Demo fixtures remain private by setting ``is_public`` false.
+        A pure function so the rule is testable without a database.
         """
-        stmt = select(Estate).where(
-            Estate.is_public.is_(True), Estate.is_demo.is_(False)
-        )
+        stmt = select(Estate).where(Estate.is_public.is_(True))
         if q:
             pattern = f"%{q.strip()}%"
             stmt = stmt.where(

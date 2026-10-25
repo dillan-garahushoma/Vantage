@@ -2,10 +2,9 @@
 
 Three shapes:
 
-* what a resident may send (``ResidencyRequestCreate``) - an estate *target*, a
-  unit number and an optional note. The ``estate_id`` here is the estate the
-  person is asking to join, not a claim of existing access; the service still
-  verifies that the estate and unit exist;
+* what a resident may send (``ResidencyRequestCreate``) - an estate *target* and
+  an optional note. Unit assignment is handled by the estate office after
+  approval; an optional legacy unit value remains accepted for existing clients;
 * what an administrator may send to decline one (``ResidencyRequestReject``) - a
   note and nothing else. The decision itself is the endpoint, not a status field,
   so a client can never PATCH a request into ``approved``;
@@ -24,10 +23,10 @@ from app.identity.models.estate_residency_request import (
 
 
 class ResidencyRequestCreate(BaseModel):
-    """A resident's request to be admitted to one unit of one estate."""
+    """A resident's request to be admitted to an estate."""
 
     estate_id: int = Field(..., gt=0)
-    unit_no: str = Field(..., min_length=1, max_length=UNIT_NO_MAX_LENGTH)
+    unit_no: str | None = Field(default=None, min_length=1, max_length=UNIT_NO_MAX_LENGTH)
     note: str | None = Field(default=None, max_length=NOTE_MAX_LENGTH)
 
     model_config = ConfigDict(extra="forbid")
@@ -59,7 +58,7 @@ class ResidencyRequestResponse(BaseModel):
     # Resolved from the estate row and included so the resident's cross-estate
     # list reads correctly; the admin list is already estate-scoped.
     estate_name: str | None = None
-    unit_no: str
+    unit_no: str | None = None
     status: str
     applicant_name: str
     applicant_email: str

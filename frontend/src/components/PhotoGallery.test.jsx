@@ -65,8 +65,23 @@ describe('mosaic — the tile arithmetic', () => {
         expect(mosaic(5)).toMatchObject({ clear: 5, overflow: 0 });
         expect(mosaic(4)).toMatchObject({ clear: 4, overflow: 0 });
     });
+    it('uses a large lead image with balanced supporting tiles', () => {
+        expect(mosaic(3).grid).toContain('lg:grid-cols-2');
+        expect(mosaic(3).tiles[0]).toContain('lg:row-span-2');
+        expect(mosaic(4).grid).toContain('lg:grid-cols-4');
+        expect(mosaic(4).tiles[0]).toContain('lg:col-span-2');
+        expect(mosaic(4).tiles[0]).toContain('lg:row-span-2');
+        expect(mosaic(5).tiles[0]).toContain('lg:col-span-2');
+        expect(mosaic(5).tiles[0]).toContain('lg:row-span-2');
+    });
 });
 describe('PhotoGallery — more photographs than the mosaic can show', () => {
+    it('reserves a consistent desktop height for the photo collage', () => {
+        renderGallery(5);
+        const lead = screen.getByRole('button', { name: /open photograph 1 of 5/i });
+        expect(lead.parentElement?.parentElement?.className).toContain('lg:h-[320px]');
+        expect(lead.parentElement?.parentElement?.className).toContain('xl:h-[380px]');
+    });
     it('counts the concealed photographs on the last tile instead of ending at five', () => {
         renderGallery(12);
         // 4 clear + 8 concealed = the 12 that were published.

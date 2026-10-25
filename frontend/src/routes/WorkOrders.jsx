@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { IconSearch, IconWrench } from '../components/Icons';
 import { RequireEstate } from '../components/RequireEstate';
 import { Button, ErrorState, Field, Input, LoadingState, Select, Textarea } from '../components/ui';
@@ -79,10 +80,18 @@ function WorkOrderDrawer({ order, onClose, }) {
 /* ------------------------------------------------------------ admin view */
 function AdminWorkOrders() {
     const { estateId } = useEstateScope();
+    const location = useLocation();
+    const navigate = useNavigate();
     const [status, setStatus] = useState('');
     const [page, setPage] = useState(1);
     const [open, setOpen] = useState(null);
     const [creating, setCreating] = useState(false);
+    const [focusedOrderLoading, setFocusedOrderLoading] = useState(false);
+    const [focusedOrderError, setFocusedOrderError] = useState(null);
+    const focusWorkOrderId = Number.isSafeInteger(location.state?.focusWorkOrderId)
+        && location.state.focusWorkOrderId > 0
+        ? location.state.focusWorkOrderId
+        : null;
     const workOrders = useAsync(() => api.get('/api/v1/work-orders', {
         estate_id: estateId,
         page,
@@ -90,6 +99,33 @@ function AdminWorkOrders() {
         sort: '-created_at',
         status: status || undefined,
     }), [estateId, page, status]);
+    useEffect(() => {
+        if (focusWorkOrderId === null || estateId === null)
+            return undefined;
+        let cancelled = false;
+        setFocusedOrderLoading(true);
+        setFocusedOrderError(null);
+        api.get(`/api/v1/work-orders/${focusWorkOrderId}`, { estate_id: estateId })
+            .then((order) => {
+                if (!cancelled)
+                    setOpen(order);
+            })
+            .catch((error) => {
+                if (!cancelled)
+                    setFocusedOrderError(error instanceof Error
+                        ? error.message
+                        : 'Could not open the selected work order.');
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setFocusedOrderLoading(false);
+                    navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
+                }
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [estateId, focusWorkOrderId, location.pathname, location.search, navigate]);
     const items = workOrders.data?.items ?? [];
     const pages = workOrders.data?.pages ?? 0;
     const columns = [
@@ -148,6 +184,8 @@ function AdminWorkOrders() {
     ];
     return (<>
       <Surface>
+        {focusedOrderLoading ? <LoadingState label="Opening work order"/> : null}
+        {focusedOrderError ? <ErrorState message={focusedOrderError}/> : null}
         <div className="flex flex-wrap items-end gap-4 border-b border-line pb-4">
           <label className="min-w-[12rem] flex-1">
             <span className="mb-1.5 block text-[0.68rem] font-semibold tracking-[0.1em] text-ink/45 uppercase">

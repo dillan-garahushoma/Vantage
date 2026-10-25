@@ -17,11 +17,9 @@ function location(item) {
 /**
  * The approval-based way onto an estate.
  *
- * A resident finds their complex, names their unit, and submits. Nothing is
- * granted here: the request is recorded pending and an estate administrator
- * decides it. The estate is chosen from the published directory, because the
- * resident has no membership to resolve an estate from yet — and the server
- * re-checks that the estate and the unit exist regardless of what was picked.
+ * A resident finds their complex and submits their contact details for review.
+ * Nothing is granted here: an estate administrator decides the request. Unit
+ * assignment is handled by the estate office after approval.
  */
 export function RequestAccess() {
     const { user } = useAuth();
@@ -29,7 +27,6 @@ export function RequestAccess() {
     const [query, setQuery] = useState('');
     const [committed, setCommitted] = useState('');
     const [picked, setPicked] = useState(() => selectedPublicEstate());
-    const [unitNo, setUnitNo] = useState('');
     const [note, setNote] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
@@ -38,7 +35,7 @@ export function RequestAccess() {
     const directory = useAsync(() => listPublicEstates({ q: committed, page: 1, page_size: 8 }), [committed]);
     const mine = useAsync(() => listMyResidencyRequests(), []);
     if (!user)
-        return <Navigate to="/login" replace state={{ from: '/request-access' }}/>;
+        return <Navigate to="/register" replace state={{ from: '/request-access' }}/>;
     async function search(event) {
         event.preventDefault();
         setCommitted(query.trim());
@@ -49,10 +46,6 @@ export function RequestAccess() {
             setFieldError('Choose your complex first.');
             return;
         }
-        if (unitNo.trim().length === 0) {
-            setFieldError('Enter your unit number.');
-            return;
-        }
         setFieldError(null);
         setBusy(true);
         setError(null);
@@ -60,16 +53,12 @@ export function RequestAccess() {
         try {
             await submitResidencyRequest({
                 estate_id: picked.estate_id,
-                unit_no: unitNo.trim(),
                 note: note.trim() || null,
             });
             setSubmitted(picked.name);
             setPicked(null);
             clearSelectedPublicEstate();
-            setUnitNo('');
             setNote('');
-            // The request may have just been approved for a unit that was already
-            // granted; reloading keeps the rest of the app honest either way.
             mine.reload();
             reloadEstates();
         }
@@ -85,10 +74,10 @@ export function RequestAccess() {
     return (<AuthShell
       eyebrow="Resident onboarding"
       title="Ask to join your estate"
-      intro="Send your details to the estate office. They review the request against their unit register, then approve or decline it. You will not have access until they approve it."
+      intro="Send your details to the estate office. You will not have access until they approve it. No unit number is needed; the office can assign one after approval."
       points={[
-        ['Approval, not self-selection', 'The estate office decides against their own unit register.'],
-        ['One home per request', 'Pick the complex you actually live in — the server re-checks the unit.'],
+        ['Approval, not self-selection', 'The estate office decides who can enter its workspace.'],
+        ['No unit number required', 'Share your contact details and let the estate office review your request.'],
       ]}
       aside={<>
           <p className="mt-4 max-w-md text-[13px] text-ink-muted">
@@ -116,10 +105,16 @@ export function RequestAccess() {
                             <Chip tone={meta.tone}>{meta.label}</Chip>
                           </div>
                           <p className="num mt-1 text-[11.5px] text-ink-muted">
-                            unit {request.unit_no} · submitted {fullDate(request.created_at)}
+                            {request.unit_no ? `unit ${request.unit_no} · ` : 'Unit to be assigned · '}
+                            submitted {fullDate(request.created_at)}
                             {request.decided_at ? ` · decided ${fullDate(request.decided_at)}` : ''}
                           </p>
                           <p className="mt-1.5 text-[12.5px] text-ink-soft">{meta.hint}</p>
+                          {status === 'approved' ? (
+                            <Link to="/app" className="mt-2 inline-flex text-[12.5px] font-medium text-accent-ink hover:underline">
+                              Enter estate
+                            </Link>
+                          ) : null}
                           {request.decision_note ? (<p className="mt-1 text-[12.5px] text-ink-soft">
                               Note from the estate: {request.decision_note}
                             </p>) : null}
@@ -159,27 +154,41 @@ export function RequestAccess() {
                       {picked.location}
                     </span>
                   </span>
-                  <Button type="button" variant="ghost" onClick={() => setPicked(null)}>
+                  <Button type="button" variant="ghost" onClick={() => {
+                    setPicked(null);
+                    clearSelectedPublicEstate();
+                  }}>
                     Change
                   </Button>
                 </div>) : (<>
                   <div className="flex gap-2">
-                    <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by name, suburb or city" aria-label="Search the published complexes"/>
+                    <Input
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          setCommitted(query.trim());
+                        }
+                      }}
+                      placeholder="Search by name, suburb or city"
+                      aria-label="Search the published complexes"
+                    />
                     <Button type="button" variant="secondary" onClick={search}>
                       Search
                     </Button>
                   </div>
 
                   <div className="mt-3">
-                    {directory.loading ? (<LoadingState label="Searching complexes"/>) : directory.error ? (<ErrorState message={directory.error.message} requestId={directory.error.requestId} action={<Button variant="secondary" onClick={directory.reload}>
+                    {directory.loading ? (<LoadingState label="Searching published complexes"/>) : directory.error ? (<ErrorState title="Could not load published complexes" message={directory.error.message} requestId={directory.error.requestId} action={<Button variant="secondary" onClick={directory.reload}>
                             Try again
-                          </Button>}/>) : items.length === 0 ? (<EmptyState title="No published complex matches" body="Only complexes that publish a public profile appear here. If yours is missing, ask your estate office for a join code."/>) : (<ul className="space-y-2">
+                          </Button>}/>) : items.length === 0 ? (<EmptyState title={committed ? "No published complex matches" : "No complexes are published yet"} body={committed ? "Try another name, suburb, city or province. Private and unpublished estates cannot appear in the public selector; ask your estate office for a join code." : "The selector only lists estates that have enabled their public profile. You can search again or ask your estate office for a join code."}/>) : (<ul className="space-y-2">
                         {items.map((item) => (<li key={item.estate_id}>
                             <button type="button" onClick={() => setPicked({
                         estate_id: item.estate_id,
                         name: item.name,
                         location: location(item),
-                    })} className="hairline w-full rounded-xs bg-surface px-3 py-2.5 text-left transition-colors hover:border-accent">
+                    })} className="hairline w-full rounded-xs bg-surface px-3 py-2.5 text-left transition-colors hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                               <span className="block text-[13.5px] font-medium">{item.name}</span>
                               <span className="num mt-0.5 block text-[11.5px] text-ink-muted">
                                 {location(item)} · {item.unit_count ?? 0} units
@@ -190,10 +199,6 @@ export function RequestAccess() {
                   </div>
                 </>)}
             </div>
-
-            <Field label="Unit number" error={fieldError && fieldError.includes('unit') ? fieldError : undefined} hint="As it appears on your lease, for example A-101.">
-              <Input name="unit_no" value={unitNo} maxLength={10} onChange={(event) => setUnitNo(event.target.value)} placeholder="A-101"/>
-            </Field>
 
             <Field label="Note to the estate office (optional)" hint="Max 500 characters.">
               <Textarea name="note" value={note} maxLength={500} onChange={(event) => setNote(event.target.value)} placeholder="I moved in on 1 November and the lease is in my name."/>

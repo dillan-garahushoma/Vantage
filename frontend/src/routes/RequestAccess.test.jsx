@@ -2,9 +2,9 @@
  * Asking to join an estate, for approval.
  *
  * The screen makes three promises the test pins: nothing is granted until an
- * administrator decides, the complex and the unit are both required before a
- * request is spent, and a rejected submission is the server's own message rather
- * than a guess.
+ * administrator decides, the resident can request estate membership without
+ * disclosing a unit number, and a rejected submission is the server's own
+ * message rather than a guess.
  */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -72,12 +72,13 @@ describe('RequestAccess', () => {
         // A join code is offered as the alternative, not hidden.
         expect(screen.getByRole('link', { name: /redeem it instead/i })).toBeVisible();
     });
-    it('requires a complex and a unit before spending a request', async () => {
+    it('requires a complex before spending a request, but never requires a unit', async () => {
         const user = userEvent.setup();
         renderScreen();
         await user.click(screen.getByRole('button', { name: /send request for approval/i }));
         expect(await screen.findByText(/choose your complex first/i)).toBeVisible();
         expect(mocks.submit).not.toHaveBeenCalled();
+        expect(screen.queryByRole('textbox', { name: /unit number/i })).toBeNull();
     });
     it('uses a complex selected from the public directory as form context only', async () => {
         window.sessionStorage.setItem('valora.public-estate-selection', JSON.stringify({
@@ -88,16 +89,15 @@ describe('RequestAccess', () => {
         const user = userEvent.setup();
         renderScreen();
         expect(await screen.findByText('Zambezi Country Estate')).toBeVisible();
-        await user.type(screen.getByLabelText(/unit number/i), 'A-101');
         await user.click(screen.getByRole('button', { name: /send request for approval/i }));
-        expect(mocks.submit).toHaveBeenCalledWith({ estate_id: 4, unit_no: 'A-101', note: null });
+        expect(mocks.submit).toHaveBeenCalledWith({ estate_id: 4, note: null });
     });
-    it('submits the chosen complex, the trimmed unit and the note', async () => {
+    it('submits the chosen complex and note without asking for a unit', async () => {
         mocks.submit.mockResolvedValue({
             request_id: 31,
             estate_id: 4,
             estate_name: 'Zambezi Country Estate',
-            unit_no: 'A-101',
+            unit_no: null,
             status: 'pending',
             applicant_name: 'Thandi Nkosi',
             applicant_email: 'thandi@example.co.za',
@@ -106,12 +106,10 @@ describe('RequestAccess', () => {
         const user = userEvent.setup();
         renderScreen();
         await user.click(await screen.findByRole('button', { name: /zambezi country estate/i }));
-        await user.type(screen.getByLabelText(/unit number/i), ' A-101 ');
         await user.type(screen.getByLabelText(/note to the estate office/i), 'Lease starts 1 Nov');
         await user.click(screen.getByRole('button', { name: /send request for approval/i }));
         expect(mocks.submit).toHaveBeenCalledWith({
             estate_id: 4,
-            unit_no: 'A-101',
             note: 'Lease starts 1 Nov',
         });
         expect(await screen.findByText(/request sent to zambezi country estate/i)).toBeVisible();
@@ -122,7 +120,6 @@ describe('RequestAccess', () => {
         const user = userEvent.setup();
         renderScreen();
         await user.click(await screen.findByRole('button', { name: /zambezi country estate/i }));
-        await user.type(screen.getByLabelText(/unit number/i), 'A-101');
         await user.click(screen.getByRole('button', { name: /send request for approval/i }));
         expect(await screen.findByText('You cannot request this one')).toBeVisible();
         expect(screen.getByText(/already have a registration awaiting review/i)).toBeVisible();
@@ -134,7 +131,7 @@ describe('RequestAccess', () => {
                 request_id: 31,
                 estate_id: 4,
                 estate_name: 'Zambezi Country Estate',
-                unit_no: 'A-101',
+                unit_no: null,
                 status: 'approved',
                 applicant_name: 'Thandi Nkosi',
                 applicant_email: 'thandi@example.co.za',
@@ -144,6 +141,7 @@ describe('RequestAccess', () => {
         ]);
         renderScreen();
         expect(await screen.findByText('Approved')).toBeVisible();
-        expect(screen.getByText(/you are a resident of this unit/i)).toBeVisible();
+        expect(screen.getByText(/you are a resident of this estate/i)).toBeVisible();
+        expect(screen.getByRole('link', { name: /enter estate/i })).toHaveAttribute('href', '/app');
     });
 });

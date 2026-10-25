@@ -1,10 +1,7 @@
 import {
   ArrowRight,
   CheckCircle2,
-  FileSearch,
-  Layers,
   ShieldCheck,
-  Sparkles,
 } from 'lucide-react';
 import { useState } from 'react';
 import { RequireEstate } from '../components/RequireEstate';
@@ -17,7 +14,6 @@ import { RecommendationCard } from '../components/valora/RecommendationCard';
 import { SignalField } from '../components/valora/SignalField';
 import { StatusChip } from '../components/valora/StatusChip';
 import { Surface } from '../components/valora/Surface';
-import { useAuth } from '../context/AuthContext';
 import { useEstateScope } from '../context/EstateContext';
 import { api } from '../lib/api';
 import { zar } from '../lib/format';
@@ -64,13 +60,37 @@ function signalNodes(counts) {
   return nodes;
 }
 
+function sourceActionFor(recommendation) {
+  const overdue = /^overdue_work_order-(\d+)$/.exec(recommendation?.id ?? '');
+  if (overdue) {
+    return {
+      type: 'work_order',
+      recordId: Number(overdue[1]),
+      label: 'Open work order',
+      to: '/app/work-orders',
+      state: { focusWorkOrderId: Number(overdue[1]) },
+    };
+  }
+
+  const complaint = /^unassigned_complaint-(\d+)$/.exec(recommendation?.id ?? '');
+  if (complaint) {
+    return {
+      type: 'complaint',
+      recordId: Number(complaint[1]),
+      label: 'Open complaint',
+      to: '/app/complaints',
+      state: { focusComplaintId: Number(complaint[1]) },
+    };
+  }
+
+  return null;
+}
+
 function IntelligenceBody() {
   const { estateId, estate } = useEstateScope();
-  const { user } = useAuth();
 
   const [reviewing, setReviewing] = useState(null);
   const [workOrderDraft, setWorkOrderDraft] = useState(null);
-  const [accepted, setAccepted] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [generationError, setGenerationError] = useState(null);
   const [historyBriefingId, setHistoryBriefingId] = useState(null);
@@ -81,8 +101,11 @@ function IntelligenceBody() {
   );
 
   const history = useAsync(
-    () => (estateId === null ? Promise.resolve(null) : api.get('/api/v1/analytics/intelligence/history', { estate_id: estateId, size: 10 })),
-    [estateId]
+    () =>
+      estateId === null || intelligenceQuery.data?.role !== 'hoa_admin'
+        ? Promise.resolve(null)
+        : api.get('/api/v1/analytics/intelligence/history', { estate_id: estateId, size: 10 }),
+    [estateId, intelligenceQuery.data?.role]
   );
 
   const historicalBriefing = useAsync(
@@ -99,14 +122,19 @@ function IntelligenceBody() {
   const signals = signalNodes(intelligence?.operational_signals);
 
   // Role resolution
-  const isHoaAdmin = user?.role === 'hoa_admin' && estate?.is_estate_admin === true;
-  const isProvider = intelligence?.role === 'service_provider' || user?.role === 'service_provider' || estate?.is_estate_provider === true;
-  const isResident = !isHoaAdmin && !isProvider;
+  const resolvedRole = intelligence?.role ?? (
+    estate?.is_estate_admin ? 'hoa_admin' : estate?.is_estate_provider ? 'service_provider' : 'resident'
+  );
+  const isHoaAdmin = resolvedRole === 'hoa_admin';
+  const isProvider = resolvedRole === 'service_provider';
+  const isResident = resolvedRole === 'resident';
 
   function openWorkOrder(recommendation) {
     setReviewing(null);
+    const sourceAction = sourceActionFor(recommendation);
     setWorkOrderDraft({
       title: recommendation.title,
+      complaintId: sourceAction?.type === 'complaint' ? sourceAction.recordId : undefined,
       asset: recommendation.workOrderDefaults.asset,
       location: recommendation.workOrderDefaults.location,
       priority: recommendation.workOrderDefaults.priority,
@@ -115,71 +143,54 @@ function IntelligenceBody() {
     });
   }
 
-  if (intelligenceQuery.loading) return <p role="status">Loading stored estate intelligence…</p>;
-  if (intelligenceQuery.error || !activeBriefing) {
-    return (
-      <ErrorState
-        title="Intelligence unavailable"
-        message={intelligenceQuery.error?.message ?? 'No briefing was returned.'}
-        action={<Button onClick={intelligenceQuery.reload}>Try again</Button>}
-      />
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {/* The briefing is editorial on purpose: it establishes the one operational story before the detail below. */}
-      <section className="overflow-hidden border border-line bg-surface" aria-labelledby="briefing-title">
-        <div className="grid lg:grid-cols-[minmax(12rem,0.34fr)_1fr]">
-          <div className="flex min-h-48 flex-col justify-between bg-brand px-6 py-7 text-white sm:px-8 sm:py-9">
-            <div>
-              <span className="inline-flex h-9 w-9 items-center justify-center border border-white/25 bg-white/10">
-                <Sparkles className="h-4 w-4" aria-hidden="true" />
-              </span>
-              <p className="mt-5 text-[0.66rem] font-bold tracking-[0.18em] text-white/75 uppercase">
-                Estate intelligence
-              </p>
-              <p className="mt-2 font-heading text-xl font-bold leading-tight">
-                {isResident ? 'Your estate, in focus.' : isProvider ? 'The work that matters now.' : 'The operating picture.'}
-              </p>
-            </div>
-            <p className="mt-7 text-[0.74rem] leading-relaxed text-white/70">
-              {intelligence?.briefing_id ? 'Saved briefing' : 'Current briefing'} ·{' '}
+    <div className="space-y-7">
+      {intelligenceQuery.loading ? (
+        <p role="status" className="text-sm text-ink-muted">
+          Loading your authorized intelligence…
+        </p>
+      ) : null}
+      {intelligenceQuery.error ? (
+        <ErrorState
+          title="Briefing unavailable"
+          message={intelligenceQuery.error.message}
+          requestId={intelligenceQuery.error.requestId}
+          action={<Button onClick={intelligenceQuery.reload}>Try again</Button>}
+        />
+      ) : null}
+      {activeBriefing ? (
+        <section className="border-b border-line pb-6" aria-labelledby="briefing-title">
+          <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
+            <p className="text-sm font-semibold text-brand-ink">
+              {isResident ? 'Personal estate assistant' : isProvider ? 'Assigned work intelligence' : 'Estate operations'}
+              <span className="mx-2 text-ink-muted" aria-hidden="true">/</span>
+              {estate?.estate_name ?? intelligence?.estate_name}
+            </p>
+            <p className="text-xs text-ink-muted">
+              {intelligence?.briefing_id ? 'Saved briefing' : activeBriefing.windowLabel}
+              {' · '}
               {intelligence?.as_of ? new Date(intelligence.as_of).toLocaleString('en-ZA') : 'Date unavailable'}
             </p>
           </div>
-
-          <div className="px-6 py-8 sm:px-10 sm:py-10">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.7rem] font-semibold tracking-[0.12em] text-brand-ink uppercase">
-              <span>{isResident ? 'Resident briefing' : isProvider ? 'Provider briefing' : 'Executive briefing'}</span>
-              <span className="h-1 w-1 rounded-full bg-brand-soft" aria-hidden="true" />
-              <span>{activeBriefing.windowLabel}</span>
-            </div>
-            <h1 id="briefing-title" className="mt-5 max-w-3xl font-heading text-[1.9rem] leading-[1.08] font-extrabold tracking-[-0.03em] text-ink sm:text-[2.65rem]">
-              {activeBriefing.headline}
-            </h1>
-            <p className="mt-4 max-w-2xl text-[0.98rem] leading-relaxed text-ink/65">
-              {activeBriefing.body}
-            </p>
-
-            <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-line pt-4">
-              <span className="text-[0.78rem] font-medium text-ink/55">
-                {activeBriefing.signalsReviewed.toLocaleString('en-ZA')} signals reviewed across {activeBriefing.sources} sources
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-[0.78rem] font-semibold text-mint-ink">
-                <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                Every finding traceable to source
-              </span>
-            </div>
-
-            {intelligence?.briefing_id ? (
-              <p className="mt-3 text-xs text-ink/50">
-                Counts are frozen at the briefing date. Ask VALORA reads current records.
+          <div className="mt-4 flex flex-wrap items-start justify-between gap-5">
+            <div className="max-w-4xl">
+              <h1 id="briefing-title" className="font-heading text-2xl font-semibold leading-tight tracking-[-0.025em] text-ink sm:text-[2rem]">
+                {activeBriefing.headline}
+              </h1>
+              <p className="mt-3 max-w-3xl text-[0.95rem] leading-relaxed text-ink/75">
+                {activeBriefing.body}
               </p>
-            ) : null}
+              {intelligence?.limitations?.length ? (
+                <p className="mt-2 max-w-3xl text-xs leading-relaxed text-ink-muted">
+                  {intelligence.limitations[0]}
+                  {intelligence?.briefing_id ? ' Counts are frozen at the briefing date.' : ''}
+                </p>
+              ) : null}
+            </div>
             {isHoaAdmin ? (
               <Button
-                className="mt-5"
+                variant="outline"
+                className="shrink-0"
                 disabled={generating}
                 onClick={async () => {
                   setGenerating(true);
@@ -194,23 +205,22 @@ function IntelligenceBody() {
                   }
                 }}
               >
-                {generating ? 'Saving…' : 'Save current briefing'}
+                {generating ? 'Saving briefing…' : 'Save current briefing'}
               </Button>
             ) : null}
-            {generationError ? <p role="alert" className="mt-3 text-sm text-rose-700">{generationError}</p> : null}
-            {intelligence?.limitations?.map((limitation) => (
-              <p key={limitation} className="mt-2 text-xs text-ink/50">
-                {limitation}
-              </p>
-            ))}
           </div>
-        </div>
-      </section>
+          {generationError ? <p role="alert" className="mt-3 text-sm text-rose-700">{generationError}</p> : null}
+        </section>
+      ) : null}
 
       {/* -------------------- Resident View -------------------- */}
       {isResident ? (
-        <div className="grid gap-5 xl:grid-cols-[1fr_400px]">
-          <div className="space-y-5">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.8fr)]">
+          <Surface className="order-1 h-[min(560px,70vh)] min-h-[420px] overflow-hidden xl:sticky xl:top-24" padded={false}>
+            <AskValora key={estateId} estateId={estateId} role={resolvedRole} />
+          </Surface>
+
+          <div className="order-2 space-y-5">
             <Surface>
               <div className="flex items-center justify-between border-b border-line pb-3">
                 <h2 className="font-heading text-[1.05rem] font-bold text-ink">
@@ -224,7 +234,7 @@ function IntelligenceBody() {
                 <div className="py-8 text-center text-ink/60">
                   <CheckCircle2 className="mx-auto h-8 w-8 text-mint-ink" />
                   <p className="mt-2 text-sm font-medium">No open maintenance issues logged for your unit.</p>
-                  <p className="mt-1 text-xs text-ink/40">All systems and reported items are functioning properly.</p>
+                  <p className="mt-1 text-xs text-ink/55">Your requests will appear here when submitted.</p>
                 </div>
               ) : (
                 <div className="mt-3 divide-y divide-line-soft">
@@ -271,26 +281,23 @@ function IntelligenceBody() {
                     How Living Score Protects Property Values
                   </p>
                   <p className="mt-1 text-[0.82rem] leading-relaxed text-ink/55">
-                    {intelligence?.resident_view?.living_score_summary ||
-                      'Estate Living Score reflects operational stability, contractor resolution time, and perimeter integrity. High-scoring estates preserve higher property appreciation and lower reactive levies.'}
+                    {intelligence?.resident_view?.living_score_summary || 'A Living Score has not been published for this estate.'}
                   </p>
                 </div>
               </div>
             </Surface>
           </div>
-
-          <Surface className="h-fit overflow-hidden xl:sticky xl:top-24" padded={false}>
-            <div className="h-[620px]">
-              <AskValora key={estateId} />
-            </div>
-          </Surface>
         </div>
       ) : null}
 
       {/* -------------------- Provider View -------------------- */}
       {isProvider ? (
-        <div className="grid gap-5 xl:grid-cols-[1fr_400px]">
-          <div className="space-y-5">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.8fr)]">
+          <Surface className="order-1 h-[min(560px,70vh)] min-h-[420px] overflow-hidden xl:sticky xl:top-24" padded={false}>
+            <AskValora key={estateId} estateId={estateId} role={resolvedRole} />
+          </Surface>
+
+          <div className="order-2 space-y-5">
             <Surface>
               <div className="flex items-center justify-between border-b border-line pb-3">
                 <h2 className="font-heading text-[1.05rem] font-bold text-ink">
@@ -302,7 +309,7 @@ function IntelligenceBody() {
                   </span>
                   {(intelligence?.provider_view?.urgent_count ?? 0) > 0 && (
                     <span className="rounded-full bg-rose-100 text-rose-700 px-2.5 py-1 text-xs font-bold">
-                      {intelligence.provider_view.urgent_count} urgent
+                      {intelligence.provider_view.urgent_count} high priority
                     </span>
                   )}
                 </div>
@@ -310,8 +317,8 @@ function IntelligenceBody() {
               {(intelligence?.provider_view?.assigned_work_orders ?? []).length === 0 ? (
                 <div className="py-8 text-center text-ink/60">
                   <CheckCircle2 className="mx-auto h-8 w-8 text-mint-ink" />
-                  <p className="mt-2 text-sm font-medium">No work orders currently assigned to your team.</p>
-                  <p className="mt-1 text-xs text-ink/40">Check back for new work dispatch notices from estate managers.</p>
+                  <p className="mt-2 text-sm font-medium">No work orders are currently assigned to your provider account.</p>
+                  <p className="mt-1 text-xs text-ink/40">New assignments appear here when recorded.</p>
                 </div>
               ) : (
                 <div className="mt-3 divide-y divide-line-soft">
@@ -320,7 +327,7 @@ function IntelligenceBody() {
                       <div>
                         <p className="text-sm font-semibold text-ink">{wo.title}</p>
                         <p className="text-xs text-ink/40">
-                          {wo.location} · Due: {wo.due_date ? new Date(wo.due_date).toLocaleDateString('en-ZA') : 'Flexible'}
+                          {wo.location} · Due: {wo.due_date ? new Date(wo.due_date).toLocaleDateString('en-ZA') : 'Due date not recorded'}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -348,30 +355,34 @@ function IntelligenceBody() {
                   Contractor Site Access Guidelines
                 </h2>
               </div>
-              <p className="mt-3 text-sm text-ink/75 leading-relaxed">
-                {intelligence?.provider_view?.instructions ||
-                  'Contractor hours: 08:00 - 17:00 weekdays. Quote work order ID at security gatehouse. Strict compliance with estate speed limits (20 km/h) and noise regulations required.'}
-              </p>
+              {intelligence?.provider_view?.instructions ? (
+                <p className="mt-3 text-sm text-ink/75 leading-relaxed">
+              {intelligence.provider_view.instructions}
+                </p>
+              ) : (
+                <p className="mt-3 text-sm text-ink/60 leading-relaxed">
+              No access procedures are recorded for your assigned work.
+                </p>
+              )}
             </Surface>
           </div>
-
-          <Surface className="h-fit overflow-hidden xl:sticky xl:top-24" padded={false}>
-            <div className="h-[620px]">
-              <AskValora key={estateId} />
-            </div>
-          </Surface>
         </div>
       ) : null}
 
       {/* -------------------- HOA Admin View -------------------- */}
       {isHoaAdmin ? (
         <>
+          <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.8fr)]">
+            <Surface className="h-[min(560px,70vh)] min-h-[420px] overflow-hidden xl:sticky xl:top-24" padded={false}>
+              <AskValora key={estateId} estateId={estateId} role={resolvedRole} />
+            </Surface>
+            <div className="space-y-4">
           <Surface>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 className="font-heading text-[1rem] font-bold text-ink">Briefing history</h2>
                 <p className="mt-1 text-[0.82rem] text-ink-muted">
-                  Saved briefings are immutable snapshots of the authorized estate record.
+                  Previous saved estate analyses
                 </p>
               </div>
               {historyBriefingId !== null ? (
@@ -393,7 +404,7 @@ function IntelligenceBody() {
               </div>
             ) : (history.data?.items ?? []).length === 0 ? (
               <p className="mt-4 text-[13px] text-ink-muted">
-                No saved briefings yet. An estate administrator can save the current briefing when a record is needed.
+                No saved briefings yet.
               </p>
             ) : (
               <ul className="mt-4 divide-y divide-line-soft">
@@ -410,7 +421,7 @@ function IntelligenceBody() {
                     >
                       {historicalBriefing.loading && historyBriefingId === entry.briefing_id
                         ? 'Loading…'
-                        : 'View saved briefing'}
+                        : `View saved briefing ${entry.briefing_id}`}
                     </Button>
                   </li>
                 ))}
@@ -427,84 +438,47 @@ function IntelligenceBody() {
             ) : null}
           </Surface>
 
-          {signals.length > 0 ? <SignalField signals={signals} label="Operational counts at the briefing date" /> : null}
+          {signals.length > 0 ? <SignalField signals={signals} label="Measured operational signals" /> : null}
+            </div>
+          </div>
 
-          <div className="grid gap-5 xl:grid-cols-[1fr_400px]">
-            <div className="space-y-5">
+          <div className="space-y-5">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h2 className="font-heading text-[1.1rem] font-bold tracking-[-0.01em] text-ink">
-                    This week’s priority recommendations
-                  </h2>
-                  <p className="mt-1 text-[0.85rem] text-ink/55">
-                    Ordered by expected impact. Each one shows its evidence, confidence and suggested action.
-                  </p>
+                  <h2 className="font-heading text-[1.1rem] font-bold tracking-[-0.01em] text-ink">Management recommendations</h2>
+                  <p className="mt-1 text-[0.85rem] text-ink/65">Review each source record before deciding on action.</p>
                 </div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-wash px-3 py-1.5 text-[0.72rem] font-semibold text-brand-ink">
-                  <Layers className="h-3.5 w-3.5" /> {activeRecommendations.length} recommendations
-                </span>
+                <span className="text-sm text-ink-muted">{activeRecommendations.length} findings</span>
               </div>
+              <p className="mt-2 text-[0.72rem] font-semibold tracking-[0.12em] text-brand-ink uppercase">
+                Every finding traceable to source
+              </p>
 
-              <div className="grid gap-5 2xl:grid-cols-2">
+              <div className="space-y-3">
                 {activeRecommendations.length === 0 ? (
-                  <div className="col-span-full rounded-2xl border border-dashed border-line bg-canvas/60 p-8 text-center">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-wash text-brand-ink">
-                      <Sparkles className="h-6 w-6" />
-                    </div>
-                    <h3 className="mt-4 font-heading text-base font-bold text-ink">
-                      No Priority Recommendations Yet
-                    </h3>
-                    <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink/60">
-                      Stored counts are available. Asset failure predictions and verified cost savings require additional
-                      evidence.
+                  <div className="rounded-xl bg-surface px-4 py-5">
+                    <h3 className="font-heading text-sm font-semibold text-ink">No findings require action</h3>
+                    <p className="mt-1 text-sm text-ink-muted">
+                      No overdue work orders or unassigned high-priority complaints were returned for this estate.
                     </p>
-                    <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1 text-xs font-medium text-ink/60">
-                      <ShieldCheck className="h-3.5 w-3.5 text-mint-ink" />
-                      Stored operational records
-                    </div>
                   </div>
                 ) : (
-                  activeRecommendations.map((recommendation, index) => (
-                    <RecommendationCard
-                      key={recommendation.id}
-                      recommendation={recommendation}
-                      index={index}
-                      onReview={setReviewing}
-                      onAction={openWorkOrder}
-                      canAction={isHoaAdmin}
-                    />
-                  ))
+                  activeRecommendations.map((recommendation) => {
+                    const sourceAction = sourceActionFor(recommendation);
+                    return (
+                      <RecommendationCard
+                        key={recommendation.id}
+                        recommendation={recommendation}
+                        onReview={setReviewing}
+                        onAction={openWorkOrder}
+                        sourceAction={sourceAction}
+                        canAction={isHoaAdmin && sourceAction?.type !== 'work_order'}
+                      />
+                    );
+                  })
                 )}
               </div>
 
-              <Surface className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-canvas text-brand">
-                    <FileSearch className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <p className="text-[0.88rem] font-semibold text-ink">
-                      Recommendations are clearly separated from measured results
-                    </p>
-                    <p className="mt-1 text-[0.82rem] leading-relaxed text-ink/55">
-                      Estate health scores, financial figures and incident counts come from measured signals. Everything
-                      on this screen is a recommendation until you act on it.
-                    </p>
-                  </div>
-                </div>
-                {accepted.length > 0 ? (
-                  <span className="shrink-0 rounded-full bg-mint-wash px-3 py-1.5 text-[0.72rem] font-semibold text-mint-ink">
-                    {accepted.length} accepted this session
-                  </span>
-                ) : null}
-              </Surface>
-            </div>
-
-            <Surface className="h-fit overflow-hidden xl:sticky xl:top-24" padded={false}>
-              <div className="h-[620px]">
-                <AskValora key={estateId} />
-              </div>
-            </Surface>
           </div>
         </>
       ) : null}
@@ -541,8 +515,8 @@ function IntelligenceBody() {
 
             <div className="grid gap-4 sm:grid-cols-3">
               {[
-                { label: 'Confidence', value: `${reviewing.confidence} · ${reviewing.confidenceValue}%` },
-                { label: 'Expected saving', value: zar(reviewing.savingsZar) },
+                ...(reviewing.confidenceValue != null ? [{ label: 'Confidence', value: `${reviewing.confidence} · ${reviewing.confidenceValue}%` }] : []),
+                ...(reviewing.savingsZar != null ? [{ label: 'Expected saving', value: zar(reviewing.savingsZar) }] : []),
                 { label: 'Category', value: reviewing.kind },
               ].map((row) => (
                 <div key={row.label} className="rounded-xl border border-line p-3.5">
@@ -598,7 +572,6 @@ function IntelligenceBody() {
         }}
         defaults={workOrderDraft ?? undefined}
         onCreated={() => {
-          if (reviewing) setAccepted((current) => [...current, reviewing.id]);
           intelligenceQuery.reload();
         }}
       />

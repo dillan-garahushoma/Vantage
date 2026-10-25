@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ComplaintDrawer } from '../components/ComplaintDrawer';
 import { IconPlus } from '../components/Icons';
 import { RequireEstate } from '../components/RequireEstate';
@@ -126,12 +127,23 @@ export function LogComplaintDrawer({ onClose, onDone }) {
 }
 function ComplaintsBody() {
     const { estateId, estate } = useEstateScope();
+    const location = useLocation();
+    const navigate = useNavigate();
     const { user } = useAuth();
     const isAdmin = user?.role === 'hoa_admin';
     const [status, setStatus] = useState('');
     const [category, setCategory] = useState('');
     const [page, setPage] = useState(1);
-    const [openId, setOpenId] = useState(null);
+    const [openId, setOpenId] = useState(() => location.state?.focusComplaintId ?? null);
+
+    // The resident dashboard can deep-link into one specific request. Consume
+    // that one-shot navigation state after opening the drawer so Back/revisits
+    // don't repeatedly reopen it.
+    useEffect(() => {
+        if (location.state?.focusComplaintId) {
+            navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
+        }
+    }, [location.key, location.pathname, location.search, location.state, navigate]);
     const [logging, setLogging] = useState(false);
     const complaints = useAsync(() => api.get('/api/v1/complaints', {
         estate_id: estateId,

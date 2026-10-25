@@ -1,106 +1,180 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { ArrowRight, Bell, CalendarDays, CheckCircle2, CircleAlert, Clock3, FileText, HeartPulse, ShieldAlert, Wrench } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { IconArrowRight, IconClock, IconMegaphone, IconReport, IconWrench } from '../components/Icons';
-import { RequireEstate } from '../components/RequireEstate';
-import { Chip, EmptyState, ErrorState, LoadingState, SectionTitle } from '../components/ui';
-import { Button } from '../components/ui/button';
-import { MetricCard } from '../components/valora/MetricCard';
-import { ScoreCard } from '../components/valora/ScoreCard';
-import { SectionHeading } from '../components/valora/SectionHeading';
-import { Surface } from '../components/valora/Surface';
-import { AttentionPanel } from '../components/valora/AttentionPanel';
+import { Chip, ErrorState, LoadingState } from '../components/ui';
+import { ComplaintDrawer } from '../components/ComplaintDrawer';
 import { useAuth } from '../context/AuthContext';
 import { useEstateScope } from '../context/EstateContext';
 import { api, ApiError } from '../lib/api';
 import { getLivingScore, getLivingScoreHistory, recalculateLivingScore } from '../lib/analytics';
 import { complaintStatus, pillarBand, workOrderStatus } from '../lib/display';
-import { durationHours, displayLabel, ratio, relativeDays, shortDate } from '../lib/format';
+import { displayLabel, relativeDays, shortDate } from '../lib/format';
 import { useAsync } from '../lib/useAsync';
 
 const OPEN_STATUSES = new Set(['submitted', 'reviewed', 'assigned', 'in_progress']);
 
-function EstateCard() {
-  const { estate } = useEstateScope();
-  if (!estate) return null;
+function EstateContextHero({ estate }) {
+  const location = [estate?.suburb, estate?.city, estate?.province].filter(Boolean).join(' · ');
   return (
-    <Surface>
-      <p className="text-[0.66rem] font-semibold tracking-[0.14em] text-ink/40 uppercase">Estate</p>
-      <h2 className="mt-1 font-heading text-[1.05rem] font-bold text-ink">{estate.estate_name}</h2>
-      <p className="num mt-1 text-[0.78rem] text-ink-muted">
-        {estate.suburb}, {estate.city}, {estate.province}
-      </p>
-
-      <dl className="mt-4 space-y-2.5">
-        <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-[0.82rem] text-ink-soft">Your role here</dt>
-          <dd className="num text-[0.82rem] font-medium">
-            {estate.is_estate_admin
-              ? 'HOA administrator'
-              : estate.is_estate_provider
-              ? 'Service provider'
-              : (estate.membership_roles[0] ?? 'member')}
-          </dd>
-        </div>
-        <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-[0.82rem] text-ink-soft">Units linked to you</dt>
-          <dd className="num text-[0.82rem] font-medium">{estate.property_ids.length}</dd>
-        </div>
-        <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-[0.82rem] text-ink-soft">Estate reference</dt>
-          <dd className="num text-[0.82rem] font-medium">#{estate.estate_id}</dd>
-        </div>
-      </dl>
-
-      <p className="mt-4 border-t border-line pt-3 text-[0.75rem] text-ink-muted">
-        This identifier is resolved on the server from your membership. Supplying an estate number is
-        never treated as proof of access.
-      </p>
-    </Surface>
+    <section className="relative min-h-[154px] overflow-hidden bg-brand-wash sm:min-h-[174px]" aria-label="Selected estate">
+      <img
+        src="/estate-hero.jpg"
+        alt="Contemporary residential architecture and landscaped grounds"
+        width="960"
+        height="420"
+        fetchPriority="high"
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#241532]/80 via-[#241532]/35 to-transparent" />
+      <div className="relative flex min-h-[154px] max-w-xl flex-col justify-end p-5 text-white sm:min-h-[174px] sm:p-6">
+        <p className="text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-white/75">Your estate</p>
+        <h2 className="mt-1 font-heading text-xl font-semibold tracking-tight sm:text-2xl">{estate?.estate_name ?? 'Selected estate'}</h2>
+        {location ? <p className="mt-1 text-xs text-white/80">{location}</p> : null}
+      </div>
+    </section>
   );
 }
 
-function NeedsAttention({ complaints }) {
-  const open = complaints.filter((item) => OPEN_STATUSES.has(item.status ?? '')).slice(0, 5);
-  const items =
-    open.length > 0
-      ? open.map((item) => ({
-          id: item.id,
-          title: item.description,
-          detail: `Unit ${item.unit_id} · ${displayLabel(item.category)} · logged ${relativeDays(item.created_at)}`,
-          area: `Unit ${item.unit_id}`,
-          eta: item.priority === 'urgent' ? 'Immediate SLA' : 'Standard SLA',
-          impact: `Priority: ${displayLabel(item.priority)}`,
-          urgency:
-            item.priority === 'urgent'
-              ? 'Critical'
-              : item.priority === 'high'
-              ? 'At Risk'
-              : 'Watch',
-        }))
-      : [];
-  return <AttentionPanel items={items} />;
+function nextAction(status) {
+  switch (status) {
+    case 'submitted': return 'Review issue';
+    case 'reviewed': return 'Assign provider';
+    case 'assigned': return 'Confirm work start';
+    case 'in_progress': return 'Follow repair';
+    default: return 'Open record';
+  }
 }
 
-function AnnouncementList({ announcements }) {
-  if (announcements.length === 0) {
-    return (
-      <EmptyState
-        title="No announcements yet"
-        body="When your HOA publishes a notice — an outage, an AGM, a security upgrade — it appears here for every member of the estate."
-      />
-    );
-  }
+function PriorityRow({ complaint, onSelect }) {
+  const priority = (complaint.priority ?? 'normal').toLowerCase();
+  const critical = priority === 'urgent';
+  const high = priority === 'high';
+  const status = complaintStatus[complaint.status ?? 'submitted'];
   return (
-    <ul className="divide-y divide-line">
-      {announcements.map((item) => (
-        <li key={item.id} className="py-3.5">
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 className="text-[0.88rem] font-medium">{item.title}</h3>
-            <span className="num shrink-0 text-[0.75rem] text-ink-muted">
-              {shortDate(item.created_at)}
+    <li className="border-b border-brand/10 last:border-b-0">
+      <button
+        type="button"
+        onClick={() => onSelect(complaint)}
+        className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 py-3.5 text-left transition-colors hover:bg-brand-wash/35 focus-visible:outline-2 focus-visible:outline-brand sm:grid-cols-[minmax(0,1.6fr)_100px_minmax(90px,0.7fr)_140px] sm:gap-4 sm:px-2"
+        aria-label={`Open issue details for complaint ${complaint.id}: ${complaint.description}`}
+      >
+        <span className="flex min-w-0 items-start gap-3">
+          <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${critical ? 'bg-signal-wash text-signal-ink' : high ? 'bg-ochre-wash text-ochre-ink' : 'bg-brand-wash text-brand-ink'}`}>
+            {critical || high ? <CircleAlert className="h-3.5 w-3.5" aria-hidden="true" /> : <Wrench className="h-3.5 w-3.5" aria-hidden="true" />}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block line-clamp-2 text-[0.82rem] font-semibold leading-snug text-ink">{complaint.description}</span>
+            <span className="mt-1 block truncate text-[0.68rem] text-ink/50">
+              {displayLabel(complaint.category)} · Unit {complaint.unit_id} · #{complaint.id}
             </span>
+            <span className="mt-1 block text-[0.68rem] text-ink/45 sm:hidden">
+              {status?.label ?? displayLabel(complaint.status ?? 'submitted')} · {relativeDays(complaint.created_at)}
+            </span>
+          </span>
+        </span>
+
+        <span className={`inline-flex w-fit items-center rounded-full px-2 py-1 text-[0.62rem] font-semibold ${critical ? 'bg-signal-wash text-signal-ink' : high ? 'bg-ochre-wash text-ochre-ink' : priority === 'low' ? 'bg-mint-wash text-mint-ink' : 'bg-brand-wash text-brand-ink'}`}>
+          {displayLabel(priority)}
+        </span>
+
+        <span className="hidden min-w-0 truncate text-[0.74rem] text-ink/60 sm:block">
+          {complaint.assigned_to?.trim() || 'Not assigned'}
+        </span>
+
+        <span className="col-span-2 flex items-center justify-between gap-2 border-t border-brand/5 pt-2 text-[0.72rem] font-semibold text-brand-ink sm:col-span-1 sm:border-0 sm:pt-0">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="hidden text-[0.68rem] font-normal text-ink/45 sm:inline">{status?.label ?? displayLabel(complaint.status ?? 'submitted')}</span>
+            <span className="truncate">{nextAction(complaint.status)}</span>
+          </span>
+          <ArrowRight className="h-3.5 w-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+        </span>
+      </button>
+    </li>
+  );
+}
+
+function ScoreSummary({ snapshot, history, loading, error, onRecalculate, recalculating, recalculateError }) {
+  const scored = snapshot?.status === 'scored' && snapshot?.overall_score !== null && snapshot?.overall_score !== undefined;
+  const score = scored ? Number(snapshot.overall_score) : null;
+  const band = scored ? pillarBand(score) : null;
+  const snapshots = [...(history?.snapshots ?? [])].reverse().filter((item) => item.overall_score !== null && item.overall_score !== undefined);
+  const change = snapshots.length > 1 ? Number(snapshots.at(-1).overall_score) - Number(snapshots.at(-2).overall_score) : null;
+  const percentage = score === null ? 0 : Math.max(0, Math.min(100, score));
+
+  return (
+    <section className="flex min-w-0 items-center gap-4" aria-labelledby="estate-health-summary">
+      <div
+        className="flex h-[74px] w-[74px] shrink-0 items-center justify-center rounded-full"
+        style={{ background: `conic-gradient(#7041D8 ${percentage}%, #e9e1f6 ${percentage}% 100%)` }}
+        role={scored ? 'img' : undefined}
+        aria-label={scored ? `Living Score ${score.toLocaleString('en-ZA', { maximumFractionDigits: 1 })} out of 100` : undefined}
+      >
+        <div className="flex h-[58px] w-[58px] flex-col items-center justify-center rounded-full bg-white">
+          <span className="num text-lg font-bold leading-none text-brand-ink">{loading ? '—' : scored ? score.toLocaleString('en-ZA', { maximumFractionDigits: 1 }) : '—'}</span>
+          <span className="mt-1 text-[0.55rem] text-ink/40">/ 100</span>
+        </div>
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 text-brand-ink">
+          <HeartPulse className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <p id="estate-health-summary" className="text-[0.65rem] font-bold uppercase tracking-[0.13em]">Estate health</p>
+        </div>
+        {loading ? <div className="mt-2"><LoadingState label="Loading Living Score" /></div> : error ? (
+          <p className="mt-1 text-xs text-ink/55">Estate health is temporarily unavailable.</p>
+        ) : scored ? (
+          <>
+            <p className="mt-1 text-[0.78rem] font-semibold text-ink">{band?.label ?? 'Published score'}</p>
+            <p className="mt-0.5 text-[0.66rem] text-ink/50">Updated {shortDate(snapshot.as_of ?? snapshot.calculated_at)}</p>
+            {change !== null ? <p className={`mt-1 text-[0.65rem] font-semibold ${change > 0 ? 'text-mint-ink' : change < 0 ? 'text-signal-ink' : 'text-ink/45'}`}>{change > 0 ? '+' : ''}{change.toLocaleString('en-ZA', { maximumFractionDigits: 1 })} points vs previous snapshot</p> : null}
+          </>
+        ) : (
+          <p className="mt-1 text-[0.74rem] leading-relaxed text-ink/55">Not enough data for a published Living Score yet.</p>
+        )}
+
+        {recalculateError ? <div role="alert" className="mt-2 border-l-2 border-signal bg-signal-wash/60 px-2.5 py-2 text-[0.68rem] text-signal-ink"><p className="font-semibold">Recalculation refused</p><p className="mt-1">{recalculateError.message}</p>{recalculateError.requestId ? <p className="mt-1">Reference: {recalculateError.requestId}</p> : null}</div> : null}
+
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <Link to="/app/health" className="inline-flex items-center gap-1 text-[0.72rem] font-semibold text-brand-ink hover:underline">
+            Explore Estate Health <ArrowRight className="h-3 w-3" aria-hidden="true" />
+          </Link>
+          <button type="button" onClick={onRecalculate} disabled={recalculating} className="text-[0.66rem] font-medium text-ink/45 underline-offset-4 hover:text-brand-ink hover:underline disabled:opacity-50">
+            {recalculating ? 'Recalculating…' : 'Recalculate'}
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ActivityList({ complaints, workOrders }) {
+  const records = [
+    ...complaints.map((item) => ({
+      key: `complaint-${item.id}`,
+      icon: <FileText className="h-4 w-4" />,
+      title: item.description,
+      detail: `Complaint #${item.id} · ${displayLabel(item.status ?? 'submitted')}`,
+      date: item.updated_at ?? item.created_at,
+    })),
+    ...workOrders.map((item) => ({
+      key: `work-order-${item.id}`,
+      icon: <Wrench className="h-4 w-4" />,
+      title: `Work order #${item.id}`,
+      detail: `${displayLabel(item.status ?? 'assigned')} · Complaint #${item.complaint_id}`,
+      date: item.updated_at ?? item.created_at,
+    })),
+  ].sort((a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime()).slice(0, 4);
+
+  if (records.length === 0) return <p className="py-4 text-sm text-ink-muted">Recent activity will appear here as estate work is recorded.</p>;
+  return (
+    <ul className="divide-y divide-line/80">
+      {records.map((item) => (
+        <li key={item.key} className="flex items-start gap-3 py-3.5">
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center bg-brand-wash text-brand-ink">{item.icon}</span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-ink">{item.title}</p>
+            <p className="mt-1 text-xs text-ink-muted">{item.detail}</p>
           </div>
-          <p className="mt-1 line-clamp-2 text-[0.83rem] text-ink-soft">{item.message}</p>
+          <time className="shrink-0 pt-0.5 text-xs text-ink-muted">{shortDate(item.date)}</time>
         </li>
       ))}
     </ul>
@@ -110,55 +184,54 @@ function AnnouncementList({ announcements }) {
 export function AdminDashboard() {
   const { estateId, estate } = useEstateScope();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'hoa_admin';
-  const announcements = useAsync(
-    () => api.get('/api/v1/announcements', { estate_id: estateId, size: 4 }),
-    [estateId]
-  );
-  const complaints = useAsync(
-    () =>
-      api.get('/api/v1/complaints', {
-        estate_id: estateId,
-        size: 12,
-        sort: '-created_at',
-      }),
-    [estateId]
-  );
-  const stats = useAsync(
-    () =>
-      isAdmin
-        ? api.get('/api/v1/complaints/stats', { estate_id: estateId })
-        : Promise.resolve(null),
-    [estateId, isAdmin]
-  );
-  const workOrders = useAsync(
-    () =>
-      isAdmin
-        ? api.get('/api/v1/work-orders', { estate_id: estateId, size: 100 })
-        : Promise.resolve(null),
-    [estateId, isAdmin]
-  );
-  const properties = useAsync(
-    () => api.get('/api/v1/properties', { estate_id: estateId, size: 100 }),
-    [estateId]
-  );
-
-  // The stored snapshot, exactly as the engine wrote it: this screen never
-  // calculates a score. A 404 (never scored) and an `insufficient_data` snapshot
-  // are both rendered as "not enough data yet", never as a zero.
-  const livingScoreSnapshot = useAsync(
-    () => (estateId === null ? Promise.resolve(null) : getLivingScore(estateId)),
-    [estateId]
-  );
-  const livingScoreHistory = useAsync(
-    () => (estateId === null ? Promise.resolve(null) : getLivingScoreHistory(estateId, 12)),
-    [estateId]
-  );
-
-  // The one action on this panel. The server decides whether the caller may
-  // calculate; a refusal is shown verbatim and nothing is recalculated locally.
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [recalculating, setRecalculating] = useState(false);
   const [recalculateError, setRecalculateError] = useState(null);
+
+  const announcements = useAsync(
+    () => estateId === null ? Promise.resolve({ items: [], total: 0 }) : api.get('/api/v1/announcements', { estate_id: estateId, size: 4 }),
+    [estateId],
+  );
+  const complaints = useAsync(
+    () => estateId === null ? Promise.resolve({ items: [], total: 0 }) : api.get('/api/v1/complaints', { estate_id: estateId, size: 50, sort: '-created_at' }),
+    [estateId],
+  );
+  const stats = useAsync(
+    () => user?.role === 'hoa_admin' && estateId !== null ? api.get('/api/v1/complaints/stats', { estate_id: estateId }) : Promise.resolve(null),
+    [estateId, user?.role],
+  );
+  const workOrders = useAsync(
+    () => user?.role === 'hoa_admin' && estateId !== null ? api.get('/api/v1/work-orders', { estate_id: estateId, size: 50 }) : Promise.resolve({ items: [], total: 0 }),
+    [estateId, user?.role],
+  );
+  const score = useAsync(
+    () => estateId === null ? Promise.resolve(null) : getLivingScore(estateId).catch((error) => {
+      if (error?.status === 404) return null;
+      throw error;
+    }),
+    [estateId],
+  );
+  const scoreHistory = useAsync(
+    () => estateId === null ? Promise.resolve(null) : getLivingScoreHistory(estateId, 12).catch((error) => {
+      if (error?.status === 404) return { snapshots: [] };
+      throw error;
+    }),
+    [estateId],
+  );
+
+  const allComplaints = complaints.data?.items ?? [];
+  const activeComplaints = useMemo(
+    () => allComplaints.filter((item) => OPEN_STATUSES.has(item.status ?? '')).sort((a, b) => {
+      const priorityRank = (value) => value === 'urgent' ? 0 : value === 'high' ? 1 : value === 'normal' ? 2 : 3;
+      const priorityDifference = priorityRank(a.priority) - priorityRank(b.priority);
+      return priorityDifference || new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime();
+    }),
+    [allComplaints],
+  );
+  const workOrderItems = workOrders.data?.items ?? [];
+  const workOrdersInFlight = workOrderItems.filter((item) => ['assigned', 'in_progress'].includes(item.status ?? ''));
+  const resolutionRate = stats.data?.resolution_rate_pct;
+  const notices = announcements.data?.items ?? [];
 
   async function recalculateScore() {
     if (estateId === null || recalculating) return;
@@ -166,450 +239,223 @@ export function AdminDashboard() {
     setRecalculateError(null);
     try {
       await recalculateLivingScore(estateId);
-      livingScoreSnapshot.reload();
-      livingScoreHistory.reload();
+      score.reload();
+      scoreHistory.reload();
     } catch (cause) {
-      setRecalculateError(
-        cause instanceof ApiError
-          ? cause
-          : new ApiError(0, cause instanceof Error ? cause.message : 'Something went wrong.')
-      );
+      setRecalculateError(cause instanceof ApiError ? cause : new ApiError(0, cause instanceof Error ? cause.message : 'Could not recalculate the score.'));
     } finally {
       setRecalculating(false);
     }
   }
 
-  const snapshot = livingScoreSnapshot.data;
-  const scored =
-    snapshot !== null &&
-    snapshot.status === 'scored' &&
-    snapshot.overall_score !== null &&
-    snapshot.overall_score !== undefined;
-
-  // The engine's own pillars, with the weights it published — never re-derived.
-  const pillars = (snapshot?.components ?? []).map((component) => ({
-    key: component.key,
-    name: component.label,
-    score:
-      component.score === null || component.score === undefined ? 0 : Number(component.score),
-    weight: Number(component.weight) * 100,
-    summary: component.explanation || undefined,
-    measured: component.status === 'measured' && component.score !== null,
-  }));
-
-  // Stored snapshots, oldest first: a trajectory of published numbers.
-  const trajectory = [...(livingScoreHistory.data?.snapshots ?? [])]
-    .reverse()
-    .filter((row) => row.overall_score !== null)
-    .map((row) => ({ date: shortDate(row.as_of), score: Number(row.overall_score) }));
-
-  // The written status and the movement come from the snapshots this screen
-  // fetched — the band is a *label* for the published number, and the change is
-  // the difference between two stored figures. Neither is a score calculation.
-  const storedValues = trajectory.map((point) => point.score);
-  const band = scored ? pillarBand(Number(snapshot?.overall_score)) : null;
-  const trend =
-    storedValues.length > 1
-      ? Math.round((storedValues[storedValues.length - 1] - storedValues[storedValues.length - 2]) * 10) /
-        10
-      : null;
-
-  // “Healthy, with watch areas” — the composite band, qualified by the pillars
-  // the engine measured below the healthy band.
-  const flagged = pillars.filter(
-    (pillar) => pillar.measured && pillarBand(pillar.score).tone !== 'positive'
-  );
-  const statusLabel = !scored
-    ? 'Not enough data yet'
-    : `${band?.label ?? 'Healthy'}${flagged.length === 0 ? '' : ', with watch areas'}`;
-
-  const openCount = (complaints.data?.items ?? []).filter((item) =>
-    OPEN_STATUSES.has(item.status ?? '')
-  ).length;
-  const unitCount = properties.data?.total ?? null;
-  const averageResolution = stats.data?.avg_resolution_hours;
-  const workOrdersInFlight = (workOrders.data?.items ?? []).filter((order) =>
-    ['assigned', 'in_progress'].includes(order.status ?? '')
-  ).length;
-
-  const operationalTimeline = [
-    ...(complaints.data?.items ?? []).map((item) => ({
-      id: `complaint-${item.id}`,
-      date: shortDate(item.updated_at ?? item.created_at),
-      title: `Complaint #${item.id}: ${displayLabel(item.status ?? 'submitted')}`,
-      description: item.description,
-      meta: `Unit ${item.unit_id} · ${displayLabel(item.category)}`,
-      status: OPEN_STATUSES.has(item.status ?? '') ? 'current' : 'completed',
-      occurredAt: item.updated_at ?? item.created_at,
-    })),
-    ...(isAdmin
-      ? (workOrders.data?.items ?? []).map((order) => ({
-          id: `work-order-${order.id}`,
-          date: shortDate(order.updated_at ?? order.created_at),
-          title: `Work order #${order.id}: ${displayLabel(order.status ?? 'assigned')}`,
-          description:
-            order.completion_notes ?? `Complaint #${order.complaint_id} · provider #${order.provider_id}`,
-          meta: `Work order #${order.id}`,
-          status: ['assigned', 'in_progress'].includes(order.status ?? '') ? 'current' : 'completed',
-          occurredAt: order.updated_at ?? order.created_at,
-        }))
-      : []),
-  ]
-    .sort(
-      (left, right) =>
-        new Date(right.occurredAt ?? 0).getTime() - new Date(left.occurredAt ?? 0).getTime()
-    )
-    .slice(0, 8);
-
-  // ADD: triage banner computation
-  const unassignedComplaints = (complaints.data?.items ?? []).filter(
-    (c) => c.status === 'submitted' || c.status === 'reviewed'
-  );
+  const openComplaintCount = stats.data
+    ? Math.max(
+        0,
+        Number(stats.data.total ?? 0) -
+          Number(stats.data.by_status?.resolved ?? 0) -
+          Number(stats.data.by_status?.rated ?? 0) -
+          Number(stats.data.by_status?.closed ?? 0),
+      )
+    : activeComplaints.length;
+  const urgentCount = activeComplaints.filter((item) => ['urgent', 'high'].includes((item.priority ?? '').toLowerCase())).length;
+  const firstName = user?.full_name?.trim().split(' ').filter(Boolean)[0] || 'there';
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="space-y-5">
-      {/* ---- Triage banners (NEW — leads the view) ---- */}
-      {unassignedComplaints.length > 0 ? (
-        <div className="flex items-center justify-between gap-4 rounded-xl border border-signal/30 border-l-4 border-l-signal bg-signal-wash px-4 py-3.5">
-          <div>
-            <p className="text-[13.5px] font-semibold text-signal-ink">
-              {unassignedComplaints.length} complaint{unassignedComplaints.length !== 1 ? 's' : ''} need{unassignedComplaints.length === 1 ? 's' : ''} review
-            </p>
-            <p className="text-[12px] text-ink-soft">
-              Unassigned — no contractor has been assigned yet.
-            </p>
-          </div>
-          <Link
-            to="/app/complaints"
-            className="shrink-0 rounded-xs border border-signal/30 bg-white px-3 py-1.5 text-[12.5px] font-medium text-signal-ink transition-colors hover:bg-signal-wash"
-          >
-            Review →
-          </Link>
+    <div className="space-y-6 pb-6">
+      <header className="flex flex-col justify-between gap-3 border-b border-brand/10 pb-5 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-brand-ink">Welcome back</p>
+          <h1 className="mt-1 font-heading text-3xl font-semibold leading-tight tracking-[-0.045em] text-ink sm:text-[2.65rem]">
+            {greeting}, <span className="text-brand-ink">{firstName}</span>
+          </h1>
+          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-ink/55">
+            Here's the current status for {estate?.estate_name ?? 'your estate'}.
+          </p>
         </div>
-      ) : null}
+      </header>
 
-      {/* ---- All existing DashboardBody JSX below, unchanged ---- */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <SectionHeading
-          eyebrow={isAdmin ? 'Governance overview' : 'Estate overview'}
-          title="Property health at a glance"
-          description="Operational data as recorded by the estate. Each score shows its own calculation date."
-        />
-      </div>
+      <section className="grid gap-0 overflow-hidden border border-brand/10 bg-white md:grid-cols-[1.12fr_0.88fr]" aria-label="Estate summary">
+        <EstateContextHero estate={estate} />
+        <div className="flex items-center px-5 py-5 sm:px-6">
+          <ScoreSummary
+            snapshot={score.data}
+            history={scoreHistory.data}
+            loading={score.loading || scoreHistory.loading}
+            error={score.error || scoreHistory.error}
+            onRecalculate={recalculateScore}
+            recalculating={recalculating}
+            recalculateError={recalculateError}
+          />
+        </div>
+      </section>
 
-      <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
-        <ScoreCard
-          empty={!scored}
-          value={scored ? ratio(snapshot?.overall_score) : undefined}
-          status={statusLabel}
-          change={scored ? (trend ?? undefined) : undefined}
-          spark={scored ? storedValues : undefined}
-          label="Living Score"
-          description={
-            scored
-              ? `Stored for a rolling 90-day window by engine ${snapshot?.engine_version}. The figure is read, never recalculated on this screen.`
-              : 'This estate has no publishable score yet. Every operational action — a logged complaint, a completed work order, a resident rating — feeds the five weighted pillars below.'
-          }
-          action={
-            <div className="space-y-3">
-              {recalculateError ? (
-                <ErrorState
-                  title="The recalculation was refused"
-                  message={recalculateError.message}
-                  requestId={recalculateError.requestId}
-                />
-              ) : null}
-              <div className="flex flex-wrap items-center gap-2">
-                {isAdmin ? (
-                  <Button variant="secondary" onClick={recalculateScore} disabled={recalculating}>
-                    {recalculating ? 'Recalculating…' : 'Recalculate now'}
-                  </Button>
-                ) : null}
-                <Link
-                  to="/app/health"
-                  className="inline-flex items-center gap-1.5 text-[0.8rem] font-medium text-brand-ink hover:underline"
-                >
-                  Full health breakdown
-                  <IconArrowRight size={15} />
-                </Link>
+      <section className="grid grid-cols-2 gap-x-5 gap-y-4 border-y border-brand/15 py-4 sm:grid-cols-4 sm:gap-0" aria-label="Operational summary">
+        <div className="sm:border-r sm:border-brand/10 sm:pr-4">
+          <p className="text-[0.62rem] font-bold uppercase tracking-[0.12em] text-ink/55">Open requests</p>
+          <p className="num mt-1 text-2xl font-semibold leading-none text-ink">{stats.loading || stats.error ? '—' : openComplaintCount}</p>
+        </div>
+        <div className="sm:border-r sm:border-brand/10 sm:px-4">
+          <p className="text-[0.62rem] font-bold uppercase tracking-[0.12em] text-signal-ink">Urgent &amp; high</p>
+          <p className="num mt-1 text-2xl font-semibold leading-none text-ink">{complaints.loading || complaints.error ? '—' : urgentCount}</p>
+        </div>
+        <div className="sm:border-r sm:border-brand/10 sm:px-4">
+          <p className="text-[0.62rem] font-bold uppercase tracking-[0.12em] text-ink/55">Work in progress</p>
+          <p className="num mt-1 text-2xl font-semibold leading-none text-ink">{workOrders.loading || workOrders.error ? '—' : workOrdersInFlight.length}</p>
+        </div>
+        <div className="sm:pl-4">
+          <p className="text-[0.62rem] font-bold uppercase tracking-[0.12em] text-ink/55">Resolution rate</p>
+          <p className="num mt-1 text-2xl font-semibold leading-none text-ink">{stats.loading || stats.error || resolutionRate == null ? '—' : `${Number(resolutionRate).toFixed(0)}%`}</p>
+        </div>
+      </section>
+
+      <section className="grid gap-8 xl:grid-cols-[minmax(0,1.55fr)_minmax(250px,0.72fr)] xl:gap-9">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-brand/15 pb-3">
+            <div>
+              <h2 className="font-heading text-xl font-semibold tracking-tight text-ink sm:text-2xl">What needs your attention today?</h2>
+              <p className="mt-1 text-xs text-ink/50">Priority issues and open items requiring action.</p>
+            </div>
+            <Link to="/app/complaints" className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-ink hover:underline">
+              All complaints <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </Link>
+          </div>
+
+          {urgentCount > 0 ? (
+            <div className="my-3 flex items-start gap-2.5 border-l-2 border-signal bg-signal-wash/55 px-3.5 py-2.5">
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-signal-ink" aria-hidden="true" />
+              <div>
+                <p className="text-xs font-semibold text-signal-ink">{urgentCount} high-priority issue{urgentCount === 1 ? '' : 's'} in the latest records</p>
+                <p className="mt-0.5 text-[0.7rem] leading-relaxed text-ink/60">Open an issue to inspect the record and continue the workflow.</p>
               </div>
             </div>
-          }
-        />
-        <EstateCard />
-      </div>
+          ) : null}
 
-      {/* ------------------------------------------------ KPI row */}
-      {isAdmin ? (
-        stats.loading ? (
-          <LoadingState label="Loading estate metrics" />
-        ) : stats.error ? (
-          <ErrorState message={stats.error.message} requestId={stats.error.requestId} />
-        ) : stats.data ? (
-          <section aria-label="Estate operations at a glance" className="border-y border-line bg-surface">
-            <dl className="grid divide-y divide-line sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
-              {[
-                {
-                  label: 'Complaints logged',
-                  value: String(stats.data.total),
-                  detail: `${stats.data.total - (stats.data.by_status.resolved ?? 0) - (stats.data.by_status.rated ?? 0) - (stats.data.by_status.closed ?? 0)} still open`,
-                  icon: <IconReport size={16} />,
-                  tone: 'text-signal-ink',
-                },
-                {
-                  label: 'Resolution rate',
-                  value: `${Number(stats.data.resolution_rate_pct).toFixed(0)}%`,
-                  detail: 'Reached resolved',
-                  icon: <IconClock size={16} />,
-                  tone: 'text-mint-ink',
-                },
-                {
-                  label: 'Average resolution',
-                  value: durationHours(averageResolution),
-                  detail: 'Benchmark: 5 business days',
-                  icon: <IconWrench size={16} />,
-                  tone: averageResolution && Number(averageResolution) > 24 * 5 ? 'text-ochre-ink' : 'text-mint-ink',
-                },
-                {
-                  label: 'Work orders in flight',
-                  value: String(workOrdersInFlight),
-                  detail: 'Assigned or in progress',
-                  icon: <IconWrench size={16} />,
-                  tone: workOrdersInFlight > 0 ? 'text-brand-ink' : 'text-mint-ink',
-                },
-              ].map((metric) => (
-                <div key={metric.label} className="px-5 py-4 sm:px-6">
-                  <dt className="flex items-center gap-2 text-[0.68rem] font-semibold tracking-[0.12em] text-ink/45 uppercase">
-                    <span className={metric.tone}>{metric.icon}</span>
-                    {metric.label}
-                  </dt>
-                  <dd className="num mt-3 text-[1.8rem] leading-none font-semibold tracking-[-0.03em] text-ink">{metric.value}</dd>
-                  <p className="mt-2 text-[0.75rem] text-ink/50">{metric.detail}</p>
-                </div>
-              ))}
-            </dl>
-          </section>
-        ) : null
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <MetricCard
-            label={user?.role === 'resident' ? 'Your open complaints' : 'Open complaints'}
-            value={String(openCount)}
-            deltaTone={openCount > 0 ? 'attention' : 'positive'}
-            hint={user?.role === 'resident' ? 'Issues you have logged' : 'Across the estate'}
-            icon={<IconReport size={17} />}
-          />
-          <MetricCard
-            label="Estate units"
-            value={unitCount === null ? '—' : String(unitCount)}
-            hint="Registered in VALORA"
-            icon={<IconClock size={17} />}
-          />
-          <MetricCard
-            label="Announcements"
-            value={String(announcements.data?.total ?? 0)}
-            hint="Published by the HOA"
-            icon={<IconMegaphone size={17} />}
-          />
-        </div>
-      )}
+          <div className="hidden grid-cols-[minmax(0,1.6fr)_100px_minmax(90px,0.7fr)_140px] gap-4 border-b border-brand/10 px-2 py-2.5 text-[0.6rem] font-bold uppercase tracking-[0.13em] text-ink/40 sm:grid">
+            <span>Issue</span><span>Priority</span><span>Owner</span><span>Next action</span>
+          </div>
 
-      {/* ------------------------------------------------ lower grid */}
-      <div className="grid gap-5 lg:grid-cols-[1.35fr_1fr]">
-        {isAdmin ? (
-          complaints.loading ? (
-            <LoadingState label="Loading complaints" />
-          ) : complaints.error ? (
-            <ErrorState
-              message={complaints.error.message}
-              requestId={complaints.error.requestId}
-            />
+          {complaints.loading ? <div className="py-5"><LoadingState label="Loading priority issues" /></div> : complaints.error ? (
+            <div className="py-4">
+              <ErrorState title="Issues could not be loaded" message={complaints.error.message} requestId={complaints.error.requestId} action={<button onClick={complaints.reload} type="button" className="text-sm font-semibold text-brand-ink underline">Try again</button>} />
+            </div>
+          ) : activeComplaints.length === 0 ? (
+            <div className="flex items-start gap-3 py-7">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 text-mint-ink" aria-hidden="true" />
+              <div><p className="font-semibold text-ink">No open complaints on record.</p><p className="mt-1 text-sm text-ink/55">New submissions will appear here for review.</p></div>
+            </div>
           ) : (
-            <NeedsAttention complaints={complaints.data?.items ?? []} />
-          )
-        ) : (
-          <Surface>
-            <SectionTitle
-              title={user?.role === 'resident' ? 'Your complaints' : 'Your activity'}
-              hint="Only issues you logged are visible to you"
-              action={
-                user?.role === 'resident' ? (
-                  <Link
-                    to="/app/complaints"
-                    className="inline-flex items-center gap-1.5 text-[0.8rem] font-medium text-brand-ink hover:underline"
-                  >
-                    Open complaints
-                    <IconArrowRight size={15} />
-                  </Link>
-                ) : null
-              }
-            />
-            {complaints.loading ? (
-              <LoadingState label="Loading complaints" />
-            ) : complaints.error ? (
-              <ErrorState
-                message={complaints.error.message}
-                requestId={complaints.error.requestId}
-              />
-            ) : (complaints.data?.items.length ?? 0) === 0 ? (
-              <p className="py-4 text-[0.83rem] text-ink-muted">
-                {user?.role === 'resident'
-                  ? 'You have not logged any complaints yet.'
-                  : 'Nothing logged against your membership.'}
-              </p>
+            <ul>{activeComplaints.slice(0, 7).map((item) => <PriorityRow key={item.id} complaint={item} onSelect={setSelectedComplaint} />)}</ul>
+          )}
+          {activeComplaints.length > 7 ? <Link to="/app/complaints" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-ink hover:underline">View all {activeComplaints.length} open items <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link> : null}
+
+          <section className="mt-7 border-t border-brand/10 pt-5" aria-labelledby="operational-pulse-heading">
+            <div className="flex items-baseline justify-between gap-3">
+              <div>
+                <h2 id="operational-pulse-heading" className="font-heading text-lg font-semibold text-ink">Operational pulse</h2>
+                <p className="mt-1 text-xs text-ink/50">Latest measurements from stored estate records.</p>
+              </div>
+              <Link to="/app/health" className="text-xs font-semibold text-brand-ink hover:underline">Estate health <ArrowRight className="ml-1 inline h-3 w-3" aria-hidden="true" /></Link>
+            </div>
+            {complaints.loading || workOrders.loading ? <div className="mt-3"><LoadingState label="Loading recent activity" /></div> : complaints.error && workOrders.error ? (
+              <p className="py-3 text-xs text-ink/50">Recent activity is unavailable.</p>
             ) : (
-              <ul className="divide-y divide-line">
-                {(complaints.data?.items ?? []).slice(0, 5).map((item) => {
-                  const status = complaintStatus[item.status ?? 'submitted'];
-                  return (
-                    <li key={item.id} className="flex items-start gap-3 py-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[0.86rem]">{item.description}</p>
-                        <p className="num mt-0.5 text-[0.75rem] text-ink-muted">
-                          #{item.id} · {item.category} · {relativeDays(item.created_at)}
-                        </p>
-                      </div>
-                      <Chip tone={status?.tone ?? 'neutral'} glyph={status?.glyph}>
-                        {status?.label ?? item.status}
-                      </Chip>
-                    </li>
-                  );
+              <div className="mt-2"><ActivityList complaints={allComplaints.slice(0, 6)} workOrders={workOrderItems.slice(0, 6)} /></div>
+            )}
+          </section>
+        </div>
+
+        <aside className="min-w-0">
+          <section className="border border-brand/10 bg-white" aria-labelledby="estate-profile-heading">
+            <img src="/estate-hero.jpg" alt="Contemporary residential architecture" width="720" height="320" loading="lazy" className="h-[118px] w-full object-cover sm:h-[140px]" />
+            <div className="p-4">
+              <p className="text-[0.6rem] font-bold uppercase tracking-[0.15em] text-brand-ink">Selected estate</p>
+              <h2 id="estate-profile-heading" className="mt-1 font-heading text-lg font-semibold text-ink">{estate?.estate_name ?? 'Estate profile'}</h2>
+              <p className="mt-0.5 text-xs text-ink/50">{[estate?.suburb, estate?.city, estate?.province].filter(Boolean).join(', ') || 'Location not recorded'}</p>
+              <p className="mt-1 text-xs text-ink/50">{estate?.property_ids?.length ?? 0} units linked to your account</p>
+              <div className="mt-4 divide-y divide-brand/10 border-t border-brand/10">
+                <Link to="/admin/settings" className="flex items-center justify-between gap-3 py-3 text-xs font-semibold text-ink/70 hover:text-brand-ink">Estate profile <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+                <Link to="/admin/members" className="flex items-center justify-between gap-3 py-3 text-xs font-semibold text-ink/70 hover:text-brand-ink">Residents and access <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+                <Link to="/intelligence" className="flex items-center justify-between gap-3 py-3 text-xs font-semibold text-ink/70 hover:text-brand-ink">Reports and intelligence <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-6 border-t border-brand/10 pt-5" aria-labelledby="latest-notices">
+            <div className="flex items-start justify-between gap-3">
+              <div><h2 id="latest-notices" className="font-heading text-lg font-semibold text-ink">Community updates</h2><p className="mt-1 text-xs text-ink/50">Keep residents informed.</p></div>
+              <Link to="/app/announcements" aria-label="View all announcements" className="flex h-8 w-8 items-center justify-center text-brand-ink hover:bg-brand-wash"><ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+            </div>
+            {announcements.loading ? <div className="mt-3"><LoadingState label="Loading notices" /></div> : announcements.error ? (
+              <p className="mt-3 text-xs text-ink/55">Notices are temporarily unavailable.</p>
+            ) : notices.length === 0 ? (
+              <div className="mt-3 flex items-start gap-2.5 bg-brand-wash/40 px-3 py-3"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-brand-ink" aria-hidden="true" /><p className="text-xs text-ink/55">No notices have been published yet.</p></div>
+            ) : (
+              <ul className="mt-3 divide-y divide-brand/10">
+                {notices.slice(0, 2).map((notice, index) => <li key={notice.id} className={index === 0 ? 'bg-brand-wash/45 px-3 py-3' : 'py-3'}>
+                  <div className="flex items-start gap-2.5">
+                    <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-brand-ink" aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2"><p className="text-xs font-semibold text-ink">{notice.title}</p><time className="text-[0.64rem] text-ink/40">{shortDate(notice.created_at)}</time></div>
+                      <p className="mt-1 line-clamp-2 text-[0.7rem] leading-relaxed text-ink/55">{notice.message}</p>
+                    </div>
+                  </div>
+                </li>)}
+              </ul>
+            )}
+            <Link to="/app/announcements" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-ink hover:underline">Manage announcements <ArrowRight className="h-3 w-3" aria-hidden="true" /></Link>
+          </section>
+
+          <section className="mt-6 border-t border-brand/10 pt-5" aria-labelledby="work-orders-heading">
+            <div className="flex items-center justify-between gap-3">
+              <div><h2 id="work-orders-heading" className="font-heading text-lg font-semibold text-ink">Work in motion</h2><p className="mt-1 text-xs text-ink/50">Assigned and active repairs.</p></div>
+              <Link to="/app/work-orders" aria-label="View all work orders" className="flex h-8 w-8 items-center justify-center text-brand-ink hover:bg-brand-wash"><ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+            </div>
+            {workOrders.loading ? <div className="mt-3"><LoadingState label="Loading work orders" /></div> : workOrders.error ? (
+              <p className="mt-3 text-xs text-ink/55">Work orders are temporarily unavailable.</p>
+            ) : workOrdersInFlight.length === 0 ? (
+              <p className="py-4 text-xs text-ink/50">No active work orders are recorded.</p>
+            ) : (
+              <ul className="mt-2 divide-y divide-brand/10">
+                {workOrdersInFlight.slice(0, 3).map((order) => {
+                  const status = workOrderStatus[order.status ?? 'assigned'];
+                  return <li key={order.id} className="flex items-start gap-2.5 py-3">
+                    <Wrench className="mt-0.5 h-4 w-4 shrink-0 text-brand-ink" aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-ink">Work order #{order.id}</p>
+                      <p className="mt-0.5 text-[0.68rem] text-ink/50">Complaint #{order.complaint_id}</p>
+                      <p className="mt-1 text-[0.68rem] text-ink/60">{status?.label ?? displayLabel(order.status ?? 'assigned')}</p>
+                    </div>
+                  </li>;
                 })}
               </ul>
             )}
-          </Surface>
-        )}
+          </section>
+        </aside>
+      </section>
 
-        <Surface>
-          <SectionTitle
-            title="Latest announcements"
-            hint="Governance activity is itself a health signal"
-            action={
-              <Link
-                to="/app/announcements"
-                className="inline-flex items-center gap-1.5 text-[0.8rem] font-medium text-brand-ink hover:underline"
-              >
-                All
-                <IconArrowRight size={15} />
-              </Link>
-            }
-          />
-          {announcements.loading ? (
-            <LoadingState label="Loading announcements" />
-          ) : announcements.error ? (
-            <ErrorState
-              message={announcements.error.message}
-              requestId={announcements.error.requestId}
-            />
-          ) : (
-            <AnnouncementList announcements={announcements.data?.items ?? []} />
-          )}
-        </Surface>
-      </div>
-
-      {isAdmin ? (
-        <Surface>
-          <SectionTitle
-            title="Maintenance in flight"
-            hint="Work orders measure operational quality, not just cost"
-            action={
-              <Link
-                to="/app/work-orders"
-                className="inline-flex items-center gap-1.5 text-[0.8rem] font-medium text-brand-ink hover:underline"
-              >
-                All work orders
-                <IconArrowRight size={15} />
-              </Link>
-            }
-          />
-          {workOrders.loading ? (
-            <LoadingState label="Loading work orders" />
-          ) : workOrders.error ? (
-            <ErrorState
-              message={workOrders.error.message}
-              requestId={workOrders.error.requestId}
-            />
-          ) : (workOrders.data?.items.length ?? 0) === 0 ? (
-            <p className="py-4 text-[0.83rem] text-ink-muted">
-              No work orders have been raised yet.
-            </p>
-          ) : (
-            <ul className="divide-y divide-line">
-              {(workOrders.data?.items ?? []).slice(0, 6).map((order) => {
-                const status = workOrderStatus[order.status ?? 'assigned'];
-                return (
-                  <li key={order.id} className="flex flex-wrap items-center gap-3 py-3">
-                    <IconWrench size={16} className="shrink-0 text-ink-muted" />
-                    <span className="num text-[0.8rem]">
-                      WO-{String(order.id).padStart(4, '0')}
-                    </span>
-                    <span className="num text-[0.8rem] text-ink-muted">
-                      complaint #{order.complaint_id}
-                    </span>
-                    <span className="num text-[0.8rem] text-ink-muted">
-                      provider #{order.provider_id}
-                    </span>
-                    <span className="ml-auto">
-                      <Chip tone={status?.tone ?? 'neutral'} glyph={status?.glyph}>
-                        {status?.label ?? order.status}
-                      </Chip>
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Surface>
-      ) : null}
-
-      {/* --------------------------------------------------- operational timeline */}
-      <Surface>
-        <SectionTitle
-          title="Recent estate operations"
-          hint="Authorized complaint and work-order records, newest first"
-        />
-        <div className="mt-4">
-          {complaints.loading || (isAdmin && workOrders.loading) ? (
-            <LoadingState label="Loading recent operations" />
-          ) : complaints.error ? (
-            <ErrorState
-              message={complaints.error.message}
-              requestId={complaints.error.requestId}
-            />
-          ) : isAdmin && workOrders.error ? (
-            <ErrorState
-              message={workOrders.error.message}
-              requestId={workOrders.error.requestId}
-            />
-          ) : operationalTimeline.length === 0 ? (
-            <EmptyState
-              title="No recent operational activity"
-              body="Logged complaints and work-order updates will appear here once the estate has records."
-            />
-          ) : (
-            <ul className="divide-y divide-line">
-              {operationalTimeline.map((item) => (
-                <li key={item.id} className="py-3">
-                  <div className="flex flex-wrap items-baseline justify-between gap-3">
-                    <p className="text-[13px] font-medium">{item.title}</p>
-                    <span className="num text-[11.5px] text-ink-muted">{item.date}</span>
-                  </div>
-                  <p className="mt-1 text-[12.5px] text-ink-soft">{item.description}</p>
-                  <p className="mt-1 text-[11.5px] text-ink-muted">{item.meta}</p>
-                </li>
-              ))}
-            </ul>
-          )}
+      <section className="border-t border-brand/10 pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[0.7rem] text-ink/45">Figures reflect records returned for this estate. Living Score details and supporting history are in Estate Health.</p>
+          <Link to="/app/health" className="inline-flex items-center gap-1 text-[0.7rem] font-semibold text-brand-ink hover:underline">Explore Estate Health <ArrowRight className="h-3 w-3" aria-hidden="true" /></Link>
         </div>
-      </Surface>
-
-      <p className="text-[0.72rem] text-ink/35">
-        Scope: {estate?.estate_name ?? 'no estate selected'} ·{' '}
-        {stats.data ? `${stats.data.total} complaints on record` : 'estate metrics unavailable'}
-      </p>
+      </section>
+      {selectedComplaint ? (
+        <ComplaintDrawer
+          complaintId={selectedComplaint.id}
+          onClose={() => setSelectedComplaint(null)}
+          onChanged={() => {
+            complaints.reload();
+            stats.reload();
+            workOrders.reload();
+            score.reload();
+            scoreHistory.reload();
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
-// Re-export as DashboardBody for backwards compatibility
 export { AdminDashboard as DashboardBody };
