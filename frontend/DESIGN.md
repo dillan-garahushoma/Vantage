@@ -113,13 +113,16 @@ Vary the vertical rhythm: a tight section after the hero (py-10) and a generous 
 (py-16). Uniform py-14 everywhere is what makes a page read as a template.
 
 **Account screen.** One layout for sign-in, create-account, join, request-access, recovery and the
-completion screen: `AuthShell`. Two columns on desktop (claim left, form card right, 1fr / 1.02fr,
-cap 1040px), one column below `lg`. The left column is an eyebrow in mono, the claim in the display
-serif at 34–40px, one 14.5px lead, then either three trust points (rotated accent squares) or the
-onboarding step thread — three numbered stops, completed in mint, current in accent. The card opens
-with a 16px title and a hairline, never a coloured header. The primary action is full width, the
-secondary link sits under the form, and `Forgot password?` is right-aligned above the button. Never
-let an account screen use a different shell, a centred single column, or a stepper as a banner.
+completion screen: `AuthShell`. A split screen on desktop: two equal panels, each with its own ground
+— the claim on `paper`, the form on `surface` — divided by a single hairline, with each panel's
+content capped at 480px and held at the centre line. Below `lg` the panels stack and the call on
+paper keeps its hairline above the form. The left panel is an eyebrow in mono, the claim in the
+display serif at 34–40px, one 14.5px lead, then either trust points (rotated accent squares) or the
+onboarding step thread — three numbered stops, completed in mint, current in accent. The form panel
+opens with a 16px title and a hairline, never a coloured header. The primary action is full width,
+the secondary link sits under the form, and `Forgot password?` is right-aligned above the button.
+Never let an account screen use a different shell, a centred single column, a stepper as a banner,
+or put the claim inside a translucent card floating on a background photograph.
 
 **Record row.** Left: title (15px medium) over a metadata line (11px mono, `ink-muted`). Right: status
 chip, then age in mono. Hover: hairline turns `line` → `brand-soft`, nothing moves.

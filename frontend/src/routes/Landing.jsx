@@ -357,21 +357,29 @@ export function Landing() {
             <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-paper/90">
               VALORA turns maintenance, repairs and resident feedback into a clear record of what needs attention and what has changed.
             </p>
-            <form onSubmit={handleHeroSearch} className="mt-8 flex min-h-14 max-w-xl items-center gap-3 rounded-md bg-paper p-2 pl-4 focus-within:ring-2 focus-within:ring-white">
-              <IconSearch size={18} className="shrink-0 text-ink-muted" />
+            {/* The owner asked for a rounded, see-through search bar, so this control is a
+            glass pill rather than the soft-radius surface `DESIGN.md` tiles elsewhere. The
+            fill is translucent white over the hero photograph, which is why the text,
+            placeholder and icon are white and the focus ring is white rather than violet. */}
+            <form onSubmit={handleHeroSearch} className="mt-8 flex min-h-14 max-w-xl items-center gap-3 rounded-full border border-white/25 bg-white/10 p-1.5 pl-5 backdrop-blur-md transition-colors focus-within:border-white/45 focus-within:bg-white/15 focus-within:ring-2 focus-within:ring-white/60">
+              <IconSearch size={18} className="shrink-0 text-white/75"/>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search complex, suburb or city"
                 aria-label="Search complex, suburb or city"
-                className="min-w-0 flex-1 bg-transparent text-[14px] text-ink placeholder:text-ink-muted focus:outline-none"
-              />
+                className="min-w-0 flex-1 bg-transparent text-[14px] text-white placeholder:text-white/70 focus:outline-none"/>
+              {/* Below `sm` the label gives way to the arrow alone: a pill carrying the
+              full label left the input about 105px on a 390px phone, which truncated the
+              placeholder. `aria-label` keeps the accessible name at every width. */}
               <button
                 type="submit"
-                className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-sm bg-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-accent/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                aria-label="Find a complex"
+                className="flex min-h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-full bg-accent px-0 text-[13px] font-medium text-white transition-colors hover:bg-accent/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto sm:px-5"
               >
-                Find a complex <IconArrowRight size={16} />
+                <span className="hidden sm:inline">Find a complex</span>
+                <IconArrowRight size={16}/>
               </button>
             </form>
             <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13.5px] text-paper">
@@ -502,8 +510,11 @@ export function Landing() {
             The operational record exists inside the community that runs on it
           </h2>
 
-          <div className="mt-8 overflow-hidden rounded-2xl border border-ink/15 bg-surface">
-            <table className="w-full border-collapse text-left text-[13.5px]">
+          {/* Scrolls sideways on phones instead of clipping the "On VALORA" column;
+              the table keeps a readable minimum rather than squeezing three
+              columns into 320px. */}
+          <div className="scrollbar-slim mt-8 overflow-x-auto rounded-2xl border border-ink/15 bg-surface">
+            <table className="w-full min-w-[540px] border-collapse text-left text-[13.5px]">
               <thead>
                 <tr>
                   <th className="border-b border-ink/15 bg-paper px-5 py-3 text-[11px] font-medium tracking-wider text-ink-muted uppercase">

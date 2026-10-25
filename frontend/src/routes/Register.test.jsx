@@ -42,6 +42,16 @@ function renderRegister() {
   );
 }
 
+const progress = () => screen.getByRole('progressbar', { name: 'Registration progress' });
+const fillWidth = () => Number.parseFloat(progress().firstElementChild.style.width);
+const continueButton = () => screen.getByRole('button', { name: 'Continue' });
+
+async function fillDetails(user, { name = 'Thandi Nkosi', email = 'thandi@example.co.za' } = {}) {
+  await user.type(screen.getByLabelText('Full name'), name);
+  await user.type(screen.getByLabelText('Email address'), email);
+  await user.type(screen.getByLabelText('Password'), 'aGoodPassword1');
+}
+
 describe('registration payloads', () => {
   it('keeps public resident registration limited to resident data', () => {
     expect(registrationPayload(BASE)).toEqual({
@@ -89,12 +99,68 @@ describe('Register', () => {
     );
   });
 
+  it('opens on step one of three and offers no submit before the details exist', () => {
+    renderRegister();
+
+    expect(progress()).toHaveAttribute('aria-valuenow', '1');
+    // The bar fills by stage: one of three at the start, never empty.
+    expect(fillWidth()).toBeCloseTo(100 / 3, 3);
+    expect(screen.getByRole('heading', { name: 'How will you use VALORA?' })).toBeVisible();
+    expect(screen.queryByLabelText('Full name')).toBeNull();
+    expect(screen.queryByRole('button', { name: /create .*account/i })).toBeNull();
+  });
+
+  it('walks the three steps and keeps answers when going back', async () => {
+    const user = userEvent.setup();
+    renderRegister();
+
+    await user.click(continueButton());
+    expect(progress()).toHaveAttribute('aria-valuenow', '2');
+    expect(fillWidth()).toBeCloseTo(200 / 3, 3);
+    expect(screen.getByRole('heading', { name: 'Your details' })).toBeVisible();
+
+    await user.type(screen.getByLabelText('Full name'), 'Thandi Nkosi');
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(progress()).toHaveAttribute('aria-valuenow', '1');
+
+    await user.click(continueButton());
+    expect(screen.getByLabelText('Full name')).toHaveValue('Thandi Nkosi');
+  });
+
+  it('holds the details step until the answers are valid', async () => {
+    const user = userEvent.setup();
+    renderRegister();
+
+    await user.click(continueButton());
+    await user.click(continueButton());
+
+    expect(progress()).toHaveAttribute('aria-valuenow', '2');
+    expect(screen.getByRole('heading', { name: 'Your details' })).toBeVisible();
+    expect(screen.getByText('Enter your full name.')).toBeVisible();
+    expect(auth.register).not.toHaveBeenCalled();
+  });
+
+  it('asks for a review before creating the account', async () => {
+    const user = userEvent.setup();
+    renderRegister();
+
+    await user.click(continueButton());
+    await fillDetails(user);
+    await user.click(continueButton());
+
+    expect(progress()).toHaveAttribute('aria-valuenow', '3');
+    expect(fillWidth()).toBeCloseTo(100, 3);
+    expect(screen.getByRole('heading', { name: 'Review and create' })).toBeVisible();
+    expect(screen.getByText('thandi@example.co.za')).toBeVisible();
+    expect(auth.register).not.toHaveBeenCalled();
+  });
+
   it('creates a resident through the existing public registration path', async () => {
     const user = userEvent.setup();
     renderRegister();
-    await user.type(screen.getByLabelText('Full name'), 'Thandi Nkosi');
-    await user.type(screen.getByLabelText('Email address'), 'thandi@example.co.za');
-    await user.type(screen.getByLabelText('Password'), 'aGoodPassword1');
+    await user.click(continueButton());
+    await fillDetails(user);
+    await user.click(continueButton());
     await user.click(screen.getByRole('button', { name: 'Create resident account' }));
 
     await waitFor(() => expect(auth.register).toHaveBeenCalledOnce());
@@ -106,9 +172,11 @@ describe('Register', () => {
     const user = userEvent.setup();
     renderRegister();
     await user.click(screen.getByRole('radio', { name: /HOA \/ estate manager/i }));
+    await user.click(continueButton());
     await user.type(screen.getByLabelText('Full name'), 'Amina Manager');
     await user.type(screen.getByLabelText('Email address'), 'amina@example.co.za');
     await user.type(screen.getByLabelText('Password'), 'aGoodPassword1');
+    await user.click(continueButton());
     await user.type(screen.getByLabelText('Estate name'), 'Ridge Close Estate');
     await user.type(screen.getByLabelText('Suburb'), 'Centurion');
     await user.type(screen.getByLabelText('City'), 'Tshwane');
@@ -132,6 +200,7 @@ describe('Register', () => {
 
     expect(screen.getByText(/the HOA reviews your application/i)).toBeVisible();
     expect(screen.getByRole('link', { name: /apply to an estate/i })).toHaveAttribute('href', '/provider/apply');
+    expect(screen.queryByRole('progressbar', { name: 'Registration progress' })).toBeNull();
     expect(screen.queryByRole('button', { name: /create .*account/i })).toBeNull();
     expect(auth.register).not.toHaveBeenCalled();
     expect(auth.registerEstate).not.toHaveBeenCalled();

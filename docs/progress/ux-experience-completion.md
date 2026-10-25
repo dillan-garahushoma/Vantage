@@ -61,3 +61,135 @@ Implementation and local validation are complete. No deployment was attempted; l
    - Passed with local offline validation settings.
 8. `git diff --check`
    - Passed after correcting the trailing blank line found on the first run.
+
+## Follow-up pass — narrow-phone layout defects (2026-10-24)
+
+Two responsive defects were found by driving the public surface at 360px in a real browser, then fixed and covered by e2e tests. Both were invisible at the 390px width the existing sweep used.
+
+### Done
+
+- `PublicShell` header: the directory shortcut kept rendering on phones. `LinkButton` sets its own `inline-flex`, and `hidden sm:inline-flex` passed to it lost — two unprefixed `display` utilities resolve by stylesheet order, not class order. The responsive display now lives on a wrapper `<span>`, so the button is hidden below `sm` as intended. Verified at 360px: `documentElement.scrollWidth == clientWidth` (343px each) and the “Find a complex” link measures 0px wide inside a `display: none` wrapper.
+- Landing comparison table: the wrapper was `overflow-hidden`, so the third column (“On VALORA”) was clipped with no way to reach it. It is now `scrollbar-slim overflow-x-auto` with `min-w-[540px]` on the table, so the three columns stay readable and scroll sideways. Verified at 360px: wrapper `clientWidth 301`, `scrollWidth 540`, `overflow-x: auto`, and the last cell's right edge lands at 322px inside a 360px viewport once scrolled.
+- `frontend/e2e/mobile.spec.js`: new `narrow phones at 360px` describe — the header must drop the directory shortcut without overflowing, and the comparison table must scroll its last column into view rather than clip it.
+- Repaired two latent bugs in the existing `mobile sweep at 390px`, which had 4 permanent failures: the page-title assertion matched `/ridge close estate/i` against both the `<h1>` and the “Managed by Ridge Close Estate HOA” sub-heading (strict-mode violation), now scoped to `level: 1`; and `/provider/work` was measured while signed in as an administrator, so it rendered the provider-access notice instead of the work list — it now runs with `role: 'service_provider'`, and the page it is meant to measure is finally the one measured.
+
+### Tests and checks run (this pass)
+
+- `frontend/e2e/mobile.spec.js` via Playwright/Chromium: `22 passed` (20 sweep routes + 2 narrow-phone tests), `EXIT=0`.
+- `npm run build` (frontend): passed, `built in 31.25s`; only the pre-existing >500 kB chunk advisory.
+- Browser inspection at 360x740 against this checkout's own Vite server: header and comparison-table screenshots taken after the fix, plus computed-style/geometry assertions quoted above.
+
+### Environment note
+
+Port 5173 was held by another worktree's dev server (`VANTAGE.worktrees\valora-intelligence-redesign-ux`), so `reuseExistingServer` made the first Playwright run measure the *other* checkout's stale code and both new tests failed against markup this branch no longer has. The suite was then run through a temporary, gitignored config (`frontend/tmp/pw.config.mjs`) pointing at this checkout's own Vite server on port 5199. The committed `playwright.config.js` is unchanged and correct whenever 5173 is free.
+
+### Written but not run (this pass)
+
+- Backend suites were not re-run: this pass only touched frontend markup and e2e specs.
+
+### Remaining
+
+- `frontend/test-results/.last-run.json` is tracked and was rewritten by the Playwright runs; it is a test artifact, not a product change.
+
+## Redesign pass — registration as a three-step flow (2026-10-25)
+
+The owner asked for the long single-screen registration form to become a three-step flow with the progress bar at the top of the form.
+
+### Done
+
+- `frontend/src/routes/Register.jsx` is now a stepper with three named stages — Access, Your details, Finish.
+  - Step 1 keeps the three account paths as radio cards (Resident, HOA / estate manager, Service provider), each still one click target with the description inside the label, a visible “Selected” marker, and the same `has-[:focus-visible]` dotted accent ring.
+  - Step 2 collects name, email, password and optional phone; it validates before advancing and stays put on error.
+  - Step 3 differs by path: residents get a review block (name/email, with Edit), the unit number and a join-code note; HOA managers get the estate name, suburb, city, province and optional description.
+  - `Back` on every step after the first; answers survive the round trip. A stale identity error on the final submit sends the person back to step 2 rather than failing silently.
+  - The provider path keeps its existing behaviour (apply, HOA approval, secure setup link) and hides the stepper, because no account can be created before approval.
+- The progress indicator is one continuous track that fills by stage — a third, two thirds, full — with the unfilled track in `ink/10` and a 300ms width transition (`motion-reduce:transition-none`). Completed stages keep their mint tick in the label row. It is a real `role="progressbar"` (`aria-valuemin/max/now/valuetext`) with a separate labelled `<ol>` carrying `aria-current="step"`, plus a polite `role="status"` announcement when the step changes. Colour is never the only signal.
+- `frontend/src/components/AuthShell.jsx` gained one optional `progress` prop, rendered above the card title. No existing caller changes.
+- `frontend/src/routes/Register.test.jsx` walks the steps (11 tests) and adds coverage for: opening on step 1 with no submit, back preserving answers, the details step holding until valid, the review step before any API call, and the provider panel having no stepper.
+- `frontend/e2e/register.spec.js` was stale — it asserted a registration UI that no longer exists (“Do the work.”, “Estate administrator”, a direct “Create account” button). Rewritten for the current flow: segmented progress advancing, description and card body both selecting, selection marked beyond colour, keyboard ring on the card, the 409 notice painting a 2px signal bar, and no horizontal overflow at 390px on all three steps.
+
+### Tests and checks run (this pass)
+
+- `frontend/node_modules/.bin/vitest run src/routes/Register.test.jsx` — `11 passed`, EXIT 0.
+- `frontend/node_modules/.bin/vitest run` (whole frontend) — `35 files, 225 tests passed`, EXIT 0.
+- `frontend/node_modules/.bin/playwright test --config tmp/pw.config.mjs register.spec.js` — `6 passed`, EXIT 0 after warming the Vite server (a cold first run failed two navigations on a 30s `page.goto` timeout; Vite reported `ready in 32195 ms`, which is cold dependency optimisation, not a product failure; the warmed re-run passed all six).
+- `frontend/node_modules/.bin/playwright test --config tmp/pw.config.mjs mobile.spec.js` — `22 passed`, EXIT 0 (includes `/register` at 390px).
+- `frontend/node_modules/.bin/vite build --mode development` — `✓ built in 1m 22s`, only the pre-existing chunk-size advisory.
+- `node --test tests/*.test.mjs` — `2 passed`.
+- Browser geometry at 1440x900 and 390x844: the progress block sits above the card title (`barAboveTitle: true`), three 143x4 segments at 1440 and 99x4 at 390, `aria-valuenow` 1 → 2 → 3 with the matching label carrying `aria-current="step"`, and `scrollWidth == clientWidth` on every step at 390.
+
+### Environment limitations
+
+- The Desktop preview webview stopped compositing again (`produced no frames` / `webContents … is not attached`), so the later steps were verified by geometry and e2e assertions rather than screenshots. One 1440px screenshot of step 1 was captured before the panel failed; it shows the stepper at the head of the card as intended.
+- Playwright again ran through the gitignored `frontend/tmp/pw.config.mjs` on port 5199 because another worktree holds 5173. The committed `playwright.config.js` is untouched.
+- A dev server is running at http://localhost:5199/ for review (PID 14800); stop it when done.
+
+### Written but not run
+
+- Nothing in the backend was touched, so the backend suites were not re-run. PostgreSQL integration tests remain skipped (`TEST_DATABASE_URL` unset).
+
+### Whole e2e suite (this pass)
+
+`playwright test --config tmp/pw.config.mjs` ran all 43 tests: **40 passed, 3 failed**, EXIT 1. The three failures do not touch registration:
+
+- `smoke.spec.js` “landing page renders without console errors” asserted a link "Find your complex", a control that no longer exists anywhere in `src` (the hero action is the search form's submit button, which was already a button at HEAD). The selector was corrected to that button — the assertion now passes — but the test's final `consoleErrors` check still fails because the landing page fetches `/api/v1/public/estates` and no backend is running in this environment: `GET http://127.0.0.1:8010/api/v1/public/estates?page=1&page_size=6 net::ERR_CONNECTION_REFUSED` (twice), URL coming from `frontend/.env`. That is an environment limitation, not a regression.
+- `intelligence.spec.js` two tests fail in isolation too (`--workers=1`): the suggestion button after “Saved briefing ·” never appears, and the exact text `105` is absent. These specs mock `**/api/v1/**` and neither `Intelligence.jsx` nor its fixtures were touched in this pass; they are pre-existing failures on this branch.
+
+Registration and mobile specs are green: `register.spec.js` 6/6 and `mobile.spec.js` 22/22.
+
+### Revision after owner feedback — the bar fills continuously (2026-10-25)
+
+The segmented three-block bar was replaced with a single track whose violet fill grows 33% → 66% → 100% as the steps advance. The duplicate stage caption on the right of the “Step n of 3” row was removed; the stage names live in the label row beneath the track. Both assertions were updated: `Register.test.jsx` checks the inline fill width at each step, and `register.spec.js` measures the rendered fill ratio after its transition.
+
+### Revision after owner feedback — split panels, no card on the claim (2026-10-25)
+
+The owner asked for the sign-up and sign-in screens to read as two panels, with the claim no
+longer inside a card. `AuthShell` is the one shell for every account screen (sign in, create
+account, join, request access, recovery, provider apply/accept, completion), so the change lands
+there once and every account screen follows.
+
+- Removed the fixed-width 1040px grid, the translucent `bg-paper/75` card around the claim and the
+  blurred `/estate-hero.jpg` backdrop. The shell is now a real split: two equal panels, the claim on
+  `paper` and the form on `surface`, divided by one hairline (`lg:border-l`), each holding its
+  content at 480px. Below `lg` the panels stack and the claim keeps a bottom hairline above the
+  form. Both panels size to the tallest content (`grid` stretch), so the surface ground runs the
+  full height of the row.
+- Dropped the form's inner `rounded-xl border` card as well: a bordered card inside a full-height
+  panel would have recreated the floating-box problem on the other side. The panel's own ground and
+  the divider now do that work; the 16px title and `Keyline` remain.
+- `Keyline` now renders only when there is a title or progress above it. On recovery, join, request
+  access and completion screens (`cardTitle` not passed) it was left floating with nothing to
+  divide at the top of the panel.
+- `frontend/DESIGN.md` §4 "Account screen" was updated to describe the split instead of the 1040px
+  claim-plus-form-card layout.
+- `frontend/playwright.config.js` now accepts `PLAYWRIGHT_BASE_URL` (default unchanged at
+  `http://localhost:5173`) for both `use.baseURL` and the `webServer` probe, because another
+  worktree's dev server owns 5173 and served a stale bundle to the suite. No test assertion was
+  weakened; the suite simply points at the checkout under test.
+
+### Tests and checks run (this pass)
+
+- `frontend/node_modules/.bin/vitest run --maxWorkers=2` — `35 files, 225 tests passed`, EXIT 0.
+  (An unbounded-worker run first crashed 11 worker spawns on Windows with
+  `exit code 3221225794` after 178 tests; the same files pass at two workers, so the limit is the
+  machine's process/handle budget, not a test failure.)
+- `PLAYWRIGHT_BASE_URL=http://localhost:5199 playwright test e2e/register.spec.js --workers=1` —
+  `6 passed`, EXIT 0, after warming the Vite module graph. A cold first attempt timed out at
+  `page.keyboard.press('Tab')` in the keyboard test and at the 390px step sweep; both pass once the
+  cold transform cost (~13s for `/register`) is out of the picture, and both were re-run green.
+- `PLAYWRIGHT_BASE_URL=http://localhost:5199 playwright test e2e/smoke.spec.js e2e/mobile.spec.js
+  --workers=1 -g "landing page renders|sign-in route renders|/login does not scroll|/register does
+  not scroll"` — `3 passed, 1 failed`, EXIT 1. The four auth/mobile checks pass; the landing smoke
+  test still fails only on its final console-error assertion, with two
+  `net::ERR_CONNECTION_REFUSED` entries from the public-estates request to `127.0.0.1:8010`
+  (no backend in this environment). Same pre-existing limitation recorded above.
+- `npm run build` — `✓ built in 1m 57s`, EXIT 0, only the pre-existing chunk-size advisory.
+- `git diff --check` — EXIT 0.
+- Browser at 1440x900, 768x1024 and 390x844: `/register` and `/login` show two panels with the
+  divider at the fold on desktop, the claim unbounded on paper, and the stacked panels with the
+  hairline between them on phones; `/password-recovery` shows no orphaned keyline.
+
+### Remaining
+
+- The dev server on http://localhost:5199 (PID 14800) still serves this checkout for review.
+- The backend suites were not run: no backend file changed.

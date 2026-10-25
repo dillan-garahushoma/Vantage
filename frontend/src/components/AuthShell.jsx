@@ -6,8 +6,9 @@ import { Button } from './ui';
 /**
  * AuthShell — the one layout for every account screen.
  *
- * Places account screens in a light, token-led frame. The left column carries
- * page context; the right column holds the active form or account action.
+ * A split screen, not a card on a background: the left panel carries page
+ * context on paper, the right panel holds the active form on the surface ground,
+ * and one hairline divides them. Below `lg` the panels stack, still divided.
  *
  * `aside` is the left column's extra content (the resident's request history,
  * for instance); `footer` sits under the form inside the card.
@@ -23,22 +24,22 @@ export function AuthShell({
   backTo = null,
   backLabel = 'Back',
   cardTitle = null,
+  progress = null,
   aside = null,
   children,
   footer = null,
 }) {
   return (
     <PublicShell>
-      <div className="relative isolate min-h-[calc(100vh-64px)] overflow-hidden bg-paper">
-        <img
-          src="/estate-hero.jpg"
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-0 h-full w-full scale-105 object-cover blur-[8px]"
-        />
-        <div className="pointer-events-none absolute inset-0 z-[1] bg-paper/70" aria-hidden="true" />
-        <div className="relative z-10 mx-auto grid max-w-[1040px] gap-8 px-5 py-10 sm:py-12 lg:grid-cols-[1fr_1.05fr] lg:items-start lg:gap-10 lg:py-16">
-          <section className="min-w-0 rounded-xl bg-paper/75 p-5 sm:p-6">
+      {/*
+        A true split screen: the claim and the form are two panels with their own
+        ground, divided by one hairline. The claim sits directly on paper rather
+        than inside a translucent card, which was reading as a box floating over a
+        blurred photograph instead of as the page's own left column.
+      */}
+      <div className="grid min-h-[calc(100vh-64px)] bg-paper lg:grid-cols-2">
+        <section className="flex min-w-0 flex-col justify-center border-b border-line px-5 py-10 sm:px-8 lg:border-b-0 lg:px-12 lg:py-16">
+          <div className="mx-auto w-full max-w-[480px] lg:mx-0 lg:ml-auto">
             {backTo ? (
               <Link
                 to={backTo}
@@ -75,17 +76,24 @@ export function AuthShell({
             ) : null}
 
             {aside}
-          </section>
+          </div>
+        </section>
 
-          <section className="min-w-0 self-start rounded-xl border border-line bg-surface p-5 sm:p-6">
+        <section className="flex min-w-0 flex-col justify-center bg-surface px-5 py-10 sm:px-8 lg:border-l lg:border-line lg:px-12 lg:py-16">
+          <div className="mx-auto w-full max-w-[480px] lg:mx-0">
+            {progress}
             {cardTitle ? (
               <h2 className="text-[16px] font-semibold text-ink">{cardTitle}</h2>
             ) : null}
-            <Keyline className={cardTitle ? 'mt-3 mb-5' : 'mb-5'} />
+            {/* With no title above it, a keyline becomes a stray rule floating at
+                the top of the panel, so it only appears when it divides something. */}
+            {cardTitle || progress ? (
+              <Keyline className={cardTitle ? 'mt-3 mb-5' : 'mb-5'} />
+            ) : null}
             {children}
             {footer}
-          </section>
-        </div>
+          </div>
+        </section>
       </div>
     </PublicShell>
   );

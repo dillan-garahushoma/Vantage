@@ -12,9 +12,15 @@ export function PublicShell({ children }) {
             {/* Below `sm` the header keeps only the two entry actions: three
             buttons plus the wordmark is what pushed a 390px page sideways.
             The directory is still one tap away — in the hero and the footer. */}
-            <LinkButton to="/estates" variant="ghost" className="hidden sm:inline-flex">
-              Find a complex
-            </LinkButton>
+            {/* The wrapper carries the responsive display, not the button: `LinkButton`
+            already sets `inline-flex`, and two unprefixed display utilities resolve by
+            stylesheet order rather than class order — `hidden` lost, so the button kept
+            showing on phones and pushed the header 11px past a 360px viewport. */}
+            <span className="hidden sm:inline-flex">
+              <LinkButton to="/estates" variant="ghost">
+                Find a complex
+              </LinkButton>
+            </span>
             <LinkButton to="/login" variant="ghost" className="min-h-11 whitespace-nowrap px-2.5 sm:px-3.5">
               Sign in
             </LinkButton>

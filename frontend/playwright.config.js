@@ -9,19 +9,22 @@ import { defineConfig, devices } from '@playwright/test';
  * Browsers are not downloaded by this project's tooling. Run
  * `npx playwright install chromium` once locally before the first e2e run.
  */
+// Point the suite at another checkout's dev server when 5173 is already taken:
+// `PLAYWRIGHT_BASE_URL=http://localhost:5199 npm run test:e2e`.
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173';
 export default defineConfig({
     testDir: './e2e',
     fullyParallel: true,
     forbidOnly: true,
     reporter: [['list']],
     use: {
-        baseURL: 'http://localhost:5173',
+        baseURL,
         trace: 'retain-on-failure',
     },
     projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
     webServer: {
         command: 'npm run dev',
-        url: 'http://localhost:5173',
+        url: baseURL,
         reuseExistingServer: true,
     },
 });
