@@ -29,13 +29,11 @@ describe('Login', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('status')).toHaveTextContent(/signed in as thandi@example\.co\.za/i);
-    expect(screen.getByRole('link', { name: 'Continue to workspace' })).toHaveAttribute(
-      'href',
-      '/welcome',
-    );
+    expect(screen.getByRole('heading', { name: "You're already signed in." })).toBeVisible();
+    expect(screen.getByText('thandi@example.co.za')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Continue to VALORA' })).toBeVisible();
 
-    await user.click(screen.getByRole('button', { name: /sign out and switch accounts/i }));
+    await user.click(screen.getByRole('button', { name: /sign out and use another account/i }));
 
     expect(auth.logout).toHaveBeenCalledOnce();
     expect(screen.getByRole('textbox', { name: 'Email address' })).toBeVisible();

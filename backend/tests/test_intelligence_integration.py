@@ -149,7 +149,9 @@ async def test_http_generate_history_grounding_and_error_envelopes(db_session, a
         assert (await async_client.get(base + '/history', params=params)).json()['total'] == 1
         assert (await async_client.get(base + '/history', params=params | {'size': 101})).status_code == 422
         app.dependency_overrides[get_current_user] = lambda: w.resident_a1
-        assert (await async_client.get(base + '/history', params=params)).status_code == 200
+        # Saved HOA briefings are administrator-only; residents can use the role-scoped assistant
+        # but cannot read the HOA's historical operational briefings.
+        assert (await async_client.get(base + '/history', params=params)).status_code == 403
         denied = await async_client.post(base + '/briefing/generate', params=params)
         assert denied.status_code == 403 and 'request_id' in denied.json()['detail']
         for bad_params in ({'estate_id': 2147483648}, params | {'size': 101}):

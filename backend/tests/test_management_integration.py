@@ -72,7 +72,8 @@ async def test_priorities_are_grounded_manager_only_and_history_is_immutable(db_
     assert (await async_client.get(f"/api/v1/analytics/intelligence/history/{output['briefing_id']}", params=params)).json() == output
     app.dependency_overrides[get_current_user] = lambda: w.resident_a1
     safe = await async_client.get(f"/api/v1/analytics/intelligence/history/{output['briefing_id']}", params=params)
-    assert safe.status_code == 200 and safe.json()['recommendations'] == []
+    # HOA briefing history is a management capability, so residents are denied at the API boundary.
+    assert safe.status_code == 403
     assert 'maintenance_priorities' not in safe.json()['facts']
 
 
