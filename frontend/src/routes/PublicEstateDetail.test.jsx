@@ -53,7 +53,7 @@ function renderPage() {
     return render(<MemoryRouter initialEntries={['/estates/1']}>
       <Routes>
         <Route path="/estates/:id" element={<EstatePage />}/>
-        <Route path="/request-access" element={<p>Request access route</p>}/>
+        <Route path="/register" element={<p>Resident account route</p>}/>
       </Routes>
     </MemoryRouter>);
 }
@@ -152,9 +152,9 @@ describe('PublicEstateDetail', () => {
         renderPage();
         await screen.findByRole('heading', { level: 1, name: 'Ridge Close' });
         const requestAccess = screen.getByRole('link', { name: 'Request access' });
-        expect(requestAccess).toHaveAttribute('href', '/request-access');
+        expect(requestAccess).toHaveAttribute('href', '/register');
         await user.click(requestAccess);
-        expect(screen.getByText('Request access route')).toBeVisible();
+        expect(screen.getByText('Resident account route')).toBeVisible();
         expect(JSON.parse(window.sessionStorage.getItem('valora.public-estate-selection'))).toMatchObject({
             estate_id: 1,
             name: 'Ridge Close',

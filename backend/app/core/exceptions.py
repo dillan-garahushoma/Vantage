@@ -52,3 +52,10 @@ class RateLimitException(HTTPException):
 
     def __init__(self, detail: str = "Too many requests. Please try again later.") -> None:
         super().__init__(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=detail)
+
+
+class ServiceUnavailableException(HTTPException):
+    """Raised when a required external service is unavailable."""
+
+    def __init__(self, detail: str = "The service is temporarily unavailable.") -> None:
+        super().__init__(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)

@@ -17,11 +17,9 @@ function location(item) {
 /**
  * The approval-based way onto an estate.
  *
- * A resident finds their complex, names their unit, and submits. Nothing is
- * granted here: the request is recorded pending and an estate administrator
- * decides it. The estate is chosen from the published directory, because the
- * resident has no membership to resolve an estate from yet — and the server
- * re-checks that the estate and the unit exist regardless of what was picked.
+ * A resident finds their complex and submits their contact details for review.
+ * Nothing is granted here: an estate administrator decides the request. Unit
+ * assignment is handled by the estate office after approval.
  */
 export function RequestAccess() {
     const { user } = useAuth();
@@ -29,7 +27,6 @@ export function RequestAccess() {
     const [query, setQuery] = useState('');
     const [committed, setCommitted] = useState('');
     const [picked, setPicked] = useState(() => selectedPublicEstate());
-    const [unitNo, setUnitNo] = useState(() => selectedPublicEstate()?.unit_no ?? '');
     const [note, setNote] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
@@ -38,7 +35,7 @@ export function RequestAccess() {
     const directory = useAsync(() => listPublicEstates({ q: committed, page: 1, page_size: 8 }), [committed]);
     const mine = useAsync(() => listMyResidencyRequests(), []);
     if (!user)
-        return <Navigate to="/login" replace state={{ from: '/request-access' }}/>;
+        return <Navigate to="/register" replace state={{ from: '/request-access' }}/>;
     async function search(event) {
         event.preventDefault();
         setCommitted(query.trim());
@@ -49,10 +46,6 @@ export function RequestAccess() {
             setFieldError('Choose your complex first.');
             return;
         }
-        if (unitNo.trim().length === 0) {
-            setFieldError('Enter your unit number.');
-            return;
-        }
         setFieldError(null);
         setBusy(true);
         setError(null);
@@ -60,16 +53,12 @@ export function RequestAccess() {
         try {
             await submitResidencyRequest({
                 estate_id: picked.estate_id,
-                unit_no: unitNo.trim(),
                 note: note.trim() || null,
             });
             setSubmitted(picked.name);
             setPicked(null);
             clearSelectedPublicEstate();
-            setUnitNo('');
             setNote('');
-            // The request may have just been approved for a unit that was already
-            // granted; reloading keeps the rest of the app honest either way.
             mine.reload();
             reloadEstates();
         }
@@ -85,10 +74,10 @@ export function RequestAccess() {
     return (<AuthShell
       eyebrow="Resident onboarding"
       title="Ask to join your estate"
-      intro="Send your details to the estate office. They review the request against their unit register, then approve or decline it. You will not have access until they approve it."
+      intro="Send your details to the estate office. You will not have access until they approve it. No unit number is needed; the office can assign one after approval."
       points={[
-        ['Approval, not self-selection', 'The estate office decides against their own unit register.'],
-        ['One home per request', 'Pick the complex you actually live in — the server re-checks the unit.'],
+        ['Approval, not self-selection', 'The estate office decides who can enter its workspace.'],
+        ['No unit number required', 'Share your contact details and let the estate office review your request.'],
       ]}
       aside={<>
           <p className="mt-4 max-w-md text-[13px] text-ink-muted">
@@ -116,10 +105,16 @@ export function RequestAccess() {
                             <Chip tone={meta.tone}>{meta.label}</Chip>
                           </div>
                           <p className="num mt-1 text-[11.5px] text-ink-muted">
-                            unit {request.unit_no} · submitted {fullDate(request.created_at)}
+                            {request.unit_no ? `unit ${request.unit_no} · ` : 'Unit to be assigned · '}
+                            submitted {fullDate(request.created_at)}
                             {request.decided_at ? ` · decided ${fullDate(request.decided_at)}` : ''}
                           </p>
                           <p className="mt-1.5 text-[12.5px] text-ink-soft">{meta.hint}</p>
+                          {status === 'approved' ? (
+                            <Link to="/app" className="mt-2 inline-flex text-[12.5px] font-medium text-accent-ink hover:underline">
+                              Enter estate
+                            </Link>
+                          ) : null}
                           {request.decision_note ? (<p className="mt-1 text-[12.5px] text-ink-soft">
                               Note from the estate: {request.decision_note}
                             </p>) : null}
@@ -161,7 +156,6 @@ export function RequestAccess() {
                   </span>
                   <Button type="button" variant="ghost" onClick={() => {
                     setPicked(null);
-                    setUnitNo('');
                     clearSelectedPublicEstate();
                   }}>
                     Change
@@ -205,10 +199,6 @@ export function RequestAccess() {
                   </div>
                 </>)}
             </div>
-
-            <Field label="Unit number" error={fieldError && fieldError.includes('unit') ? fieldError : undefined} hint="As it appears on your lease, for example A-101.">
-              <Input name="unit_no" value={unitNo} maxLength={10} onChange={(event) => setUnitNo(event.target.value)} placeholder="A-101"/>
-            </Field>
 
             <Field label="Note to the estate office (optional)" hint="Max 500 characters.">
               <Textarea name="note" value={note} maxLength={500} onChange={(event) => setNote(event.target.value)} placeholder="I moved in on 1 November and the lease is in my name."/>

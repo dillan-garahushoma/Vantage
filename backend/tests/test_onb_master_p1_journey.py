@@ -19,6 +19,7 @@ happened.
 from __future__ import annotations
 
 import sys
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 from types import SimpleNamespace
@@ -29,7 +30,8 @@ from pydantic import ValidationError
 
 from app.core.exceptions import RateLimitException
 from app.core.security import verify_password
-from app.identity.schemas.membership import MembershipProviderAddRequest
+from app.identity.schemas.provider_invitation import ProviderApplicationCreateRequest
+from app.identity.services import provider_application_service
 from app.identity.services.join_attempt_limiter import JoinAttemptLimiter, join_attempt_limiter
 
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
@@ -116,19 +118,114 @@ async def _signup_resident(client, *, email: str) -> dict:
     return _bearer(response.json()["access_token"])
 
 
-async def _signup_provider(client, *, email: str, trade: str = "plumber") -> dict:
+class _CapturingEmailSender:
+    def __init__(self) -> None:
+        self.messages = []
+
+    async def send(self, message) -> None:
+        self.messages.append(message)
+
+
+@pytest.fixture
+def provider_mailer(monkeypatch):
+    sender = _CapturingEmailSender()
+    monkeypatch.setattr(
+        provider_application_service,
+        "build_email_sender",
+        lambda _settings: sender,
+    )
+    return sender
+
+
+async def _publish_estate(db_session, estate_id: int) -> None:
+    from sqlalchemy import update
+    from app.property.models.estate import Estate
+
+    await db_session.execute(
+        update(Estate)
+        .where(Estate.estate_id == estate_id)
+        .values(is_public=True)
+    )
+    await db_session.commit()
+
+
+async def _submit_provider_application(
+    client, *, admin: dict, estate_id: int, email: str, trade: str
+) -> dict:
     response = await signup_fixture(client,
-        f"{BASE}/auth/register",
+        f"{BASE}/provider-applications",
         json={
+            "estate_id": estate_id,
             "full_name": "Provider One",
             "email": email,
-            "password": PASSWORD,
-            "account_type": "service_provider",
-            "provider": {"trade": trade, "phone": "+27110000000"},
+            "trade": trade,
+            "phone": "082 123 4567",
         },
     )
     assert response.status_code == 201, response.text
-    return _bearer(response.json()["access_token"])
+    return response.json()
+
+
+async def _approve_provider_application(
+    client,
+    *,
+    admin: dict,
+    estate_id: int,
+    application: dict,
+    email: str,
+    mailer: _CapturingEmailSender,
+    existing_account: bool = False,
+) -> dict:
+    message_index = len(mailer.messages)
+    approved = await client.post(
+        f"{BASE}/provider-applications/{application['application_id']}/approve"
+        f"?estate_id={estate_id}",
+        headers=admin,
+    )
+    assert approved.status_code == 200, approved.text
+    message = mailer.messages[message_index]
+    token_match = re.search(r"#token=([A-Za-z0-9_-]+)", message.body)
+    assert token_match is not None
+    payload = {"token": token_match.group(1)}
+    if not existing_account:
+        payload["password"] = PASSWORD
+    accepted = await client.post(
+        f"{BASE}/auth/provider-invitations/accept",
+        json=payload,
+    )
+    assert accepted.status_code == 200, accepted.text
+    assert accepted.json()["user"]["email"] == email
+    return _bearer(accepted.json()["access_token"])
+
+
+async def _apply_provider(
+    db_session,
+    client,
+    *,
+    admin: dict,
+    estate_id: int,
+    email: str,
+    trade: str,
+    mailer: _CapturingEmailSender,
+    existing_account: bool = False,
+) -> dict:
+    await _publish_estate(db_session, estate_id)
+    application = await _submit_provider_application(
+        client,
+        admin=admin,
+        estate_id=estate_id,
+        email=email,
+        trade=trade,
+    )
+    return await _approve_provider_application(
+        client,
+        admin=admin,
+        estate_id=estate_id,
+        application=application,
+        email=email,
+        mailer=mailer,
+        existing_account=existing_account,
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -138,7 +235,7 @@ async def _signup_provider(client, *, email: str, trade: str = "plumber") -> dic
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_the_whole_journey_in_one_complex(db_session, async_client) -> None:
+async def test_the_whole_journey_in_one_complex(db_session, async_client, provider_mailer) -> None:
     # 1. An estate admin registers and registers their estate in one step.
     admin, estate_id = await _signup_estate_admin(
         async_client, name=ESTATE_NAME, email=ADMIN_EMAIL
@@ -181,32 +278,43 @@ async def test_the_whole_journey_in_one_complex(db_session, async_client) -> Non
     assert joined.json()["estate_id"] == estate_id
     assert joined.json()["unit_id"] == unit_ids[0]
 
-    # 5. A service provider registers. They have no estate yet: nobody has added
-    #    them, which is the state the frontend has to explain.
-    provider = await _signup_provider(async_client, email=PROVIDER_EMAIL)
-    before = await async_client.get(f"{BASE}/auth/estates", headers=provider)
-    assert before.json()["estates"] == []
+    # 5. A provider applies. The application stays pending until the HOA approves
+    #    it, and no account exists while the application is waiting.
+    await _publish_estate(db_session, estate_id)
+    application = await _submit_provider_application(
+        async_client,
+        admin=admin,
+        estate_id=estate_id,
+        email=PROVIDER_EMAIL,
+        trade="plumber",
+    )
+    from sqlalchemy import text
+
+    provider_count = await db_session.execute(
+        text("SELECT count(*) FROM users WHERE email = :email"),
+        {"email": PROVIDER_EMAIL},
+    )
+    assert provider_count.scalar_one() == 0
+    pending = await async_client.get(
+        f"{BASE}/provider-applications?estate_id={estate_id}&status=pending",
+        headers=admin,
+    )
+    assert pending.status_code == 200, pending.text
+    assert pending.json()[0]["application_id"] == application["application_id"]
+
+    # HOA approval sends a one-time setup link; activating it creates the account
+    # and its estate membership together.
+    provider = await _approve_provider_application(
+        async_client,
+        admin=admin,
+        estate_id=estate_id,
+        application=application,
+        email=PROVIDER_EMAIL,
+        mailer=provider_mailer,
+    )
     assert (
         await async_client.get(f"{BASE}/providers/me", headers=provider)
     ).status_code == 200
-
-    # 6. The admin adds that provider to the estate by email.
-    added = await async_client.post(
-        f"{BASE}/memberships/providers?estate_id={estate_id}",
-        json={"email": PROVIDER_EMAIL},
-        headers=admin,
-    )
-    assert added.status_code == 201, added.text
-    assert added.json()["role"] == "service_provider"
-    assert added.json()["unit_no"] is None
-
-    # Adding them again is a conflict, not a second row.
-    again = await async_client.post(
-        f"{BASE}/memberships/providers?estate_id={estate_id}",
-        json={"email": PROVIDER_EMAIL},
-        headers=admin,
-    )
-    assert again.status_code == 409, again.text
 
     # The provider now sees the estate in their own list.
     after = await async_client.get(f"{BASE}/auth/estates", headers=provider)
@@ -222,7 +330,7 @@ async def test_the_whole_journey_in_one_complex(db_session, async_client) -> Non
     listed = directory.json()["items"][0]
     provider_id = listed["id"]
     assert listed["email"] == PROVIDER_EMAIL
-    assert listed["phone"] == "+27110000000"
+    assert listed["phone"] == "082 123 4567"
 
     # 8. The resident files a complaint against their own unit.
     complaint = await async_client.post(
@@ -358,7 +466,9 @@ async def test_the_whole_journey_in_one_complex(db_session, async_client) -> Non
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_a_member_of_another_estate_is_denied_at_every_step(db_session, async_client) -> None:
+async def test_a_member_of_another_estate_is_denied_at_every_step(
+    db_session, async_client, provider_mailer
+) -> None:
     # Estate A, fully populated, and estate B beside it.
     admin_a, estate_a = await _signup_estate_admin(
         async_client, name=ESTATE_NAME, email=ADMIN_EMAIL
@@ -373,14 +483,15 @@ async def test_a_member_of_another_estate_is_denied_at_every_step(db_session, as
             headers=resident_a,
         )
     ).status_code == 201
-    await _signup_provider(async_client, email=PROVIDER_EMAIL)
-    assert (
-        await async_client.post(
-            f"{BASE}/memberships/providers?estate_id={estate_a}",
-            json={"email": PROVIDER_EMAIL},
-            headers=admin_a,
-        )
-    ).status_code == 201
+    provider_a = await _apply_provider(
+        db_session,
+        async_client,
+        admin=admin_a,
+        estate_id=estate_a,
+        email=PROVIDER_EMAIL,
+        trade="plumber",
+        mailer=provider_mailer,
+    )
     directory = await async_client.get(f"{BASE}/providers?estate_id={estate_a}", headers=admin_a)
     provider_id_a = directory.json()["items"][0]["id"]
 
@@ -425,21 +536,21 @@ async def test_a_member_of_another_estate_is_denied_at_every_step(db_session, as
             headers=resident_b,
         )
     ).status_code == 201
-    provider_b = await _signup_provider(async_client, email=OTHER_PROVIDER_EMAIL)
-    assert (
-        await async_client.post(
-            f"{BASE}/memberships/providers?estate_id={estate_b}",
-            json={"email": OTHER_PROVIDER_EMAIL},
-            headers=admin_b,
-        )
-    ).status_code == 201
+    provider_b = await _apply_provider(
+        db_session,
+        async_client,
+        admin=admin_b,
+        estate_id=estate_b,
+        email=OTHER_PROVIDER_EMAIL,
+        trade="electrician",
+        mailer=provider_mailer,
+    )
 
     # Estate B's admin is not a member of estate A: every admin action there is 403.
     admin_denials = [
         await async_client.get(f"{BASE}/memberships?estate_id={estate_a}", headers=admin_b),
-        await async_client.post(
-            f"{BASE}/memberships/providers?estate_id={estate_a}",
-            json={"email": PROVIDER_EMAIL},
+        await async_client.get(
+            f"{BASE}/provider-applications?estate_id={estate_a}",
             headers=admin_b,
         ),
         await async_client.get(f"{BASE}/providers?estate_id={estate_a}", headers=admin_b),
@@ -539,26 +650,33 @@ async def test_a_member_of_another_estate_is_denied_at_every_step(db_session, as
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_provider_directory_is_scoped_to_the_estate_and_the_admin(db_session, async_client) -> None:
+async def test_provider_directory_is_scoped_to_the_estate_and_the_admin(
+    db_session, async_client, provider_mailer
+) -> None:
     admin_a, estate_a = await _signup_estate_admin(
         async_client, name=ESTATE_NAME, email=ADMIN_EMAIL
     )
     admin_b, estate_b = await _signup_estate_admin(
         async_client, name=OTHER_ESTATE_NAME, email=OTHER_ADMIN_EMAIL
     )
-    provider_a = await _signup_provider(async_client, email=PROVIDER_EMAIL, trade="plumber")
-    provider_b = await _signup_provider(async_client, email=OTHER_PROVIDER_EMAIL, trade="electrician")
-    for headers, estate_id, email in (
-        (admin_a, estate_a, PROVIDER_EMAIL),
-        (admin_b, estate_b, OTHER_PROVIDER_EMAIL),
-    ):
-        assert (
-            await async_client.post(
-                f"{BASE}/memberships/providers?estate_id={estate_id}",
-                json={"email": email},
-                headers=headers,
-            )
-        ).status_code == 201
+    provider_a = await _apply_provider(
+        db_session,
+        async_client,
+        admin=admin_a,
+        estate_id=estate_a,
+        email=PROVIDER_EMAIL,
+        trade="plumber",
+        mailer=provider_mailer,
+    )
+    provider_b = await _apply_provider(
+        db_session,
+        async_client,
+        admin=admin_b,
+        estate_id=estate_b,
+        email=OTHER_PROVIDER_EMAIL,
+        trade="electrician",
+        mailer=provider_mailer,
+    )
 
     # Each admin sees only their own estate's provider.
     listing_a = await async_client.get(f"{BASE}/providers?estate_id={estate_a}", headers=admin_a)
@@ -605,7 +723,7 @@ async def test_provider_directory_is_scoped_to_the_estate_and_the_admin(db_sessi
     own = await async_client.get(f"{BASE}/providers/me", headers=provider_a)
     assert own.status_code == 200, own.text
     assert own.json()["email"] == PROVIDER_EMAIL
-    assert own.json()["phone"] == "+27110000000"
+    assert own.json()["phone"] == "082 123 4567"
     # ... and a resident has no provider profile to read at all.
     assert (
         await async_client.get(f"{BASE}/providers/me", headers=resident)
@@ -618,9 +736,14 @@ async def test_provider_directory_is_scoped_to_the_estate_and_the_admin(db_sessi
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_provider_reviews_require_a_shared_estate(db_session, async_client) -> None:
+async def test_provider_reviews_require_a_shared_estate(
+    db_session, async_client, provider_mailer
+) -> None:
     admin, estate_id = await _signup_estate_admin(
         async_client, name=ESTATE_NAME, email=ADMIN_EMAIL
+    )
+    other_admin, other_estate_id = await _signup_estate_admin(
+        async_client, name=OTHER_ESTATE_NAME, email=OTHER_ADMIN_EMAIL
     )
     await _add_units(async_client, admin, estate_id, ("A-1", "A-2"))
     code = await _issue_join_code(async_client, admin, estate_id)
@@ -633,8 +756,16 @@ async def test_provider_reviews_require_a_shared_estate(db_session, async_client
         )
     ).status_code == 201
 
-    # A registered provider who was never added to the estate cannot be reviewed.
-    await _signup_provider(async_client, email=PROVIDER_EMAIL)
+    # A provider approved by a different estate cannot be reviewed here.
+    await _apply_provider(
+        db_session,
+        async_client,
+        admin=other_admin,
+        estate_id=other_estate_id,
+        email=PROVIDER_EMAIL,
+        trade="plumber",
+        mailer=provider_mailer,
+    )
     from sqlalchemy import text
 
     provider_id = (
@@ -659,14 +790,17 @@ async def test_provider_reviews_require_a_shared_estate(db_session, async_client
             provider_id, ReviewCreate(rating=5, comment="Never met them"), resident_user
         )
 
-    # Once the admin adds the provider to the estate, the review is allowed.
-    assert (
-        await async_client.post(
-            f"{BASE}/memberships/providers?estate_id={estate_id}",
-            json={"email": PROVIDER_EMAIL},
-            headers=admin,
-        )
-    ).status_code == 201
+    # The provider applies to estate A, and only that HOA's approval unlocks it.
+    await _apply_provider(
+        db_session,
+        async_client,
+        admin=admin,
+        estate_id=estate_id,
+        email=PROVIDER_EMAIL,
+        trade="plumber",
+        mailer=provider_mailer,
+        existing_account=True,
+    )
     review = await service.create_review(
         provider_id, ReviewCreate(rating=5, comment="Fixed it properly"), resident_user
     )
@@ -676,62 +810,56 @@ async def test_provider_reviews_require_a_shared_estate(db_session, async_client
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_five_unsuccessful_provider_lookups_are_throttled(db_session, async_client) -> None:
+async def test_provider_applications_require_public_estate_and_remain_pending_until_review(
+    db_session, async_client
+) -> None:
     admin, estate_id = await _signup_estate_admin(
         async_client, name=ESTATE_NAME, email=ADMIN_EMAIL
     )
 
-    for attempt in range(5):
-        response = await async_client.post(
-            f"{BASE}/memberships/providers?estate_id={estate_id}",
-            json={"email": f"nobody{attempt}@example.com"},
-            headers=admin,
-        )
-        assert response.status_code == 404, response.text
-        # One uniform message, whatever was wrong with the email.
-        assert response.json()["detail"]["message"] == (
-            "No registered service provider with that email address can be added to this estate."
-        )
+    private_application = await async_client.post(
+        f"{BASE}/provider-applications",
+        json={
+            "estate_id": estate_id,
+            "full_name": "Provider One",
+            "email": PROVIDER_EMAIL,
+            "trade": "plumber",
+            "phone": "082 123 4567",
+        },
+    )
+    assert private_application.status_code == 404
 
-    blocked = await async_client.post(
-        f"{BASE}/memberships/providers?estate_id={estate_id}",
-        json={"email": "nobody-else@example.com"},
+    await _publish_estate(db_session, estate_id)
+    application = await _submit_provider_application(
+        async_client,
+        admin=admin,
+        estate_id=estate_id,
+        email=PROVIDER_EMAIL,
+        trade="plumber",
+    )
+    duplicate = await async_client.post(
+        f"{BASE}/provider-applications",
+        json={
+            "estate_id": estate_id,
+            "full_name": "Provider One",
+            "email": PROVIDER_EMAIL,
+            "trade": "plumber",
+            "phone": "082 123 4567",
+        },
+    )
+    assert duplicate.status_code == 409
+    from sqlalchemy import text
+
+    user_count = await db_session.execute(
+        text("SELECT count(*) FROM users WHERE email = :email"),
+        {"email": PROVIDER_EMAIL},
+    )
+    assert user_count.scalar_one() == 0
+    pending = await async_client.get(
+        f"{BASE}/provider-applications?estate_id={estate_id}&status=pending",
         headers=admin,
     )
-    assert blocked.status_code == 429, blocked.text
-    assert blocked.json()["detail"]["code"] == "RATE_LIMITED"
-    assert "service-provider lookups" in blocked.json()["detail"]["message"]
-
-    # A registered provider is still refused while the window is closed, and the
-    # admin can still run the rest of their estate.
-    await _signup_provider(async_client, email=PROVIDER_EMAIL)
-    assert (
-        await async_client.post(
-            f"{BASE}/memberships/providers?estate_id={estate_id}",
-            json={"email": PROVIDER_EMAIL},
-            headers=admin,
-        )
-    ).status_code == 429
-    assert (
-        await async_client.get(f"{BASE}/memberships?estate_id={estate_id}", headers=admin)
-    ).status_code == 200
-
-    # Clearing the window (as a fresh process would) lets the real provider in.
-    import sqlalchemy as sa
-
-    admin_user_id = (
-        await db_session.execute(
-            sa.text("SELECT user_id FROM users WHERE email = :email"),
-            {"email": ADMIN_EMAIL},
-        )
-    ).scalar_one()
-    join_attempt_limiter.reset(admin_user_id)
-    allowed = await async_client.post(
-        f"{BASE}/memberships/providers?estate_id={estate_id}",
-        json={"email": PROVIDER_EMAIL},
-        headers=admin,
-    )
-    assert allowed.status_code == 201, allowed.text
+    assert pending.json()[0]["application_id"] == application["application_id"]
 
 
 # --------------------------------------------------------------------------- #
@@ -739,14 +867,37 @@ async def test_five_unsuccessful_provider_lookups_are_throttled(db_session, asyn
 # --------------------------------------------------------------------------- #
 
 
-def test_provider_add_request_forbids_extra_fields() -> None:
+def test_provider_application_request_forbids_extra_fields() -> None:
     with pytest.raises(ValidationError):
-        MembershipProviderAddRequest.model_validate(
-            {"email": PROVIDER_EMAIL, "role": "service_provider"}
+        ProviderApplicationCreateRequest.model_validate(
+            {
+                "estate_id": 1,
+                "full_name": "Provider One",
+                "email": PROVIDER_EMAIL,
+                "trade": "plumber",
+                "phone": "082 123 4567",
+                "role": "service_provider",
+            }
         )
     with pytest.raises(ValidationError):
-        MembershipProviderAddRequest.model_validate({"email": "not-an-email"})
-    parsed = MembershipProviderAddRequest.model_validate({"email": PROVIDER_EMAIL})
+        ProviderApplicationCreateRequest.model_validate(
+            {
+                "estate_id": 1,
+                "full_name": "Provider One",
+                "email": "not-an-email",
+                "trade": "plumber",
+                "phone": "082 123 4567",
+            }
+        )
+    parsed = ProviderApplicationCreateRequest.model_validate(
+        {
+            "estate_id": 1,
+            "full_name": "Provider One",
+            "email": PROVIDER_EMAIL,
+            "trade": "plumber",
+            "phone": "082 123 4567",
+        }
+    )
     assert str(parsed.email) == PROVIDER_EMAIL
 
 
@@ -760,8 +911,8 @@ def test_the_limiter_message_is_configurable() -> None:
     limiter.reset(7)
     limiter.record_failure(7)
     with pytest.raises(RateLimitException) as custom_error:
-        limiter.ensure_allowed(7, message="Too many unsuccessful service-provider lookups.")
-    assert custom_error.value.detail == "Too many unsuccessful service-provider lookups."
+        limiter.ensure_allowed(7, message="Too many unsuccessful join-code attempts.")
+    assert custom_error.value.detail == "Too many unsuccessful join-code attempts."
 
 
 def test_generated_passwords_are_random_and_readable() -> None:

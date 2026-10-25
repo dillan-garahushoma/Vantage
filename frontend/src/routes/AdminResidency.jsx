@@ -40,7 +40,7 @@ function RequestDrawer({ request, estateName, onClose, onDecided, }) {
         try {
             if (decision === 'approve') {
                 await approveResidencyRequest(scope, request.request_id);
-                setDone(`${request.applicant_name} now has resident access to unit ${request.unit_no}.`);
+                setDone(`${request.applicant_name} now has resident access to ${estateName}.`);
             }
             else {
                 await rejectResidencyRequest(scope, request.request_id, note);
@@ -56,7 +56,7 @@ function RequestDrawer({ request, estateName, onClose, onDecided, }) {
             setBusy(false);
         }
     }
-    return (<Drawer open onClose={onClose} title={request.applicant_name} subtitle={`unit ${request.unit_no} · request #${request.request_id}`}>
+    return (<Drawer open onClose={onClose} title={request.applicant_name} subtitle={`${request.unit_no ? `unit ${request.unit_no}` : 'estate-level access'} · request #${request.request_id}`}>
       <div className="space-y-6">
         {error ? (<ErrorState title={error.status === 409 ? 'Someone already decided this' : 'Could not record that decision'} message={error.message} requestId={error.requestId}/>) : null}
         {done ? (<div className="hairline rounded-xs border-l-2 border-l-accent bg-accent-wash px-3.5 py-3">
@@ -74,7 +74,7 @@ function RequestDrawer({ request, estateName, onClose, onDecided, }) {
             ['Email', request.applicant_email],
             ['Phone', request.applicant_phone ?? 'not supplied'],
             ['Estate', estateName],
-            ['Unit', request.unit_no],
+            ['Unit', request.unit_no ?? 'To be assigned by the estate office'],
             ['Submitted', fullDate(request.created_at)],
             ['Decided', request.decided_at ? fullDate(request.decided_at) : '—'],
         ].map(([label, value]) => (<div key={label} className="flex items-baseline justify-between gap-4 border-b border-ink/10 pb-2">
@@ -107,7 +107,8 @@ function RequestDrawer({ request, estateName, onClose, onDecided, }) {
           </div>) : confirming === 'approve' ? (<div className="hairline rounded-xs bg-accent-wash/50 p-4">
             <p className="text-[13.5px] font-medium">Approve {request.applicant_name}?</p>
             <p className="mt-1 text-[12.5px] text-ink-soft">
-              This grants resident access to unit {request.unit_no} of {estateName} and records you
+              This grants resident access to {estateName}
+              {request.unit_no ? `, unit ${request.unit_no},` : ' with no unit assigned yet,'} and records you
               as the deciding administrator. It cannot be undone from here.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -209,7 +210,7 @@ function AdminResidencyBody() {
           <h1 className="mt-2 text-[26px] leading-tight font-semibold">Resident approvals</h1>
           <p className="mt-1 max-w-2xl text-[13.5px] text-ink-muted">
             People who asked to join {estate?.estate_name ?? 'this estate'}. Approving grants resident
-            access to a unit; rejecting grants nothing. A join code still admits a resident
+            access to the estate; rejecting grants nothing. A join code still admits a resident
             immediately, so if someone you are about to approve already joined with a code, the
             request is approved without creating a second membership.
           </p>
@@ -273,7 +274,7 @@ function AdminResidencyBody() {
                         {request.applicant_email}
                       </span>
                     </Td>
-                    <Td className="num">{request.unit_no}</Td>
+                    <Td className="num">{request.unit_no ?? 'Unassigned'}</Td>
                     <Td>
                       <span className="block text-[13px]">{fullDate(request.created_at)}</span>
                       <span className="num block text-[11.5px] text-ink-muted">
@@ -314,7 +315,7 @@ function AdminResidencyBody() {
         <ul className="space-y-1.5 text-[13px] text-ink-soft">
           <li>
             <span className="font-medium">Approve</span> creates the resident’s membership of the
-            unit and records you as the deciding administrator, with the time. If they already joined
+            estate and records you as the deciding administrator, with the time. If they already joined
             with a code, the request is approved without creating a duplicate membership.
           </li>
           <li>

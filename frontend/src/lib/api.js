@@ -156,14 +156,26 @@ export const api = {
         body: { email, password },
         anonymous: true,
     }),
-    /**
-     * The registration contract, published by backend OpenAPI: `account_type`
-     * decides what else must be sent (an estate for an administrator, a trade and
-     * phone for a provider) — there is deliberately no `role` field to send.
-     */
+    /** Public registration creates resident accounts only. */
     register: (payload) => request('/api/v1/auth/register', {
         method: 'POST',
         body: payload,
+        anonymous: true,
+    }),
+    /** Estate onboarding creates a new estate and its first administrator. */
+    registerEstate: (payload) => request('/api/v1/auth/register-estate', {
+        method: 'POST',
+        body: payload,
+        anonymous: true,
+    }),
+    applyAsProvider: (payload) => request('/api/v1/provider-applications', {
+        method: 'POST',
+        body: payload,
+        anonymous: true,
+    }),
+    acceptProviderInvitation: (token, password) => request('/api/v1/auth/provider-invitations/accept', {
+        method: 'POST',
+        body: password ? { token, password } : { token },
         anonymous: true,
     }),
     me: () => request('/api/v1/auth/me'),

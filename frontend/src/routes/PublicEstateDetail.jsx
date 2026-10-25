@@ -486,16 +486,15 @@ function DetailBody({ estateId }) {
               ) : null}
 
               <p className="mt-4 text-[12.5px] text-ink-soft">
-                Membership is by invitation: your estate office gives you a one-time code, and you
-                redeem it against your unit number. A code is the proof of the right to join — and
-                an estate is never listed here until its administrator publishes it.
+                Request access with your account details and wait for the estate office to review
+                it. No unit number is needed; the HOA can assign one after approving you.
               </p>
 
               <ul className="mt-3.5 space-y-2">
                 {[
-                  'Ask your estate office for the join code.',
-                  'Create an account (residents register themselves).',
-                  'Redeem the code against your unit number.',
+                  'Create a resident account or sign in.',
+                  'Request access to this estate.',
+                  'Enter the estate after the HOA approves your request.',
                 ].map((step, index) => (<li key={step} className="flex gap-2.5 text-[12.5px] text-ink-soft">
                     <span className="num mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-xs border border-ink/20 text-[11px] font-semibold text-accent-ink">
                       {index + 1}
@@ -505,12 +504,12 @@ function DetailBody({ estateId }) {
               </ul>
 
               <div className="mt-5 flex flex-col gap-2">
-                <LinkButton to="/request-access" variant="primary" className="w-full justify-center text-[13px] font-medium py-2" onClick={() => rememberPublicEstate(detail)} aria-label="Request access">
+                <LinkButton to={user ? '/request-access' : '/register'} variant="primary" className="w-full justify-center text-[13px] font-medium py-2" onClick={() => rememberPublicEstate(detail)} aria-label="Request access">
                   Request Resident Access
                   <IconArrowRight size={15}/>
                 </LinkButton>
 
-                <LinkButton to={user ? "/join" : "/join"} variant="secondary" className="w-full justify-center text-[13px] font-medium py-2" onClick={() => rememberPublicEstate(detail)} aria-label="Redeem Join Code">
+                <LinkButton to="/join" variant="secondary" className="w-full justify-center text-[13px] font-medium py-2" onClick={() => rememberPublicEstate(detail)} aria-label="Redeem Join Code">
                   Redeem Join Code
                 </LinkButton>
 

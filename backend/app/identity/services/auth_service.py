@@ -14,7 +14,14 @@ from app.identity.models.user import User
 from app.identity.repositories.estate_membership_repository import EstateMembershipRepository
 from app.identity.repositories.login_attempt_repository import LoginAttemptRepository
 from app.identity.repositories.user_repository import UserRepository
-from app.identity.schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserResponse, ProvisionAccountRequest
+from app.identity.schemas.auth import (
+    AuthResponse,
+    EstateRegistrationRequest,
+    LoginRequest,
+    ProvisionAccountRequest,
+    RegisterRequest,
+    UserResponse,
+)
 from app.property.repositories.estate_repository import EstateRepository
 from app.providers.repositories.service_provider_repository import ServiceProviderRepository
 
@@ -37,6 +44,17 @@ class AuthService:
         if payload.account_type != 'resident':
             raise ForbiddenException('Public registration creates residents only.')
         return await self._create_account(payload)
+
+    async def register_estate(self, payload: EstateRegistrationRequest) -> AuthResponse:
+        provisioning_payload = ProvisionAccountRequest(
+            full_name=payload.full_name,
+            email=payload.email,
+            password=payload.password,
+            phoneno=payload.phoneno,
+            account_type="estate_admin",
+            estate=payload.estate,
+        )
+        return await self._create_account(provisioning_payload)
 
     async def provision(self, payload: ProvisionAccountRequest, operator: User) -> UserResponse:
         if operator.role != UserRole.platform_admin.value:
@@ -72,7 +90,7 @@ class AuthService:
         return self._build_auth_response(user)
 
     async def _register_estate_admin(
-        self, payload: RegisterRequest, *, email: str, password_hash: str
+        self, payload: ProvisionAccountRequest, *, email: str, password_hash: str
     ) -> AuthResponse:
         """Register an estate admin and their estate in ONE transaction.
 
@@ -102,6 +120,8 @@ class AuthService:
                 province=estate_payload.province.strip(),
                 description=estate_payload.description,
                 is_demo=False,
+                is_public=False,
+                show_living_score=False,
             )
             await self._membership_repo.add(
                 user_id=user.user_id,

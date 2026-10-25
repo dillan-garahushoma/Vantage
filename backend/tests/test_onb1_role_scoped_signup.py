@@ -32,7 +32,12 @@ from app.common.enums import UserRole
 from app.core.exceptions import ConflictException, ForbiddenException
 from app.db.session import get_db
 from app.identity.api.dependencies import get_current_user
-from app.identity.schemas.auth import ProvisionAccountRequest
+from app.identity.schemas.auth import (
+    AuthResponse,
+    EstateRegistrationRequest,
+    ProvisionAccountRequest,
+    UserResponse,
+)
 from app.identity.services.auth_service import AuthService
 from app.providers.services.service_provider_service import ServiceProviderService
 from app.property.schemas.listing import ListingCreate, ListingUpdate
@@ -130,6 +135,34 @@ def test_operator_provision_body_accepts_estate_and_defaults_to_resident() -> No
     assert payload.estate is not None and payload.estate.name == "Amberfield Valley"
 
 
+def test_public_estate_registration_does_not_accept_role_or_existing_estate() -> None:
+    payload = EstateRegistrationRequest.model_validate(
+        _register_body(
+            estate={
+                "name": "Amberfield Valley",
+                "suburb": "Centurion",
+                "city": "Pretoria",
+                "province": "Gauteng",
+            },
+        )
+    )
+    assert payload.estate.name == "Amberfield Valley"
+
+    for extra in ({"role": "hoa_admin"}, {"account_type": "estate_admin"}, {"estate_id": 1}):
+        with pytest.raises(ValidationError):
+            EstateRegistrationRequest.model_validate(
+                _register_body(
+                    estate={
+                        "name": "Amberfield Valley",
+                        "suburb": "Centurion",
+                        "city": "Pretoria",
+                        "province": "Gauteng",
+                    },
+                    **extra,
+                )
+            )
+
+
 # --------------------------------------------------------------------------- #
 # 2. Provider writes require platform_admin
 # --------------------------------------------------------------------------- #
@@ -197,6 +230,41 @@ def test_platform_admin_can_create_and_update_providers(monkeypatch) -> None:
 
     assert created.status_code == 201, created.text
     assert updated.status_code == 200, updated.text
+
+
+def test_public_estate_registration_routes_to_its_dedicated_service(monkeypatch) -> None:
+    response_body = AuthResponse(
+        access_token="test-access-token",
+        user=UserResponse(
+            user_id=11,
+            email="nandi@example.com",
+            full_name="Nandi Dlamini",
+            role=UserRole.hoa_admin.value,
+            unit_no=None,
+            email_verified=False,
+            hoa_approved=False,
+        ),
+    )
+    register_estate = AsyncMock(return_value=response_body)
+    monkeypatch.setattr(AuthService, "register_estate", register_estate)
+
+    response = _route_client().post(
+        "/api/v1/auth/register-estate",
+        json=_register_body(
+            estate={
+                "name": "Amberfield Valley",
+                "suburb": "Centurion",
+                "city": "Pretoria",
+                "province": "Gauteng",
+            },
+        ),
+    )
+
+    assert response.status_code == 201, response.text
+    assert response.json()["user"]["role"] == UserRole.hoa_admin.value
+    payload = register_estate.await_args.args[0]
+    assert isinstance(payload, EstateRegistrationRequest)
+    assert payload.estate.name == "Amberfield Valley"
 
 
 # --------------------------------------------------------------------------- #
@@ -572,10 +640,9 @@ async def test_estate_admin_signup_creates_user_estate_and_membership_once() -> 
         provider_repo=FakeProviderRepo(),
     )
 
-    response = await service._create_account(
-        ProvisionAccountRequest.model_validate(
+    response = await service.register_estate(
+        EstateRegistrationRequest.model_validate(
             _register_body(
-                account_type="estate_admin",
                 estate={
                     "name": "Amberfield Valley",
                     "suburb": "Centurion",
@@ -593,6 +660,7 @@ async def test_estate_admin_signup_creates_user_estate_and_membership_once() -> 
     assert user_repo.created["role"] == UserRole.hoa_admin.value
     assert estate_repo.added is not None
     assert estate_repo.added["is_demo"] is False
+    assert estate_repo.added["is_public"] is False
     assert estate_repo.added["name"] == "Amberfield Valley"
     assert membership_repo.added == {
         "user_id": 11,
@@ -724,7 +792,6 @@ def _bearer_token(token: str) -> dict:
 
 def _estate_admin_body(*, email: str, estate_name: str) -> dict:
     return _register_body(
-        account_type="estate_admin",
         email=email,
         estate={
             "name": estate_name,
@@ -747,7 +814,7 @@ async def test_estate_admin_signup_creates_estate_and_membership_then_lists_it(
     from app.property.repositories.estate_repository import EstateRepository
 
     response = await signup_fixture(async_client,
-        "/api/v1/auth/register",
+        "/api/v1/auth/register-estate",
         json=_estate_admin_body(
             email="onb_estate_admin@example.com", estate_name="Onboarding Test Estate"
         ),
@@ -760,6 +827,7 @@ async def test_estate_admin_signup_creates_estate_and_membership_then_lists_it(
     estate = await EstateRepository(db_session).get_by_name("Onboarding Test Estate")
     assert estate is not None
     assert estate.is_demo is False
+    assert estate.is_public is False
 
     memberships = await EstateMembershipRepository(db_session).list_for_user(user_id=user_id)
     assert len(memberships) == 1
@@ -783,13 +851,13 @@ async def test_duplicate_estate_name_rolls_back_the_whole_signup(db_session, asy
     from app.property.repositories.estate_repository import EstateRepository
 
     first = await signup_fixture(async_client,
-        "/api/v1/auth/register",
+        "/api/v1/auth/register-estate",
         json=_estate_admin_body(email="onb_dup_first@example.com", estate_name="Duplicate Estate"),
     )
     assert first.status_code == 201, first.text
 
     second = await signup_fixture(async_client,
-        "/api/v1/auth/register",
+        "/api/v1/auth/register-estate",
         json=_estate_admin_body(email="onb_dup_second@example.com", estate_name="Duplicate Estate"),
     )
     assert second.status_code == 409, second.text
@@ -835,7 +903,7 @@ async def test_new_estate_admin_gets_403_or_404_on_another_estate(
 
     world = await build_two_estate_world(db_session)
     registration = await signup_fixture(async_client,
-        "/api/v1/auth/register",
+        "/api/v1/auth/register-estate",
         json=_estate_admin_body(email="onb_sweep@example.com", estate_name="Sweep Estate"),
     )
     assert registration.status_code == 201, registration.text
@@ -858,18 +926,13 @@ async def test_new_estate_admin_gets_403_or_404_on_another_estate(
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_provider_signup_links_a_profile_and_grants_zero_estate_access(
+async def test_public_provider_signup_is_rejected(
     db_session, async_client
 ) -> None:
-    from app.identity.repositories.estate_membership_repository import (
-        EstateMembershipRepository,
-    )
     from app.providers.repositories.service_provider_repository import (
         ServiceProviderRepository,
     )
-    from tests.factories import build_two_estate_world
 
-    world = await build_two_estate_world(db_session)
     response = await signup_fixture(async_client,
         "/api/v1/auth/register",
         json=_register_body(
@@ -878,25 +941,12 @@ async def test_provider_signup_links_a_profile_and_grants_zero_estate_access(
             provider={"trade": "plumbing", "phone": "0821234567"},
         ),
     )
-    assert response.status_code == 201, response.text
-    body = response.json()
-    assert body["user"]["role"] == "service_provider"
-    user_id = body["user"]["id"]
+    assert response.status_code == 422, response.text
 
     profile = await ServiceProviderRepository(db_session).get_by_email(
         "onb_provider@example.com"
     )
-    assert profile is not None
-    assert profile.user_id == user_id
-    assert profile.verified is False
-    assert profile.emergency_available is False
-    assert await EstateMembershipRepository(db_session).list_for_user(user_id=user_id) == []
-
-    work_orders = await async_client.get(
-        f"/api/v1/work-orders?estate_id={world.estate_a.estate_id}",
-        headers=_bearer_token(body["access_token"]),
-    )
-    assert work_orders.status_code == 403, work_orders.text
+    assert profile is None
 
 
 @pytest.mark.integration
@@ -923,10 +973,8 @@ async def test_a_password_never_appears_in_the_logs(async_client, caplog) -> Non
         response = await signup_fixture(async_client,
             "/api/v1/auth/register",
             json=_register_body(
-                account_type="service_provider",
                 email="onb_logs@example.com",
                 password=secret,
-                provider={"trade": "plumbing", "phone": "0821234567"},
             ),
         )
     assert response.status_code == 201, response.text

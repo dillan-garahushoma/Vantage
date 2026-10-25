@@ -122,14 +122,16 @@ class ResidencyRequestService:
             self._limiter.record_failure(actor.user_id)
             raise NotFoundException(ESTATE_NOT_FOUND_MESSAGE)
 
-        unit = await self._properties.get_by_unit_no_in_estate_ci(
-            estate_id=payload.estate_id, unit_no=payload.unit_no
-        )
-        if unit is None:
-            self._limiter.record_failure(actor.user_id)
-            raise NotFoundException(
-                UNIT_NOT_FOUND_TEMPLATE.format(unit_no=payload.unit_no)
+        unit = None
+        if payload.unit_no is not None:
+            unit = await self._properties.get_by_unit_no_in_estate_ci(
+                estate_id=payload.estate_id, unit_no=payload.unit_no
             )
+            if unit is None:
+                self._limiter.record_failure(actor.user_id)
+                raise NotFoundException(
+                    UNIT_NOT_FOUND_TEMPLATE.format(unit_no=payload.unit_no)
+                )
 
         if (
             await self._memberships.get_for_user_and_estate(
@@ -151,8 +153,8 @@ class ResidencyRequestService:
             request = await self._requests.add(
                 estate_id=payload.estate_id,
                 user_id=actor.user_id,
-                property_id=unit.unit_id,
-                unit_no=unit.unit_no,
+                property_id=unit.unit_id if unit is not None else None,
+                unit_no=unit.unit_no if unit is not None else None,
                 status=ResidencyRequestStatus.pending.value,
                 applicant_name=actor.full_name,
                 applicant_email=actor.email,

@@ -393,7 +393,7 @@ export function Landing() {
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 aria-label="Search complexes"
               >
-                <IconArrowRight size={16} />
+                Find a complex <IconArrowRight size={16} />
               </button>
             </form>
 
@@ -486,10 +486,10 @@ export function Landing() {
             },
             {
               role: 'Service Providers',
-              tagline: 'See your work. Log progress. Get rated.',
-              body: 'Assigned jobs arrive in your portal. Upload completion evidence and build your verified provider record inside the estate.',
-              cta: 'Contact your estate admin',
-              to: '/contact',
+              tagline: 'Apply to work with an estate.',
+              body: 'The HOA reviews your application. If approved, you receive a secure account setup link and access to assigned work.',
+              cta: 'Apply as a provider',
+              to: '/provider/apply',
               primary: false,
             },
           ].map((item) => (

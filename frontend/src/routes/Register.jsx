@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Building2, Check, Search } from 'lucide-react';
 import { Keyline } from '../components/Brand';
 import { AuthShell } from '../components/AuthShell';
-import { Button, EmptyState, ErrorState, Field, Input, LoadingState } from '../components/ui';
+import { Button, EmptyState, ErrorState, Field, Input, LoadingState, Select, Textarea } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../lib/api';
 import { listPublicEstates } from '../lib/publicDirectory';
@@ -14,18 +14,30 @@ const ACCOUNT_TYPES = [
   {
     value: 'resident',
     label: 'Resident',
-    blurb: 'I live in a complex and want to manage my requests and stay informed.',
+    blurb: 'Create an account and ask your estate office for access.',
   },
   {
     value: 'estate_admin',
     label: 'HOA / estate manager',
-    blurb: 'I manage estate operations, residents and maintenance.',
+    blurb: 'Create your account and start setting up the estate you manage.',
   },
   {
     value: 'service_provider',
     label: 'Service provider',
-    blurb: 'I complete maintenance work assigned by an estate.',
+    blurb: 'Apply to an estate. Its HOA reviews your details before account setup.',
   },
+];
+
+const PROVINCES = [
+  'Eastern Cape',
+  'Free State',
+  'Gauteng',
+  'KwaZulu-Natal',
+  'Limpopo',
+  'Mpumalanga',
+  'North West',
+  'Northern Cape',
+  'Western Cape',
 ];
 
 const EMPTY = {
@@ -35,6 +47,11 @@ const EMPTY = {
   password: '',
   phoneno: '',
   unit_no: '',
+  estateName: '',
+  estateSuburb: '',
+  estateCity: '',
+  estateProvince: 'Gauteng',
+  estateDescription: '',
 };
 
 function validate(form, selectedEstate = null) {
@@ -43,11 +60,6 @@ function validate(form, selectedEstate = null) {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim())) errors.email = 'Enter a valid email address.';
   if (form.password.length < 8) errors.password = 'Use at least 8 characters.';
   if (new TextEncoder().encode(form.password).length > 72) errors.password = 'Password must not exceed 72 bytes.';
-  if (selectedEstate && form.unit_no.trim().length === 0) {
-    errors.unit_no = 'Enter the unit number for the complex you selected.';
-  } else if (form.unit_no.trim().length > 10) {
-    errors.unit_no = 'Unit numbers are at most 10 characters.';
-  }
   return errors;
 }
 
@@ -64,9 +76,16 @@ export function registrationPayload(form) {
   };
   const phone = form.phoneno.trim();
   if (phone) payload.phoneno = phone;
-  const unitNo = form.unit_no.trim();
-  if (unitNo) payload.unit_no = unitNo;
   return payload;
+}
+
+function validateEstateRegistration(form) {
+  const errors = validate(form);
+  if (form.estateName.trim().length < 2) errors.estateName = 'Enter the estate name.';
+  if (!form.estateSuburb.trim()) errors.estateSuburb = 'Enter the suburb.';
+  if (!form.estateCity.trim()) errors.estateCity = 'Enter the city.';
+  if (!form.estateProvince) errors.estateProvince = 'Choose a province.';
+  return errors;
 }
 
 function ExistingSession({ user, onSwitchAccount, onContinue }) {
@@ -120,7 +139,7 @@ function EstatePicker({ value, onSelect, onClear, query, onQueryChange, committe
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-ink">{value.name}</p>
             <p className="mt-0.5 text-xs text-ink-muted">{value.location || 'Location not available'}</p>
-            <p className="mt-1 text-xs text-ink-soft">You will confirm your unit and request access after creating your account.</p>
+            <p className="mt-1 text-xs text-ink-soft">You can request access after creating your account. No unit number is needed.</p>
           </div>
           <button type="button" onClick={onClear} className="shrink-0 text-xs font-semibold text-accent-ink underline underline-offset-2">
             Change
@@ -210,7 +229,7 @@ function EstatePicker({ value, onSelect, onClear, query, onQueryChange, committe
 }
 
 export function Register() {
-  const { user, register, logout } = useAuth();
+  const { user, register, registerEstate, logout } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState({});
@@ -226,18 +245,18 @@ export function Register() {
 
   function update(key, value) {
     setForm((previous) => ({ ...previous, [key]: value }));
+    setErrors((previous) => ({ ...previous, [key]: undefined }));
+    setError(null);
   }
 
   function clearEstate() {
     setSelectedEstate(null);
     clearSelectedPublicEstate();
-    setErrors((previous) => ({ ...previous, unit_no: undefined }));
   }
 
   function chooseEstate(estate) {
     setSelectedEstate(estate);
-    rememberPublicEstate(estate, form.unit_no);
-    setErrors((previous) => ({ ...previous, unit_no: undefined }));
+    rememberPublicEstate(estate);
     setError(null);
   }
 
@@ -249,7 +268,7 @@ export function Register() {
   async function submit(event) {
     event.preventDefault();
     if (form.accountType !== 'resident') return;
-    const found = validate(form, selectedEstate);
+    const found = validate(form);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
 
@@ -257,14 +276,48 @@ export function Register() {
     setError(null);
     try {
       if (selectedEstate) {
-        rememberPublicEstate(selectedEstate, form.unit_no.trim());
+        rememberPublicEstate(selectedEstate);
       } else {
         clearSelectedPublicEstate();
       }
       await register(registrationPayload(form));
-      navigate(selectedEstate ? '/request-access' : '/welcome', { replace: true });
+      navigate('/request-access', { replace: true });
     } catch (cause) {
       setError(cause instanceof ApiError ? cause : new ApiError(0, 'Registration failed.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitEstateRegistration(event) {
+    event.preventDefault();
+    const found = validateEstateRegistration(form);
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
+
+    setBusy(true);
+    setError(null);
+    try {
+      const estate = {
+        name: form.estateName.trim(),
+        suburb: form.estateSuburb.trim(),
+        city: form.estateCity.trim(),
+        province: form.estateProvince,
+      };
+      const description = form.estateDescription.trim();
+      if (description) estate.description = description;
+      const payload = {
+        full_name: form.full_name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        estate,
+      };
+      const phone = form.phoneno.trim();
+      if (phone) payload.phoneno = phone;
+      await registerEstate(payload);
+      navigate('/welcome', { replace: true });
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause : new ApiError(0, 'Could not create the estate account.'));
     } finally {
       setBusy(false);
     }
@@ -289,7 +342,7 @@ export function Register() {
       totalSteps={3}
       stepLabels={['Account', 'Join estate', "You're in"]}
       title="Find your way into VALORA."
-      intro="Choose the path that fits your role. Residents can create an account here; estate management and provider access must be provisioned by an authorised administrator."
+      intro="Choose the path that fits your role. Residents request estate access, HOAs create an estate workspace, and providers apply to an estate for review."
     >
       <div className="space-y-5">
         <fieldset>
@@ -370,16 +423,10 @@ export function Register() {
                 directory={directory}
               />
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Phone (optional)">
-                  <Input name="phoneno" autoComplete="tel" value={form.phoneno}
-                    onChange={(event) => update('phoneno', event.target.value)} placeholder="082 000 0000" />
-                </Field>
-                <Field label="Unit number" error={errors.unit_no} hint={selectedEstate ? 'Required for the access request; the estate office confirms it.' : 'Optional now, or confirm it when requesting estate access.'}>
-                  <Input name="unit_no" value={form.unit_no} maxLength={10}
-                    onChange={(event) => update('unit_no', event.target.value)} placeholder="A-101" />
-                </Field>
-              </div>
+              <Field label="Phone (optional)">
+                <Input name="phoneno" autoComplete="tel" value={form.phoneno}
+                  onChange={(event) => update('phoneno', event.target.value)} placeholder="082 000 0000" />
+              </Field>
 
               <Button type="submit" variant="primary" className="w-full py-2.5" disabled={busy}>
                 {busy ? 'Creating account…' : 'Create resident account'}
@@ -387,30 +434,75 @@ export function Register() {
             </form>
 
             <p className="text-[13px] text-ink-muted">
-              Already registered? <Link to="/login" className="font-medium text-accent-ink hover:underline">Sign in</Link>.
+              Already registered?{' '}
+              <Link to="/login" state={{ from: '/request-access' }} className="font-medium text-accent-ink hover:underline">
+                Sign in
+              </Link>.
             </p>
           </>
-        ) : (
-          <div role="status" className="border-l-2 border-accent bg-canvas p-4">
-            <p className="text-sm font-semibold text-ink">
-              {form.accountType === 'estate_admin' ? 'Estate management access is authorised by VALORA.' : 'Provider access is assigned by the estate.'}
+        ) : form.accountType === 'estate_admin' ? (
+          <form className="space-y-4" onSubmit={submitEstateRegistration} noValidate>
+            {error ? <ErrorState title="Could not create the estate account" message={error.message} requestId={error.requestId} /> : null}
+            <p className="text-sm leading-relaxed text-ink-soft">
+              Create the HOA administrator account and estate together. You will be signed in and can continue setup immediately.
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-              {form.accountType === 'estate_admin'
-                ? 'To protect resident and operational records, an HOA administrator account must be provisioned and attached to its estate. Contact the VALORA team to arrange access.'
-                : 'Service-provider accounts must be linked to an approved provider profile and estate membership. Ask your estate office to invite or provision your account.'}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <Link to="/contact" className="inline-flex items-center justify-center border border-accent bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-ink">
-                Contact VALORA
-              </Link>
-              <Link to="/login" className="inline-flex items-center justify-center border border-ink/15 bg-surface px-4 py-2 text-sm font-medium text-ink hover:border-ink/35">
-                Already have access? Sign in
-              </Link>
+            <Field label="Your full name" error={errors.full_name}>
+              <Input name="full_name" autoComplete="name" value={form.full_name}
+                onChange={(event) => update('full_name', event.target.value)} required />
+            </Field>
+            <Field label="Email address" error={errors.email}>
+              <Input type="email" name="email" autoComplete="email" value={form.email}
+                onChange={(event) => update('email', event.target.value)} required />
+            </Field>
+            <Field label="Password" error={errors.password} hint="At least 8 characters.">
+              <Input type="password" name="password" autoComplete="new-password" value={form.password}
+                onChange={(event) => update('password', event.target.value)} required />
+            </Field>
+            <Field label="Phone (optional)">
+              <Input name="phoneno" autoComplete="tel" value={form.phoneno}
+                onChange={(event) => update('phoneno', event.target.value)} />
+            </Field>
+            <Keyline />
+            <Field label="Estate name" error={errors.estateName}>
+              <Input name="estate_name" value={form.estateName}
+                onChange={(event) => update('estateName', event.target.value)} required />
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Suburb" error={errors.estateSuburb}>
+                <Input name="estate_suburb" value={form.estateSuburb}
+                  onChange={(event) => update('estateSuburb', event.target.value)} required />
+              </Field>
+              <Field label="City" error={errors.estateCity}>
+                <Input name="estate_city" value={form.estateCity}
+                  onChange={(event) => update('estateCity', event.target.value)} required />
+              </Field>
             </div>
-            <p className="mt-3 text-xs leading-relaxed text-ink-muted">
-              Selecting this path does not grant a role or estate access by itself.
+            <Field label="Province" error={errors.estateProvince}>
+              <Select name="estate_province" value={form.estateProvince}
+                onChange={(event) => update('estateProvince', event.target.value)} required>
+                {PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
+              </Select>
+            </Field>
+            <Field label="Description (optional)">
+              <Textarea name="estate_description" value={form.estateDescription} maxLength={5000}
+                onChange={(event) => update('estateDescription', event.target.value)}
+                placeholder="A short introduction to your estate." />
+            </Field>
+            <Button type="submit" variant="primary" className="w-full py-2.5" disabled={busy}>
+              {busy ? 'Creating estate…' : 'Create estate and HOA account'}
+            </Button>
+            <p className="text-[13px] text-ink-muted">
+              Already have an account? <Link to="/login" className="font-medium text-accent-ink hover:underline">Sign in</Link>.
             </p>
+          </form>
+        ) : (
+          <div className="space-y-4 border-l-2 border-accent bg-canvas p-4">
+            <p className="text-sm leading-relaxed text-ink-soft">
+              Apply to a published estate with your contact and trade details. The HOA reviews the application and sends a secure account setup link if it is approved.
+            </p>
+            <Link to="/provider/apply" className="inline-flex items-center justify-center border border-accent bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-ink">
+              Apply to work at an estate
+            </Link>
           </div>
         )}
         <p className="text-xs text-ink-muted">

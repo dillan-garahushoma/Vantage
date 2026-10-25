@@ -13,7 +13,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.datetime_utils import utcnow
 from app.common.enums import UserRole
 from app.common.pagination import Page
-from app.common.validators import normalise_email
 from app.core.exceptions import ConflictException, NotFoundException
 from app.identity.domain.join_code import normalise_join_code
 from app.identity.models.user import User
@@ -32,21 +31,10 @@ from app.identity.services.estate_authorization_service import EstateAuthorizati
 from app.identity.services.join_attempt_limiter import JoinAttemptLimiter, join_attempt_limiter
 from app.property.repositories.estate_repository import EstateRepository
 from app.property.repositories.property_repository import PropertyRepository
-from app.providers.repositories.service_provider_repository import ServiceProviderRepository
 
 # One uniform refusal for every unusable code, so a caller cannot tell an unknown
 # code from an expired one from a revoked one.
 INVALID_CODE_MESSAGE = "That code is not valid."
-
-# One uniform refusal for every unusable provider lookup, so an admin cannot use
-# this endpoint to discover which email addresses have accounts.
-PROVIDER_NOT_AVAILABLE_MESSAGE = (
-    "No registered service provider with that email address can be added to this estate."
-)
-
-PROVIDER_LOOKUP_RATE_LIMIT_MESSAGE = (
-    "Too many unsuccessful service-provider lookups. Please try again later."
-)
 
 # Rows an admin may remove. An admin membership is not removable through the API:
 # an estate with no admin would be unreachable.
@@ -64,12 +52,7 @@ class MembershipService:
         self._estates = EstateRepository(db)
         self._properties = PropertyRepository(db)
         self._users = UserRepository(db)
-        self._providers = ServiceProviderRepository(db)
         self._estate_authorization = EstateAuthorizationService(db)
-        # The ONB-2 limiter is reused rather than duplicated: it is keyed by user
-        # id, and an account is either a resident (who redeems codes) or an HOA
-        # admin (who looks providers up by email), so the two never share a
-        # counter in practice. Failed lookups count exactly like failed codes.
         self._limiter = limiter if limiter is not None else join_attempt_limiter
 
     # ---- resident self-service ------------------------------------------
@@ -149,82 +132,6 @@ class MembershipService:
             unit_id=unit.unit_id,
             unit_no=unit.unit_no,
             role=UserRole.resident.value,
-        )
-
-    # ---- admin: add an already-registered provider -----------------------
-
-    async def add_provider_by_email(
-        self, actor: User, *, estate_id: int, email: str
-    ) -> MembershipResponse:
-        """Bind a registered service provider to this estate, one transaction.
-
-        The provider must already have an account with the ``service_provider``
-        role *and* a linked provider profile: an admin adds somebody who has
-        registered themselves, it does not create accounts. Anything that does
-        not match - unknown email, a resident's email, a provider account with
-        no profile - is the same 404, and it is counted against the same
-        limiter that throttles join-code guessing, because otherwise this
-        endpoint is an email-enumeration oracle hand-held by an admin.
-        """
-        await self._require_estate_admin(actor, estate_id)
-        self._limiter.ensure_allowed(
-            actor.user_id, message=PROVIDER_LOOKUP_RATE_LIMIT_MESSAGE
-        )
-
-        normalised = normalise_email(email)
-        user = await self._users.get_by_email(normalised)
-        provider = (
-            await self._providers.get_by_user_id(user.user_id) if user is not None else None
-        )
-        eligible = (
-            user is not None
-            and user.role == UserRole.service_provider.value
-            and provider is not None
-        )
-        if not eligible:
-            self._limiter.record_failure(actor.user_id)
-            raise NotFoundException(PROVIDER_NOT_AVAILABLE_MESSAGE)
-        assert user is not None
-
-        existing = await self._memberships.get_for_user_and_estate(
-            user_id=user.user_id, estate_id=estate_id
-        )
-        if existing is not None:
-            raise ConflictException("That service provider is already a member of this estate.")
-
-        try:
-            membership = await self._memberships.add(
-                user_id=user.user_id,
-                estate_id=estate_id,
-                property_id=None,
-                membership_role=UserRole.service_provider.value,
-            )
-            await self._events.record(
-                estate_id=estate_id,
-                user_id=user.user_id,
-                membership_role=UserRole.service_provider.value,
-                property_id=None,
-                event_type="joined",
-                actor_user_id=actor.user_id,
-            )
-            # The membership and its audit event are one transaction.
-            await self._db.commit()
-            await self._db.refresh(membership)
-        except IntegrityError:
-            # uq_estate_memberships_user_estate_null_property: a concurrent add
-            # lost the race. That is a conflict, not a crash.
-            await self._db.rollback()
-            raise ConflictException("That service provider is already a member of this estate.")
-
-        # A successful lookup clears the admin's failure window.
-        self._limiter.reset(actor.user_id)
-        return MembershipResponse(
-            membership_id=membership.membership_id,
-            role=membership.membership_role,
-            full_name=user.full_name,
-            email=user.email,
-            unit_no=None,
-            joined_at=membership.created_at,
         )
 
     # ---- admin member management ----------------------------------------

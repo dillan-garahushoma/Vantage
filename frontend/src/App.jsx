@@ -25,6 +25,8 @@ import { PublicEstateDetail } from './routes/PublicEstateDetail';
 import { PublicEstates } from './routes/PublicEstates';
 import { PasswordRecovery } from './routes/PasswordRecovery';
 import { ProviderWaiting } from './routes/ProviderWaiting';
+import { ProviderApply } from './routes/ProviderApply';
+import { ProviderAcceptInvitation } from './routes/ProviderAcceptInvitation';
 import { ProviderWork } from './routes/ProviderWork';
 import { Providers } from './routes/Providers';
 import { Register } from './routes/Register';
@@ -56,6 +58,8 @@ export function App() {
           <Route path="/login" element={<Login />}/>
           <Route path="/password-recovery" element={<PasswordRecovery />}/>
           <Route path="/register" element={<Register />}/>
+          <Route path="/provider/apply" element={<ProviderApply />}/>
+          <Route path="/provider/accept-invitation" element={<ProviderAcceptInvitation />}/>
           <Route path="/contact" element={<Contact />}/>
           <Route path="/methodology" element={<Methodology />}/>
           <Route path="/estates" element={<PublicEstates />}/>
@@ -72,9 +76,7 @@ export function App() {
               </Protected>}/>
           {/* The approval-based resident path. A join code remains available
             beside it for an estate office that prefers to hand one out. */}
-          <Route path="/request-access" element={<Protected>
-                <RequestAccess />
-              </Protected>}/>
+          <Route path="/request-access" element={<RequestAccess />}/>
           <Route path="/welcome-success" element={<Protected>
                 <WelcomeSuccess />
               </Protected>}/>

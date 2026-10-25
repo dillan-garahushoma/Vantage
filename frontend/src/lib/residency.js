@@ -9,13 +9,12 @@
  * * The decision is the endpoint (`approve` / `reject`), not a status field. There
  *   is deliberately no "set status" call a client could use to self-approve.
  * * Submitting carries an estate id in the body because the resident is *asking*
- *   to join — it cannot be proof of access, and the server still verifies the
- *   estate and the unit exist.
+ *   to join — it cannot be proof of access, and the server verifies the estate.
  * * No maths and no client-side permission logic: the pending count is the
  *   server's number.
  */
 import { api } from './api';
-/** Ask to be admitted to one unit of one estate. Never grants access itself. */
+/** Ask to be admitted to one estate. Never grants access itself. */
 export function submitResidencyRequest(body) {
     return api.post('/api/v1/residency-requests', body);
 }
@@ -53,7 +52,7 @@ export const RESIDENCY_STATUS = {
     },
     approved: {
         label: 'Approved',
-        hint: 'You are a resident of this unit and can use the estate’s screens.',
+        hint: 'You are a resident of this estate and can use its workspace.',
         tone: 'good',
     },
     rejected: {
