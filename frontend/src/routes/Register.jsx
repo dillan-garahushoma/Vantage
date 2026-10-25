@@ -439,6 +439,7 @@ export function Register() {
                           id={id}
                           type="radio"
                           name="account_type"
+                          aria-label={item.label}
                           value={item.value}
                           aria-describedby={`${id}_blurb`}
                           checked={selected}
@@ -564,6 +565,7 @@ export function Register() {
                 <Field label="Province" error={errors.estateProvince}>
                   <Select name="estate_province" value={form.estateProvince}
                     onChange={(event) => update('estateProvince', event.target.value)} required>
+                    <option value="" disabled>Choose a province</option>
                     {PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
                   </Select>
                 </Field>
