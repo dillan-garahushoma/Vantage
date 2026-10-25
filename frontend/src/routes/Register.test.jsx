@@ -96,8 +96,15 @@ describe('Register — role paths and safe permissions', () => {
     const user = userEvent.setup();
     renderRegister();
     await user.click(screen.getByRole('radio', { name: 'HOA / estate manager', exact: true }));
+    await user.type(screen.getByRole('textbox', { name: /your full name/i }), 'Lerato Mokoena');
+    await user.type(screen.getByRole('textbox', { name: /email address/i }), 'lerato@example.co.za');
+    await user.type(screen.getByLabelText(/password/i), 'aGoodPassword1');
+    await user.click(screen.getByRole('button', { name: /continue to estate details/i }));
+    await user.type(screen.getByRole('textbox', { name: /estate name/i }), 'Ridge Close');
+    await user.type(screen.getByRole('textbox', { name: /suburb/i }), 'Centurion');
+    await user.type(screen.getByRole('textbox', { name: /city/i }), 'Tshwane');
     expect(screen.getByRole('combobox', { name: /^Province/ })).toHaveValue('');
-    await user.click(screen.getByRole('button', { name: 'Create estate and HOA account' }));
+    await user.click(screen.getByRole('button', { name: /review estate details/i }));
     expect(screen.getByText('Choose a province.')).toBeVisible();
   });
   it('shows resident, HOA manager and service provider account paths', () => {
@@ -111,8 +118,9 @@ describe('Register — role paths and safe permissions', () => {
     const user = userEvent.setup();
     renderRegister();
     await user.click(screen.getByRole('radio', { name: /hoa \/ estate manager/i }));
-    expect(screen.getByRole('button', { name: /create estate and hoa account/i })).toBeVisible();
-    expect(screen.getByRole('textbox', { name: /estate name/i })).toBeVisible();
+    expect(screen.getByRole('navigation', { name: /estate setup progress/i })).toBeVisible();
+    expect(screen.getByRole('textbox', { name: /your full name/i })).toBeVisible();
+    expect(screen.queryByRole('textbox', { name: /estate name/i })).toBeNull();
 
     await user.click(screen.getByRole('radio', { name: /service provider/i }));
     expect(screen.getByRole('link', { name: /apply to work at an estate/i })).toBeVisible();
@@ -126,10 +134,15 @@ describe('Register — role paths and safe permissions', () => {
     await user.type(screen.getByRole('textbox', { name: /your full name/i }), 'Lerato Mokoena');
     await user.type(screen.getByRole('textbox', { name: /email address/i }), 'lerato@example.co.za');
     await user.type(screen.getByLabelText(/password/i), 'aGoodPassword1');
+    await user.click(screen.getByRole('button', { name: /continue to estate details/i }));
     await user.type(screen.getByRole('textbox', { name: /estate name/i }), 'Ridge Close');
     await user.type(screen.getByRole('textbox', { name: /suburb/i }), 'Centurion');
     await user.type(screen.getByRole('textbox', { name: /city/i }), 'Tshwane');
     await user.selectOptions(screen.getByRole('combobox', { name: /^Province/ }), 'Gauteng');
+    await user.click(screen.getByRole('button', { name: /review estate details/i }));
+    expect(screen.getByRole('heading', { name: /review and create/i })).toBeVisible();
+    expect(screen.getByText('Ridge Close')).toBeVisible();
+    expect(screen.getByText('lerato@example.co.za')).toBeVisible();
     await user.click(screen.getByRole('button', { name: /create estate and hoa account/i }));
 
     expect(mocks.registerEstate).toHaveBeenCalledWith({
@@ -145,6 +158,30 @@ describe('Register — role paths and safe permissions', () => {
     });
     expect(mocks.register).not.toHaveBeenCalled();
   }, 30000);
+
+  it('validates each step and preserves account details when moving back', async () => {
+    const user = userEvent.setup();
+    renderRegister();
+    await user.click(screen.getByRole('radio', { name: /hoa \/ estate manager/i }));
+    await user.click(screen.getByRole('button', { name: /continue to estate details/i }));
+    expect(await screen.findByText('Enter your full name.')).toBeVisible();
+    expect(screen.queryByRole('textbox', { name: /estate name/i })).toBeNull();
+
+    await user.type(screen.getByRole('textbox', { name: /your full name/i }), 'Lerato Mokoena');
+    await user.type(screen.getByRole('textbox', { name: /email address/i }), 'lerato@example.co.za');
+    await user.type(screen.getByLabelText(/password/i), 'aGoodPassword1');
+    await user.click(screen.getByRole('button', { name: /continue to estate details/i }));
+    await user.type(screen.getByRole('textbox', { name: /estate name/i }), 'Ridge Close');
+    await user.click(screen.getByRole('button', { name: /review estate details/i }));
+    expect(await screen.findByText('Enter the suburb.')).toBeVisible();
+
+    await user.type(screen.getByRole('textbox', { name: /suburb/i }), 'Centurion');
+    await user.type(screen.getByRole('textbox', { name: /city/i }), 'Tshwane');
+    await user.click(screen.getByRole('button', { name: /review estate details/i }));
+    await user.click(screen.getByRole('button', { name: /edit account details/i }));
+    expect(screen.getByRole('textbox', { name: /your full name/i })).toHaveValue('Lerato Mokoena');
+    expect(screen.getByRole('textbox', { name: /email address/i })).toHaveValue('lerato@example.co.za');
+  });
 
   it('restores resident registration when the resident path is selected again', async () => {
     const user = userEvent.setup();

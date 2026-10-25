@@ -81,11 +81,56 @@ export function registrationPayload(form) {
 
 function validateEstateRegistration(form) {
   const errors = validate(form);
+  return { ...errors, ...validateEstateDetails(form) };
+}
+
+function validateEstateDetails(form) {
+  const errors = {};
   if (form.estateName.trim().length < 2) errors.estateName = 'Enter the estate name.';
   if (!form.estateSuburb.trim()) errors.estateSuburb = 'Enter the suburb.';
   if (!form.estateCity.trim()) errors.estateCity = 'Enter the city.';
   if (!form.estateProvince) errors.estateProvince = 'Choose a province.';
   return errors;
+}
+
+const ESTATE_SETUP_STEPS = ['Account', 'Estate details', 'Review'];
+
+function EstateSetupStepper({ step }) {
+  return (
+    <nav aria-label="Estate setup progress" className="mb-6">
+      <ol className="grid grid-cols-3">
+        {ESTATE_SETUP_STEPS.map((label, index) => {
+          const number = index + 1;
+          const complete = number < step;
+          const current = number === step;
+          return (
+            <li
+              key={label}
+              aria-current={current ? 'step' : undefined}
+              className={`relative flex flex-col items-center gap-2 text-center text-xs ${
+                index < ESTATE_SETUP_STEPS.length - 1
+                  ? 'after:absolute after:left-1/2 after:top-4 after:-z-10 after:h-px after:w-full after:bg-line'
+                  : ''
+              }`}
+            >
+              <span
+                className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold ${
+                  complete
+                    ? 'border-mint bg-mint text-white'
+                    : current
+                      ? 'border-accent bg-accent text-white'
+                      : 'border-line bg-surface text-ink-muted'
+                }`}
+              >
+                {complete ? <Check className="h-4 w-4" aria-hidden="true" /> : number}
+              </span>
+              <span className={current ? 'font-semibold text-ink' : 'text-ink-muted'}>{label}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
 }
 
 function ExistingSession({ user, onSwitchAccount, onContinue }) {
@@ -235,6 +280,7 @@ export function Register() {
   const [errors, setErrors] = useState({});
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [estateStep, setEstateStep] = useState(1);
   const [estateQuery, setEstateQuery] = useState('');
   const [committedEstateQuery, setCommittedEstateQuery] = useState('');
   const [selectedEstate, setSelectedEstate] = useState(() => selectedPublicEstate());
@@ -323,6 +369,28 @@ export function Register() {
     }
   }
 
+  function continueEstateAccount(event) {
+    event.preventDefault();
+    const found = validate(form);
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
+    setEstateStep(2);
+  }
+
+  function reviewEstateDetails(event) {
+    event.preventDefault();
+    const found = validateEstateDetails(form);
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
+    setEstateStep(3);
+  }
+
+  function moveToEstateStep(step) {
+    setEstateStep(step);
+    setErrors({});
+    setError(null);
+  }
+
   if (user) {
     return (
       <ExistingSession
@@ -338,58 +406,66 @@ export function Register() {
   return (
     <AuthShell
       eyebrow="Estate access"
-      step={1}
+      step={form.accountType === 'estate_admin' ? null : 1}
       totalSteps={3}
       stepLabels={['Account', 'Join estate', "You're in"]}
-      title="Find your way into VALORA."
-      intro="Choose the path that fits your role. Residents request estate access, HOAs create an estate workspace, and providers apply to an estate for review."
+      title={form.accountType === 'estate_admin' ? 'Set up your estate on VALORA.' : 'Find your way into VALORA.'}
+      intro={form.accountType === 'estate_admin'
+        ? 'Create your administrator account, add your estate details, and review everything before setup.'
+        : 'Choose the path that fits your role. Residents request estate access, HOAs create an estate workspace, and providers apply to an estate for review.'}
     >
       <div className="space-y-5">
-        <fieldset>
-          <legend className="mb-3 text-sm font-semibold text-ink">How will you use VALORA?</legend>
-          <div className="space-y-2">
-            {ACCOUNT_TYPES.map((item) => {
-              const id = `account_type_${item.value}`;
-              const selected = form.accountType === item.value;
-              return (
-                <label
-                  key={item.value}
-                  className={[
-                    'block cursor-pointer border px-3.5 py-3 transition-colors duration-150',
-                    'focus-within:outline-2 focus-within:outline-dotted focus-within:outline-accent focus-within:outline-offset-2',
-                    selected ? 'border-accent bg-accent-wash/60' : 'border-ink/15 bg-surface hover:border-ink/35',
-                  ].join(' ')}
-                >
-                  <span className="flex items-start gap-3">
-                    <input
-                      id={id}
-                      type="radio"
-                      name="account_type"
-                      aria-label={item.label}
-                      value={item.value}
-                      aria-describedby={`${id}_blurb`}
-                      checked={selected}
-                      onChange={() => {
-                        update('accountType', item.value);
-                        setErrors({});
-                        setError(null);
-                      }}
-                      className="mt-1 h-4 w-4 shrink-0 accent-accent"
-                    />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-ink">{item.label}</span>
-                      <span id={`${id}_blurb`} className="mt-1 block text-xs leading-relaxed text-ink-muted">
-                        {item.blurb}
-                      </span>
-                    </span>
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </fieldset>
+        {form.accountType === 'estate_admin' ? <EstateSetupStepper step={estateStep} /> : null}
 
-        <Keyline />
+        {form.accountType !== 'estate_admin' || estateStep === 1 ? (
+          <>
+            <fieldset>
+              <legend className="mb-3 text-sm font-semibold text-ink">How will you use VALORA?</legend>
+              <div className="space-y-2">
+                {ACCOUNT_TYPES.map((item) => {
+                  const id = `account_type_${item.value}`;
+                  const selected = form.accountType === item.value;
+                  return (
+                    <label
+                      key={item.value}
+                      className={[
+                        'block cursor-pointer border px-3.5 py-3 transition-colors duration-150',
+                        'focus-within:outline-2 focus-within:outline-dotted focus-within:outline-accent focus-within:outline-offset-2',
+                        selected ? 'border-accent bg-accent-wash/60' : 'border-ink/15 bg-surface hover:border-ink/35',
+                      ].join(' ')}
+                    >
+                      <span className="flex items-start gap-3">
+                        <input
+                          id={id}
+                          type="radio"
+                          name="account_type"
+                          value={item.value}
+                          aria-describedby={`${id}_blurb`}
+                          checked={selected}
+                          onChange={() => {
+                            update('accountType', item.value);
+                            setEstateStep(1);
+                            setErrors({});
+                            setError(null);
+                          }}
+                          className="mt-1 h-4 w-4 shrink-0 accent-accent"
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold text-ink">{item.label}</span>
+                          <span id={`${id}_blurb`} className="mt-1 block text-xs leading-relaxed text-ink-muted">
+                            {item.blurb}
+                          </span>
+                        </span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            {form.accountType !== 'estate_admin' ? <Keyline /> : null}
+          </>
+        ) : null}
 
         {form.accountType === 'resident' ? (
           <>
@@ -442,57 +518,126 @@ export function Register() {
             </p>
           </>
         ) : form.accountType === 'estate_admin' ? (
-          <form className="space-y-4" onSubmit={submitEstateRegistration} noValidate>
+          <form
+            className="space-y-4"
+            onSubmit={estateStep === 1 ? continueEstateAccount : estateStep === 2 ? reviewEstateDetails : submitEstateRegistration}
+            noValidate
+          >
             {error ? <ErrorState title="Could not create the estate account" message={error.message} requestId={error.requestId} /> : null}
-            <p className="text-sm leading-relaxed text-ink-soft">
-              Create the HOA administrator account and estate together. You will be signed in and can continue setup immediately.
-            </p>
-            <Field label="Your full name" error={errors.full_name}>
-              <Input name="full_name" autoComplete="name" value={form.full_name}
-                onChange={(event) => update('full_name', event.target.value)} required />
-            </Field>
-            <Field label="Email address" error={errors.email}>
-              <Input type="email" name="email" autoComplete="email" value={form.email}
-                onChange={(event) => update('email', event.target.value)} required />
-            </Field>
-            <Field label="Password" error={errors.password} hint="At least 8 characters.">
-              <Input type="password" name="password" autoComplete="new-password" value={form.password}
-                onChange={(event) => update('password', event.target.value)} required />
-            </Field>
-            <Field label="Phone (optional)">
-              <Input name="phoneno" autoComplete="tel" value={form.phoneno}
-                onChange={(event) => update('phoneno', event.target.value)} />
-            </Field>
-            <Keyline />
-            <Field label="Estate name" error={errors.estateName}>
-              <Input name="estate_name" value={form.estateName}
-                onChange={(event) => update('estateName', event.target.value)} required />
-            </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Suburb" error={errors.estateSuburb}>
-                <Input name="estate_suburb" value={form.estateSuburb}
-                  onChange={(event) => update('estateSuburb', event.target.value)} required />
-              </Field>
-              <Field label="City" error={errors.estateCity}>
-                <Input name="estate_city" value={form.estateCity}
-                  onChange={(event) => update('estateCity', event.target.value)} required />
-              </Field>
+            {estateStep === 1 ? (
+              <>
+                <h2 className="text-base font-semibold text-ink">Your administrator account</h2>
+                <Field label="Your full name" error={errors.full_name}>
+                  <Input name="full_name" autoComplete="name" value={form.full_name}
+                    onChange={(event) => update('full_name', event.target.value)} required />
+                </Field>
+                <Field label="Email address" error={errors.email}>
+                  <Input type="email" name="email" autoComplete="email" value={form.email}
+                    onChange={(event) => update('email', event.target.value)} required />
+                </Field>
+                <Field label="Password" error={errors.password} hint="At least 8 characters.">
+                  <Input type="password" name="password" autoComplete="new-password" value={form.password}
+                    onChange={(event) => update('password', event.target.value)} required />
+                </Field>
+                <Field label="Phone (optional)">
+                  <Input name="phoneno" autoComplete="tel" value={form.phoneno}
+                    onChange={(event) => update('phoneno', event.target.value)} />
+                </Field>
+              </>
+            ) : estateStep === 2 ? (
+              <>
+                <h2 className="text-base font-semibold text-ink">Estate details</h2>
+                <Field label="Estate name" error={errors.estateName}>
+                  <Input name="estate_name" value={form.estateName}
+                    onChange={(event) => update('estateName', event.target.value)} required />
+                </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Suburb" error={errors.estateSuburb}>
+                    <Input name="estate_suburb" value={form.estateSuburb}
+                      onChange={(event) => update('estateSuburb', event.target.value)} required />
+                  </Field>
+                  <Field label="City" error={errors.estateCity}>
+                    <Input name="estate_city" value={form.estateCity}
+                      onChange={(event) => update('estateCity', event.target.value)} required />
+                  </Field>
+                </div>
+                <Field label="Province" error={errors.estateProvince}>
+                  <Select name="estate_province" value={form.estateProvince}
+                    onChange={(event) => update('estateProvince', event.target.value)} required>
+                    {PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
+                  </Select>
+                </Field>
+                <Field label="Description (optional)">
+                  <Textarea name="estate_description" value={form.estateDescription} maxLength={5000}
+                    onChange={(event) => update('estateDescription', event.target.value)}
+                    placeholder="A short introduction to your estate." />
+                </Field>
+              </>
+            ) : (
+              <>
+                <h2 className="text-base font-semibold text-ink">Review and create</h2>
+                <p className="text-sm text-ink-soft">
+                  Check these details before creating your administrator account and estate workspace.
+                </p>
+                <dl className="divide-y divide-line border-y border-line">
+                  <div className="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
+                    <dt className="text-xs font-medium text-ink-muted">Administrator</dt>
+                    <dd className="text-sm font-medium text-ink">{form.full_name}</dd>
+                  </div>
+                  <div className="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
+                    <dt className="text-xs font-medium text-ink-muted">Email address</dt>
+                    <dd className="break-all text-sm text-ink">{form.email}</dd>
+                  </div>
+                  {form.phoneno.trim() ? (
+                    <div className="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
+                      <dt className="text-xs font-medium text-ink-muted">Phone</dt>
+                      <dd className="text-sm text-ink">{form.phoneno.trim()}</dd>
+                    </div>
+                  ) : null}
+                  <div className="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
+                    <dt className="text-xs font-medium text-ink-muted">Estate</dt>
+                    <dd className="text-sm font-medium text-ink">{form.estateName}</dd>
+                  </div>
+                  <div className="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
+                    <dt className="text-xs font-medium text-ink-muted">Location</dt>
+                    <dd className="text-sm text-ink">
+                      {[form.estateSuburb, form.estateCity, form.estateProvince].filter(Boolean).join(', ')}
+                    </dd>
+                  </div>
+                  {form.estateDescription.trim() ? (
+                    <div className="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
+                      <dt className="text-xs font-medium text-ink-muted">Description</dt>
+                      <dd className="text-sm text-ink">{form.estateDescription.trim()}</dd>
+                    </div>
+                  ) : null}
+                </dl>
+                <button
+                  type="button"
+                  onClick={() => moveToEstateStep(1)}
+                  className="min-h-11 text-sm font-medium text-accent-ink underline underline-offset-2 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  disabled={busy}
+                >
+                  Edit account details
+                </button>
+              </>
+            )}
+            <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
+              {estateStep > 1 ? (
+                <Button type="button" variant="secondary" onClick={() => moveToEstateStep(estateStep - 1)} disabled={busy}>
+                  Back
+                </Button>
+              ) : <span />}
+              {estateStep < 3 ? (
+                <Button type="submit" variant="primary" className="min-h-11 px-5" disabled={busy}>
+                  {estateStep === 1 ? 'Continue to estate details' : 'Review estate details'}
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              ) : (
+                <Button type="submit" variant="primary" className="min-h-11 px-5" disabled={busy}>
+                  {busy ? 'Creating estate…' : 'Create estate and HOA account'}
+                </Button>
+              )}
             </div>
-            <Field label="Province" error={errors.estateProvince}>
-              <Select name="estate_province" value={form.estateProvince}
-                onChange={(event) => update('estateProvince', event.target.value)} required>
-                <option value="">Choose a province</option>
-                {PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
-              </Select>
-            </Field>
-            <Field label="Description (optional)">
-              <Textarea name="estate_description" value={form.estateDescription} maxLength={5000}
-                onChange={(event) => update('estateDescription', event.target.value)}
-                placeholder="A short introduction to your estate." />
-            </Field>
-            <Button type="submit" variant="primary" className="w-full py-2.5" disabled={busy}>
-              {busy ? 'Creating estate…' : 'Create estate and HOA account'}
-            </Button>
             <p className="text-[13px] text-ink-muted">
               Already have an account? <Link to="/login" className="font-medium text-accent-ink hover:underline">Sign in</Link>.
             </p>
