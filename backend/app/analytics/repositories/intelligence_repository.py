@@ -1,10 +1,11 @@
 """Estate-scoped signal reads and append-only briefing persistence. Flush only."""
 from datetime import datetime, timezone
-from sqlalchemy import func, select, case
+from sqlalchemy import func, select, case, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analytics.models.intelligence_briefing import IntelligenceBriefing
 from app.analytics.models.living_score_snapshot import LivingScoreSnapshot
+from app.community.models.announcement import Announcement
 from app.community.models.complaint import Complaint
 from app.community.models.maintenance_work_order import MaintenanceworkOrder
 from app.community.models.security_incident import SecurityIncident
@@ -57,6 +58,35 @@ class IntelligenceRepository:
         return {'counts': dict(zip(('open_complaints', 'work_orders_in_flight', 'unresolved_incidents'), row[:3])),
                 'latest_score': row[3], 'previous_score': row[4]}
 
+    async def published_score(self, estate_id: int) -> dict | None:
+        """Return the newest stored score; callers must verify the estate publishes it."""
+        score = LivingScoreSnapshot
+        row = (await self._db.execute(
+            select(score.overall_score, score.as_of, score.status)
+            .where(score.estate_id == estate_id)
+            .order_by(score.as_of.desc(), score.snapshot_id.desc())
+            .limit(1)
+        )).one_or_none()
+        if row is None:
+            return None
+        return {
+            'overall_score': row[0],
+            'as_of': row[1].isoformat() if row[1] else None,
+            'status': row[2],
+        }
+
+    async def published_announcements(self, estate_id: int, now: datetime) -> list[dict]:
+        rows = (await self._db.execute(
+            select(Announcement.title, Announcement.message)
+            .where(
+                Announcement.estate_id == estate_id,
+                or_(Announcement.expires_at.is_(None), Announcement.expires_at > now),
+            )
+            .order_by(Announcement.created_at.desc(), Announcement.announcement_id.desc())
+            .limit(10)
+        )).all()
+        return [{'title': row[0], 'message': row[1]} for row in rows]
+
     async def resident_signals(self, estate_id: int, user_id: int) -> list[dict]:
         """Fetch recent complaints logged by this user for this estate."""
         rows = (await self._db.execute(select(
@@ -83,6 +113,8 @@ class IntelligenceRepository:
         p_row = (await self._db.execute(
             select(ServiceProvider.provider_id).where(ServiceProvider.user_id == user_id)
         )).scalar_one_or_none()
+        if p_row is None:
+            return []
 
         wo = MaintenanceworkOrder
         query = select(
@@ -94,8 +126,7 @@ class IntelligenceRepository:
             wo.estate_id == estate_id,
             wo.status.in_(["assigned", "in_progress", "pending"]),
         )
-        if p_row is not None:
-            query = query.where(wo.provider_id == p_row)
+        query = query.where(wo.provider_id == p_row)
 
         now = datetime.now(timezone.utc)
         rows = (await self._db.execute(

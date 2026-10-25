@@ -42,7 +42,8 @@ async def test_all_entrypoints_enforce_selected_estate_capability(db_session):
     for member in (w.cross_user, w.resident_b1, w.provider_user_b):
         assert (await s.get_intelligence(estate, member)).estate_id == estate
         assert (await s.ask_valora(estate, 'Show records', member)).estate_id == estate
-        assert (await s.history(estate, member)).total == 0
+        with pytest.raises(ForbiddenException):
+            await s.history(estate, member)
     for read in (lambda: s.get_intelligence(estate, w.hoa_admin_a),
                  lambda: s.ask_valora(estate, 'Show records', w.hoa_admin_a),
                  lambda: s.history(estate, w.hoa_admin_a),

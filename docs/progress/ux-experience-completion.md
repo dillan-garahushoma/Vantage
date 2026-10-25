@@ -9,6 +9,70 @@
 
 ## 1. Executive Summary
 
+Updated the first-pass VALORA Intelligence workspace redesign to better match the requested premium editorial UX without changing the underlying estate-scoped data model. The route now uses a more deliberate briefing hero, clearer role framing, denser informational panels, and a more composed interaction surface for Ask VALORA. The supplied concept image in the repo was effectively blank; the implementation therefore followed the real app architecture and brief instead of copying a non-informative mockup.
+
+---
+
+## 1A. First-pass redesign results
+
+### Done
+- Refined the Intelligence route header into a stronger editorial briefing surface with a higher-contrast purple panel and calmer supporting metadata blocks.
+- Kept the role-specific resident/provider/HOA distinction intact while improving the reading hierarchy and reducing visual clutter around the briefing.
+- Improved the Ask VALORA surface composition and introduced a more structured, premium workspace treatment around the briefing and follow-ups.
+- Preserved current data contracts and validated the route with the existing frontend tests.
+
+### Tests added and passing
+- Frontend route-level tests for the Intelligence flow passed.
+
+### Written but not run
+- Full browser screenshot inspection at multiple viewport sizes with a real UI visual audit was not fully executed in this pass.
+- Playwright E2E visual workflows / browser console checks were not run in this session.
+
+### Remaining
+- Further polish for dense mobile layouts and deeper visual differentiation across resident/provider/HOA card content.
+- Additional content density and action affordances for the secondary evidence and history surfaces.
+
+### Deviations
+- No backend contract changes were introduced; this pass is intentionally limited to the UI layer.
+
+### Open questions
+- Whether the final image reference should be used as a stronger layout benchmark once a non-blank concept asset is provided.
+
+### Exact commands run with results
+- `git status --short --branch` → repo status checked before work.
+- `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; cd C:\Users\garah\PycharmProjects\VANTAGE.worktrees\valora-intelligence-redesign-ux\frontend; npx vitest run src/routes/Intelligence.test.jsx` → 1 file passed, 8/8 tests passed.
+- `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; cd C:\Users\garah\PycharmProjects\VANTAGE.worktrees\valora-intelligence-redesign-ux\frontend; npx vite build` → production build succeeded; Vite built the bundle without errors.
+
+---
+
+## Final implementation summary
+
+### Delivered
+- Repaired the live Intelligence route so the correct role is resolved for HOA, resident, and provider experiences even before the saved briefing/history response arrives.
+- Kept the Ask VALORA flow wired to the real streaming API and ensured it remains available when the briefing data fails.
+- Fixed the inline prompt flow and contextual follow-up behavior for role-specific suggestions.
+- Preserved the premium briefing layout and panel structure while keeping the behavior aligned to the actual estate-scoped API contracts.
+
+### Files changed
+- [frontend/src/routes/Intelligence.jsx](C:/Users/garah/PycharmProjects/VANTAGE.worktrees/valora-intelligence-redesign-ux/frontend/src/routes/Intelligence.jsx)
+- [frontend/src/components/valora/AskValora.jsx](C:/Users/garah/PycharmProjects/VANTAGE.worktrees/valora-intelligence-redesign-ux/frontend/src/components/valora/AskValora.jsx)
+- [frontend/src/lib/intelligence.js](C:/Users/garah/PycharmProjects/VANTAGE.worktrees/valora-intelligence-redesign-ux/frontend/src/lib/intelligence.js)
+- [frontend/src/routes/Intelligence.test.jsx](C:/Users/garah/PycharmProjects/VANTAGE.worktrees/valora-intelligence-redesign-ux/frontend/src/routes/Intelligence.test.jsx)
+
+### Verification run
+- `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; Set-Location 'C:\Users\garah\PycharmProjects\VANTAGE.worktrees\valora-intelligence-redesign-ux\frontend'; .\node_modules\.bin\vitest run src/routes/Intelligence.test.jsx --reporter=verbose`
+  - Result: 1 file passed, 9/9 tests passed.
+- `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; Set-Location 'C:\Users\garah\PycharmProjects\VANTAGE.worktrees\valora-intelligence-redesign-ux\frontend'; npm run build`
+  - Result: Vite production build succeeded.
+
+### Outstanding / blockers
+- The repository is still on a working branch (`agents/valora-intelligence-redesign-ux`) and was not pushed to `main` from this session because no safe merge/push authorization was available.
+- Browser visual capture beyond the code-level verification and route test pass was limited by the environment constraints available here; the implemented route was verified via the actual app runtime and the production build, not a headless visual suite.
+
+---
+
+## 2. Executive Summary
+
 We executed `batches/ux-experience-completion.md` as the single assigned implementation batch on branch `codex/valora-experience-completion`. The work unified the disconnected Ask VALORA functionality into the VALORA Intelligence page, eliminated the redundant global sidebar Living Score widget, fixed server-side public directory filtering by province, and refined the resident, HOA, and provider role journeys within the established light-purple VALORA visual identity.
 
 ---
@@ -186,3 +250,32 @@ The changes are pushed to `codex/valora-experience-completion` and available in 
 - `GET https://valora-api-rk9q.onrender.com/api/v1/public/estates?page=1&page_size=50` returned all five expected published estates: Eastbank Court, Lakeside Gardens, Quarry View Flats, Silverleaf Reserve, and Willowbrook Mews. The obsolete Musgrave listing was absent.
 - Local focused verification: `vitest run src/components/PhotoGallery.test.jsx` — **10 passed**; `npm run build` — **passed** (with the existing large-chunk advisory).
 - The broader full-page inspector findings remain outside this focused visual follow-up.
+
+## 10. Intelligence role safety and source navigation — 2026-10-25
+
+### Delivered in this continuation
+
+- Resident Intelligence includes current, non-expired estate announcements in its authorised context; the repository read is estate-scoped. Resident notice questions can be answered from those published records.
+- Removed the implicit fallback service key. Signal ingestion/export now requires an explicitly configured `N8N_SERVICE_KEY`.
+- Added a timeout to streamed AI provider calls so a stalled upstream cannot leave the response open indefinitely.
+- Recommendation IDs that identify an existing overdue work order now offer **Open work order**, not a duplicate work-order creation action. Unassigned-complaint recommendations navigate to their complaint and preserve the complaint ID for the existing confirmation dialog.
+- Work-order navigation loads its detail through the existing estate-scoped endpoint, opens the existing detail drawer, surfaces a retrieval error, and consumes the one-shot route state after the request finishes.
+- Added backend regression coverage for notice visibility, service-key configuration, provider stream scoping and streaming timeouts; added frontend coverage for source-aware recommendation navigation and the estate-scoped work-order detail lookup.
+
+### Verification performed
+
+- `py -3.12 -m pytest backend/tests/test_intelligence_security.py backend/tests/test_intelligence_contract.py backend/tests/test_ai_layer.py -q` — **88 passed**, 2 existing FastAPI lifecycle deprecation warnings.
+- `py -3.12 -m pytest backend/tests/test_intelligence_integration.py -q` — **5 skipped**. `TEST_DATABASE_URL` is not configured in this shell; the database-backed integration cases are unverified, not passed.
+- `py -3.12 -m compileall -q backend/app` — **passed**.
+- `py -3.12 -m flake8 backend/app backend/tests --count --select=E9,F63,F7,F82 --show-source --statistics` — **passed**, no blocking lint findings.
+- `npx vitest run src/routes/Intelligence.test.jsx src/components/valora/AiAnswerRenderer.test.jsx src/components/valora/AskValoraSpotlight.test.jsx src/App.routes.test.jsx --reporter=dot` — **20 passed** across 4 files.
+- `npm run build` — **passed**. Vite retains its existing advisory that the main JavaScript chunk exceeds 500 kB.
+- `git diff --check` — **passed**.
+- Chromium browser check against the running Vite app with explicitly fictional API fixtures: initial HOA workspace, streamed answer/evidence/follow-up, and opening the existing work-order detail all rendered; no page or console errors; 390px mobile viewport had no horizontal overflow. This verifies the UI flow, not live estate data or a live AI provider.
+- Screenshots: `intelligence-final-desktop.png`, `intelligence-final-answer.png`, and `intelligence-final-mobile.png` in the session artifact directory. Fixture values are fictional and are not production evidence.
+
+### Outstanding
+
+- Database-backed Intelligence integration tests remain unverified until a safe test database is configured.
+- Live AI-provider behavior and production-estate data have not been tested in this local browser session.
+- The broader system-wide UX acceptance issue includes routes beyond Intelligence; this continuation verifies the Intelligence and work-order source-navigation slice only.

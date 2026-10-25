@@ -1419,7 +1419,15 @@
             "type": "array"
           },
           "operational_signals": {
-            "$ref": "#/components/schemas/OperationalSignalCounts"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperationalSignalCounts"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           },
           "provider_view": {
             "anyOf": [
@@ -1475,7 +1483,6 @@
           "as_of",
           "briefing",
           "recommendations",
-          "operational_signals",
           "source"
         ],
         "title": "EstateIntelligenceResponse",

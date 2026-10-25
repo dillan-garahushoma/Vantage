@@ -9,25 +9,13 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { AiAnswerRenderer } from './AiAnswerRenderer';
 
-const ROLE_FOLLOW_UPS = {
-  hoa_admin: [
-    'Which open issues are driving this?',
-    'Compare with last 30 days',
-    'What should the HOA escalate first?',
-  ],
-  service_provider: [
-    'Which work orders are highest priority?',
-    'What are the contractor access hours?',
-    'Check SLA deadlines for open jobs',
-  ],
-  resident: [
-    'Which open issues are driving this?',
-    'What is the expected resolution timeline?',
-    'What are the estate quiet hours?',
-  ],
-};
+function AnalysingState({ role }) {
+  const message = role === 'hoa_admin'
+    ? 'Reviewing authorised estate records…'
+    : role === 'service_provider'
+      ? 'Reviewing work assigned to your account…'
+      : 'Reviewing your requests and published estate information…';
 
-function AnalysingState() {
   return (
     <div
       className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-4 py-3"
@@ -45,7 +33,7 @@ function AnalysingState() {
           strokeDasharray="320"
         />
       </svg>
-      <p className="text-[0.8rem] font-medium text-ink/65">Analysing estate operational signals…</p>
+      <p className="text-[0.8rem] font-medium text-ink/65">{message}</p>
     </div>
   );
 }
@@ -64,46 +52,55 @@ function ChatBody({
 }) {
   const bottomRef = useRef(null);
   const [copiedId, setCopiedId] = useState(null);
+  const [copyError, setCopyError] = useState(null);
+
+  const assistantTitle = role === 'hoa_admin'
+    ? 'Estate operations intelligence'
+    : role === 'service_provider'
+      ? 'Assigned work assistant'
+      : 'Personal estate assistant';
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView?.({ behavior: 'smooth' });
   }, [messages, streaming]);
 
-  function copyAnswer(id, text) {
+  async function copyAnswer(id, text) {
     if (!text) return;
-    navigator.clipboard?.writeText?.(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    setCopyError(null);
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard access is unavailable in this browser.');
+      }
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      setCopyError('Could not copy this answer. Select and copy the text instead.');
+    }
   }
 
   return (
     <>
       <div className="scrollbar-slim flex-1 space-y-4 overflow-y-auto px-5 py-5">
         {messages.length === 0 ? (
-          <div className="rounded-xl border border-line bg-canvas/70 p-5">
-            <div className="flex items-center gap-2 text-brand">
-              <Sparkles className="h-4 w-4" />
-              <p className="text-xs font-bold tracking-wider text-brand-ink uppercase">
-                Grounded Estate Intelligence
-              </p>
-            </div>
-            <p className="mt-2 text-[0.85rem] leading-relaxed text-ink/70">
+          <div className="py-1">
+            <h2 className="font-heading text-sm font-semibold text-ink">
+              {assistantTitle}
+            </h2>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink/70">
               {role === 'hoa_admin'
-                ? 'Ask about current operational risks, overdue work orders, incident resolution, or Living Score health drivers.'
+                ? 'Ask about current operational risks, work orders, complaints, incidents, or Living Score drivers.'
                 : role === 'service_provider'
-                ? 'Ask about assigned work orders, contractor access hours, gate requirements, or SLA deadlines.'
-                : 'Ask about estate rules, your logged maintenance requests, or Living Score health.'}
+                ? 'Ask about work assigned to your provider account, recorded instructions, and due dates.'
+                : 'Ask about your maintenance requests, their recorded updates, or published estate health information.'}
             </p>
-            <div className="mt-4 flex flex-col gap-2">
-              <p className="text-[0.72rem] font-semibold tracking-wider text-ink/40 uppercase">
-                Suggested prompts
-              </p>
+            <div className="mt-5 flex flex-wrap gap-2" aria-label="Suggested questions">
               {suggestions.map((prompt) => (
                 <button
                   key={prompt}
                   type="button"
                   onClick={() => onAsk(prompt)}
-                  className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-left text-[0.82rem] font-medium text-ink/80 transition-all duration-200 hover:border-brand-soft hover:bg-canvas hover:text-brand-ink"
+                  className="min-h-11 max-w-full rounded-lg bg-canvas px-3.5 py-2.5 text-left text-[0.82rem] font-medium text-ink/80 transition-colors hover:bg-brand-wash hover:text-brand-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 >
                   {prompt}
                 </button>
@@ -151,13 +148,27 @@ function ChatBody({
                   </div>
                 </div>
 
-                <AiAnswerRenderer content={msg.text} />
+                <div className="flex items-center justify-between gap-3 pb-1">
+                  <span className="text-[0.68rem] font-semibold text-ink/45">
+                    {msg.mode === 'stored_records' ? 'Stored-record answer' : 'AI-assisted answer'}
+                  </span>
+                  {msg.mode === 'ai_assisted' ? (
+                    <span className="text-[0.68rem] text-ink/40">Interpretation grounded in authorized records</span>
+                  ) : null}
+                </div>
+                <AiAnswerRenderer
+                  content={msg.text}
+                  evidence={msg.evidence ?? []}
+                  related={msg.related ?? []}
+                  onFollowUp={onAsk}
+                />
+                {copyError ? <p role="alert" className="mt-2 text-xs text-rose-700">{copyError}</p> : null}
                 {msg.streaming ? (
                   <span className="inline-block h-3.5 w-1 bg-brand animate-pulse ml-0.5" />
                 ) : null}
               </div>
 
-              {!msg.streaming && followUps.length > 0 ? (
+              {!msg.streaming && !msg.metadataReceived && followUps.length > 0 ? (
                 <div className="flex flex-wrap items-center gap-1.5 pt-1 pl-1">
                   <span className="text-[0.7rem] font-medium text-ink/40">Suggested follow-ups:</span>
                   {followUps.map((fu) => (
@@ -182,7 +193,7 @@ function ChatBody({
           </div>
         ) : null}
 
-        {streaming && messages.every((m) => !m.streaming) ? <AnalysingState /> : null}
+        {streaming && messages.every((m) => !m.streaming) ? <AnalysingState role={role} /> : null}
         <div ref={bottomRef} />
       </div>
 
@@ -199,10 +210,10 @@ function ChatBody({
             }}
             placeholder={
               role === 'hoa_admin'
-                ? 'Ask about risks, work orders, complaints, or Living Score…'
+                ? 'Ask about estate operations, complaints, incidents, or work orders…'
                 : role === 'service_provider'
-                ? 'Ask about assigned work orders, SLA deadlines, or access hours…'
-                : 'Ask about community rules, your logged repairs, or Living Score…'
+                ? 'Ask about your assigned work, recorded instructions, or due dates…'
+                : 'Ask about your requests or published estate information…'
             }
             aria-label="Ask VALORA a question"
             disabled={streaming}
@@ -220,7 +231,13 @@ function ChatBody({
           </Button>
         </div>
         <div className="mt-2 flex items-center justify-between text-[0.7rem] text-ink/40">
-          <span>VALORA Intelligence reads estate operational signals only — never private resident data.</span>
+          <span>
+            {role === 'hoa_admin'
+              ? 'Answers use authorised estate operational records.'
+              : role === 'service_provider'
+                ? 'Answers are limited to work assigned to your provider account.'
+                : 'Answers are limited to your requests and published estate information.'}
+          </span>
           {messages.length > 0 ? (
             <button
               type="button"
@@ -237,8 +254,26 @@ function ChatBody({
   );
 }
 
-export function AskValora({ className }) {
-  const { estateId, estate } = useEstateScope();
+const fallbackSuggestions = {
+  hoa_admin: [
+    'What is the operational risk summary for this week?',
+    'Which work orders are currently overdue?',
+    'Summarise open complaints and contractor performance.',
+  ],
+  resident: [
+    'What updates are recorded on my maintenance requests?',
+    'Which of my requests is still open?',
+    'Is a Living Score published for my estate?',
+  ],
+  service_provider: [
+    'What work is assigned to my provider account?',
+    'Which of my assigned jobs is due soon?',
+    'What instructions are recorded for my assigned work?',
+  ],
+};
+
+export function AskValora({ className, estateId: pageEstateId, role: pageRole }) {
+  const { estateId: contextEstateId, estate } = useEstateScope();
   const { user } = useAuth();
 
   const [messages, setMessages] = useState([]);
@@ -246,28 +281,44 @@ export function AskValora({ className }) {
   const [error, setError] = useState(null);
   const [streaming, setStreaming] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const messagesRef = useRef(messages);
+  const streamingRef = useRef(false);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   // Role resolution
-  const isHoaAdmin = user?.role === 'hoa_admin' && estate?.is_estate_admin === true;
-  const isProvider = user?.role === 'service_provider' || estate?.is_estate_provider === true;
-  const role = isHoaAdmin ? 'hoa_admin' : isProvider ? 'service_provider' : 'resident';
+  const estateId = pageEstateId ?? contextEstateId;
+  const fallbackRole = (
+    user?.role === 'hoa_admin' && estate?.is_estate_admin === true
+      ? 'hoa_admin'
+      : user?.role === 'service_provider' && estate?.is_estate_provider === true
+        ? 'service_provider'
+        : 'resident'
+  );
+  const role = ['hoa_admin', 'service_provider', 'resident'].includes(pageRole)
+    ? pageRole
+    : fallbackRole;
 
-  const suggestions = rolePrompts[role] ?? rolePrompts.resident;
-  const followUps = ROLE_FOLLOW_UPS[role] ?? ROLE_FOLLOW_UPS.resident;
+  const roleSuggestions = Array.isArray(rolePrompts?.[role])
+    ? rolePrompts[role]
+    : fallbackSuggestions[role] ?? fallbackSuggestions.resident;
+  const suggestions = roleSuggestions.length > 0 ? roleSuggestions : fallbackSuggestions.resident;
+  const followUps = roleSuggestions.length > 0 ? roleSuggestions : fallbackSuggestions.resident;
 
   async function handleAsk(promptText) {
     const question = (promptText ?? value).trim();
-    if (!question || streaming) return;
+    if (!question || streamingRef.current) return;
 
     if (!estateId) {
       setError('Please select an active estate first.');
       return;
     }
 
-    // When starting a prompt, open the focused dialog so the conversation gets full attention
-    setExpanded(true);
     setValue('');
     setError(null);
+    streamingRef.current = true;
     setStreaming(true);
 
     const userMessageId = Date.now();
@@ -276,13 +327,17 @@ export function AskValora({ className }) {
     setMessages((prev) => [
       ...prev,
       { id: userMessageId, role: 'user', text: question },
-      { id: assistantMessageId, role: 'assistant', text: '', streaming: true },
+      { id: assistantMessageId, role: 'assistant', text: '', evidence: [], related: [], mode: 'ai_assisted', streaming: true },
     ]);
 
-    // Build multi-turn clean history for streaming
-    const history = messages
-      .filter((m) => (m.role === 'user' || m.role === 'assistant') && m.text)
-      .map((m) => ({ role: m.role, content: m.text }));
+    // Build multi-turn clean history for streaming from the latest state and
+    // include the new user message after it's queued, ensuring follow-up clicks
+    // carry the real request history rather than stale state from the previous render.
+    const history = messagesRef.current
+      .filter((m) => (m.role === 'user' || m.role === 'assistant') && (m.text || '').trim())
+      .map((m) => ({ role: m.role, content: m.text.trim() }));
+
+    const latestHistory = [...history, { role: 'user', content: question }];
 
     try {
       await streamAskValora(
@@ -298,7 +353,23 @@ export function AskValora({ className }) {
               )
             );
           },
+          onMeta: (metadata) => {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId
+                  ? {
+                      ...msg,
+                      evidence: Array.isArray(metadata.evidence) ? metadata.evidence : [],
+                      related: Array.isArray(metadata.related) ? metadata.related : [],
+                      mode: metadata.mode === 'stored_records' ? 'stored_records' : 'ai_assisted',
+                      metadataReceived: true,
+                    }
+                  : msg
+              )
+            );
+          },
           onDone: () => {
+            streamingRef.current = false;
             setStreaming(false);
             setMessages((prev) =>
               prev.map((msg) =>
@@ -307,16 +378,20 @@ export function AskValora({ className }) {
             );
           },
           onError: (err) => {
+            streamingRef.current = false;
             setStreaming(false);
             setError(err.message || 'Unable to connect to VALORA Intelligence.');
+            setValue(question);
             setMessages((prev) => prev.filter((msg) => msg.id !== assistantMessageId));
           },
         },
-        history
+        latestHistory
       );
     } catch (err) {
+      streamingRef.current = false;
       setStreaming(false);
       setError(err instanceof Error ? err.message : 'Unable to connect to VALORA Intelligence.');
+      setValue(question);
       setMessages((prev) => prev.filter((msg) => msg.id !== assistantMessageId));
     }
   }
@@ -325,6 +400,7 @@ export function AskValora({ className }) {
     setMessages([]);
     setValue('');
     setError(null);
+    streamingRef.current = false;
     setStreaming(false);
   }
 
@@ -362,7 +438,7 @@ export function AskValora({ className }) {
                   <div className="flex items-center gap-2">
                     <p className="font-heading text-[0.98rem] font-bold text-ink">Ask VALORA</p>
                     <span className="rounded-full bg-canvas px-2.5 py-0.5 text-[10px] font-semibold text-ink/55 uppercase">
-                      {role === 'hoa_admin' ? 'HOA Executive' : role === 'service_provider' ? 'Contractor' : 'Resident'}
+                    {role === 'hoa_admin' ? 'HOA administrator' : role === 'service_provider' ? 'Service provider' : 'Resident'}
                     </span>
                   </div>
                   <p className="text-[0.72rem] text-ink/45">Structured answers, every claim traceable</p>

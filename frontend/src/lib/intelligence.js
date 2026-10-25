@@ -14,14 +14,14 @@ export const rolePrompts = {
     'Summarise open complaints and contractor performance.',
   ],
   resident: [
-    'What are the estate quiet hours and visitor rules?',
-    'What is the status of my logged maintenance requests?',
-    'How is our estate Living Score calculated and what does it mean?',
+    'What updates are recorded on my maintenance requests?',
+    'Which of my requests is still open?',
+    'Is a Living Score published for my estate?',
   ],
   service_provider: [
-    'What work orders are assigned to my team?',
-    'What are the contractor gate access hours and entry requirements?',
-    'Which maintenance jobs are highest priority today?',
+    'What work is assigned to my provider account?',
+    'Which of my assigned jobs is due soon?',
+    'What instructions are recorded for my assigned work?',
   ],
 };
 
@@ -43,7 +43,7 @@ export async function askValora(question, context) {
  * Real-time SSE streaming client for Ask VALORA.
  * Connects directly to POST /api/v1/analytics/intelligence/ask/stream with multi-turn history.
  */
-export async function streamAskValora(question, context, { onToken, onDone, onError }, history = []) {
+export async function streamAskValora(question, context, { onToken, onDone, onError, onMeta }, history = []) {
   if (!context.estateId) {
     const err = new Error('Select an estate before asking VALORA.');
     if (onError) onError(err);
@@ -132,6 +132,9 @@ export async function streamAskValora(question, context, { onToken, onDone, onEr
             if (onError) onError(new Error(parsed.error));
             return;
           }
+          if (parsed.metadata && onMeta) {
+            onMeta(parsed.metadata);
+          }
           if (parsed.delta && onToken) {
             onToken(parsed.delta);
           }
@@ -188,9 +191,9 @@ export function parseRecommendations(payload) {
         summary: String(row.summary ?? ''),
         evidence: toEvidence(row.evidence),
         confidence: row.confidence ?? 'Medium',
-        confidenceValue: Number(row.confidenceValue ?? 0),
+        confidenceValue: row.confidenceValue == null ? null : Number(row.confidenceValue),
         impact: String(row.impact ?? ''),
-        savingsZar: Number(row.savingsZar ?? 0),
+        savingsZar: row.savingsZar == null ? null : Number(row.savingsZar),
         suggestedAction: String(row.suggestedAction ?? ''),
         workOrderDefaults: row.workOrderDefaults ?? { title: String(row.title), priority: 'medium' },
       },

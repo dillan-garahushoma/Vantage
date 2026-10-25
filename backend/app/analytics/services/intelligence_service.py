@@ -98,8 +98,7 @@ class IntelligenceService:
                 if settings.N8N_SERVICE_KEY
                 else None
             )
-            known_default = "fc8ae306102a72c25f5cb398ee92796dd1cb24124276847014af5a05b718bf71"
-            if (configured_key and internal_key == configured_key) or internal_key == known_default:
+            if configured_key and internal_key == configured_key:
                 return
         await self._require_admin(actor, estate_id)
 
@@ -173,19 +172,6 @@ class IntelligenceService:
         )
 
     @staticmethod
-    def _for_viewer(output: EstateIntelligenceResponse, access) -> EstateIntelligenceResponse:
-        if access.is_estate_admin:
-            return output.model_copy(update={'role': 'hoa_admin'})
-        role = "service_provider" if (access.is_estate_provider or "service_provider" in access.membership_roles) else "resident"
-        return output.model_copy(
-            update={
-                'role': role,
-                'recommendations': [],
-                'facts': {key: value for key, value in output.facts.items() if key != 'maintenance_priorities'},
-            }
-        )
-
-    @staticmethod
     def _stored(row) -> EstateIntelligenceResponse:
         return EstateIntelligenceResponse.model_validate(row.output).model_copy(
             update={
@@ -208,7 +194,6 @@ class IntelligenceService:
             output = self._stored(rows[0]) if rows else await self._current(estate_id, include_priorities=True)
             return output.model_copy(update={'role': 'hoa_admin'})
 
-        facts = await self._records.facts(estate_id)
         now = datetime.now(timezone.utc)
 
         # 2. Service Provider: Tailored to active assigned tasks and SLA deadlines
@@ -220,10 +205,7 @@ class IntelligenceService:
                 assigned_work_orders=[ProviderWorkOrderSummary(**w) for w in wo_signals],
                 pending_count=pending_count,
                 urgent_count=urgent_count,
-                instructions=(
-                    "Contractor site access: Standard hours 08:00 - 17:00 weekdays. "
-                    "Check in with security gate. Quote active work order ID on entry."
-                ),
+                instructions="",
             )
             briefing = WeeklyBriefing(
                 headline=f"Contractor Work Queue · {estate.name}",
@@ -244,40 +226,40 @@ class IntelligenceService:
                 as_of=now,
                 briefing=briefing,
                 recommendations=[],
-                operational_signals=OperationalSignalCounts(**facts['counts']),
+                operational_signals=None,
                 source='stored_records',
                 data_origin='demo' if bool(getattr(estate, 'is_demo', False)) else 'live',
-                facts=facts,
+                facts={},
                 evidence=[f"Assigned work orders: {len(wo_signals)} items active."],
-                limitations=["Contractor view shows authorized assigned work orders only."],
+                limitations=["Only work orders assigned to your provider account are included."],
                 role="service_provider",
                 provider_view=provider_view,
             )
 
         # 3. Resident: Tailored to their personal unit requests and community health
         unit_issues = await self._records.resident_signals(estate_id, actor.user_id)
-        latest_score = facts.get('latest_score')
-        score_val = latest_score.get('overall_score') if latest_score else None
+        announcements = await self._records.published_announcements(estate_id, now)
+        published_score = (
+            await self._records.published_score(estate_id)
+            if bool(getattr(estate, 'show_living_score', False))
+            else None
+        )
+        score_val = published_score.get('overall_score') if published_score else None
+        score_as_of = published_score.get('as_of') if published_score else None
         score_summary = (
-            f"Estate Living Score is {score_val}/100. Infrastructure and community services are performing well."
-            if score_val is not None else
-            "Estate Living Score calibration is in progress from ongoing operational records."
+            f"The latest published Living Score is {score_val}/100, recorded {score_as_of}."
+            if score_val is not None and score_as_of
+            else "The latest published Living Score has insufficient data; no numeric score is available."
+            if published_score is not None
+            else ""
         )
-        score_label = (
-            "Optimal"
-            if (score_val and score_val >= 80)
-            else "Moderate"
-            if (score_val and score_val >= 60)
-            else "Monitoring"
-        )
+        score_label = "Published" if published_score is not None else "Not published"
         resident_view = ResidentIntelligenceView(
             unit_issues=[ResidentUnitIssue(**u) for u in unit_issues],
             living_score_label=score_label,
             living_score_summary=score_summary,
             community_notices=[
-                "Quiet hours: 22:00 - 06:00 daily.",
-                "Refuse collection scheduled every Tuesday morning.",
-                "Visitor access codes can be generated via the Resident portal.",
+                f"{item['title']}: {item['message']}" for item in announcements
             ],
         )
         briefing = WeeklyBriefing(
@@ -286,7 +268,7 @@ class IntelligenceService:
                 f"You have {len(unit_issues)} maintenance requests logged with estate management. "
                 f"{score_summary}"
                 if unit_issues else
-                f"No active maintenance issues logged for your unit. {score_summary}"
+                f"You have no maintenance requests on record. {score_summary}"
             ),
             window_label="Live Status",
             signals_reviewed=len(unit_issues),
@@ -299,21 +281,78 @@ class IntelligenceService:
             as_of=now,
             briefing=briefing,
             recommendations=[],
-            operational_signals=OperationalSignalCounts(**facts['counts']),
+            operational_signals=None,
             source='stored_records',
             data_origin='demo' if bool(getattr(estate, 'is_demo', False)) else 'live',
-            facts=facts,
-            evidence=[f"Unit requests: {len(unit_issues)} tracked."],
-            limitations=["Resident view reflects unit service requests and estate public health."],
+            facts={},
+            evidence=(
+                [f"Your maintenance requests: {len(unit_issues)} recorded."]
+                if unit_issues
+                else []
+            ) + [
+                f"Published estate announcement: {item['title']}"
+                for item in announcements
+            ],
+            limitations=["Only your requests and information the estate has chosen to publish are included."],
             role="resident",
             resident_view=resident_view,
         )
 
     async def ask_valora(self, estate_id: int, question: str, actor: User) -> AskValoraResponse:
         access = await self._require_member(actor, estate_id)
+        if not access.is_estate_admin:
+            personal = await self.get_intelligence(estate_id, actor)
+            if personal.role == "service_provider":
+                jobs = personal.provider_view.assigned_work_orders if personal.provider_view else []
+                summary = (
+                    "Your assigned work orders: " + "; ".join(
+                        f"#{job.id} {job.title} — {job.status}, due {job.due_date or 'date not recorded'}"
+                        for job in jobs
+                    )
+                    if jobs
+                    else "There are no work orders currently assigned to your provider account."
+                )
+                related = ["Your assigned work orders"]
+            else:
+                issues = personal.resident_view.unit_issues if personal.resident_view else []
+                notices = personal.resident_view.community_notices if personal.resident_view else []
+                summary = (
+                    "Your recorded maintenance requests: " + "; ".join(
+                        f"#{issue.id} {issue.title} — {issue.status}"
+                        for issue in issues
+                    )
+                    if issues
+                    else "There are no maintenance requests recorded for your account."
+                )
+                score_summary = personal.resident_view.living_score_summary if personal.resident_view else ""
+                if any(term in question.casefold() for term in ("announcement", "notice")):
+                    summary = (
+                        "Published estate announcements: " + " ".join(notices)
+                        if notices
+                        else "There are no active published estate announcements."
+                    )
+                    related = ["Published estate announcements"]
+                elif "score" in question.casefold() and score_summary:
+                    summary = score_summary
+                    related = ["Published Living Score"]
+                else:
+                    related = ["Your maintenance requests"]
+                    if personal.resident_view and personal.resident_view.living_score_label == "Published":
+                        related.append("Published Living Score")
+            return AskValoraResponse(
+                summary=summary,
+                evidence=personal.evidence,
+                recommendation="",
+                related=related,
+                source="estate-domain",
+                as_of=personal.as_of,
+                estate_id=estate_id,
+                limitations=personal.limitations,
+            )
+
         current = await self._current(
             estate_id,
-            include_priorities=access.is_estate_admin and any(
+            include_priorities=any(
                 word in question.casefold() for word in ('priority', 'priorities', 'overdue', 'maintenance')
             ),
         )
@@ -366,39 +405,85 @@ class IntelligenceService:
 
         settings = get_settings()
         client = get_llm_client(settings)
-        facts = await self._records.facts(estate_id)
-        counts = facts.get("counts", {})
-        score_val = facts.get("latest_score", {}).get("overall_score") if facts.get("latest_score") else None
-
+        evidence: list[str] = []
         if role == "resident":
             unit_issues = await self._records.resident_signals(estate_id, actor.user_id)
+            announcements = await self._records.published_announcements(
+                estate_id, datetime.now(timezone.utc)
+            )
+            score_summary = ""
+            evidence = [
+                f"Your request #{item['id']}: {item['status']}, recorded {item['logged_date']}."
+                for item in unit_issues
+            ]
+            evidence.extend(
+                f"Published estate announcement: {item['title']}: {item['message']}"
+                for item in announcements
+            )
+            if bool(getattr(estate, "show_living_score", False)):
+                published_score = await self._records.published_score(estate_id)
+                if published_score is not None:
+                    score_summary = (
+                        f"Latest published Living Score: {published_score['overall_score']}/100, "
+                        f"recorded {published_score['as_of']}."
+                        if published_score.get("overall_score") is not None
+                        else "Latest published Living Score has insufficient data; no numeric score is available."
+                    )
+                    evidence.append(score_summary)
             context = (
                 f"Estate: {estate_name}\n"
-                f"User Role: Resident (User #{actor.user_id})\n"
-                f"Living Score: {score_val if score_val is not None else 'Calibrating'}/100\n"
-                f"Resident logged requests ({len(unit_issues)}): "
-                + (", ".join(f"#{u['id']} {u['title']} (status: {u['status']})" for u in unit_issues[:5]) if unit_issues else "None")
-                + "\nEstate Rules: Quiet hours 22:00-06:00, refuse collection Tuesday morning.\n"
+                "User Role: Resident\n"
+                f"Resident's own requests ({len(unit_issues)}): "
+                + (", ".join(f"#{u['id']} {u['title']} (status: {u['status']})" for u in unit_issues[:10]) if unit_issues else "None")
+                + "\nPublished estate announcements: "
+                + ("; ".join(f"{item['title']}: {item['message']}" for item in announcements) if announcements else "None")
+                + (f"\n{score_summary}\n" if score_summary else "\n")
             )
             system_prompt = (
                 "You are VALORA, an intelligent residential assistant for private estate living in South Africa. "
-                "Answer the resident's question helpfully, accurately, and politely based ONLY on the provided context. "
-                "Do NOT make up facts. Never disclose confidential HOA board finances or contractor pricing."
+                "Answer only from the provided resident-owned records and explicitly published information. "
+                "Never reveal, infer, or confirm other residents' requests, private incidents, estate-wide complaint "
+                "counts, internal work queues, provider performance, or HOA management assessments. "
+                "If asked for restricted information, say you can only help with the resident's own requests and published information. "
+                "Do not invent estate rules or claim a resolution timeline unless one is in the provided records."
+            )
+            related = (
+                ["What status is recorded for my requests?", "Is a Living Score published?"]
+                if unit_issues or score_summary
+                else ["How can I report a maintenance issue?"]
             )
         elif role == "service_provider":
             wo_signals = await self._records.provider_signals(estate_id, actor.user_id)
+            evidence = [
+                f"Assigned work order #{item['id']}: {item['status']}, due {item['due_date'] or 'date not recorded'}."
+                for item in wo_signals
+            ]
             context = (
                 f"Estate: {estate_name}\n"
-                f"User Role: Service Provider (User #{actor.user_id})\n"
+                "User Role: Service Provider\n"
                 f"Assigned Work Orders ({len(wo_signals)}): "
                 + (", ".join(f"#{w['id']} {w['title']} (priority: {w['priority']}, status: {w['status']})" for w in wo_signals[:5]) if wo_signals else "None")
-                + "\nContractor site rules: Access hours 08:00 - 17:00 weekdays. Quote work order ID at security gate."
+                + "\nNo access procedure, resident details, or completion requirement is available unless shown in an assigned work order."
             )
             system_prompt = (
                 "You are VALORA, an operations assistant for service contractors on private estates. "
-                "Answer the contractor's question regarding work orders, site access, and procedures based strictly on the facts provided."
+                "Use only work orders assigned to this authenticated provider. Do not disclose other providers' jobs, "
+                "estate complaint queues, residents' private accounts, or HOA briefings. Do not invent access procedures "
+                "or job requirements; say when the assigned record does not contain the requested information."
             )
+            related = ["What due dates are recorded for my jobs?", "Which assigned jobs are marked overdue?"] if wo_signals else []
         else:
+            current = await self._current(estate_id, include_priorities=True)
+            facts = current.facts
+            counts = facts.get("counts", {})
+            score_val = facts.get("latest_score", {}).get("overall_score") if facts.get("latest_score") else None
+            evidence = current.evidence + [
+                item.source for priority in current.recommendations for item in priority.evidence
+            ]
+            priority_context = "\n".join(
+                f"- {item.title}: {item.summary} ({item.evidence[0].source if item.evidence else 'source unavailable'})"
+                for item in current.recommendations
+            )
             context = (
                 f"Estate: {estate_name}\n"
                 f"Role: HOA Executive / Estate Administrator\n"
@@ -406,31 +491,42 @@ class IntelligenceService:
                 f"{counts.get('work_orders_in_flight', 0)} active work orders, "
                 f"{counts.get('unresolved_incidents', 0)} unresolved security incidents.\n"
                 f"Living Score: {score_val if score_val is not None else 'No published score'}/100.\n"
+                f"Authorized record-level priorities:\n{priority_context or 'No priority records were returned.'}\n"
             )
             system_prompt = (
                 "You are VALORA, an executive property intelligence assistant for estate managers and HOA boards in South Africa. "
                 "Provide concise, evidence-based, professional operational analysis grounded strictly in the provided estate facts. "
                 "Format responses cleanly with clear headings and concise bullets. Never invent telemetry or predictive failures."
             )
+            q = question.casefold()
+            related = (
+                ["Which overdue work orders need review?", "Which complaints are still unassigned?"]
+                if any(word in q for word in ("work order", "complaint", "overdue", "maintenance"))
+                else ["Which operational records need attention?", "What is the latest published Living Score?"]
+            )
 
-        full_system = f"{system_prompt}\n\nEstate Operational Context:\n{context}"
+        full_system = f"{system_prompt}\n\nAuthorized Context:\n{context}"
         msg_list: list[dict[str, str]] = [{"role": "system", "content": full_system}]
         if history:
-            for h in history:
+            for h in history[-8:]:
                 role_val = getattr(h, "role", None) or (h.get("role") if isinstance(h, dict) else "user")
                 content_val = getattr(h, "content", None) or (h.get("content") if isinstance(h, dict) else "")
-                if role_val in ("user", "assistant") and content_val:
-                    msg_list.append({"role": role_val, "content": str(content_val)})
+                if role_val == "user" and content_val:
+                    msg_list.append({"role": "user", "content": str(content_val)[:1000]})
         msg_list.append({"role": "user", "content": question})
-
-        user_prompt = f"Context:\n{context}\n\nQuestion: {question}"
 
         async def _generator():
             import json
+            mode = "ai_assisted" if settings.AI_ENABLED and hasattr(client, "stream_text") else "stored_records"
+            metadata = {"evidence": evidence, "related": related, "mode": mode}
+            yield f"data: {json.dumps({'metadata': metadata})}\n\n"
             try:
                 if settings.AI_ENABLED and hasattr(client, "stream_text"):
+                    from app.core.ai.client import DataClass
+                    data_class = DataClass.aggregate if role == "hoa_admin" else DataClass.personal
                     async for token in client.stream_text(
-                        system=full_system, user=question, messages=msg_list
+                        system=full_system, user=question, messages=msg_list,
+                        data_class=data_class,
                     ):
                         yield f"data: {json.dumps({'delta': token})}\n\n"
                     yield "data: [DONE]\n\n"
@@ -442,7 +538,10 @@ class IntelligenceService:
                         yield f"data: {json.dumps({'delta': space + word})}\n\n"
                     yield "data: [DONE]\n\n"
             except Exception as exc:
-                yield f"data: {json.dumps({'error': str(exc)})}\n\n"
+                from app.core.ai.errors import AIUnavailableError
+                if not isinstance(exc, AIUnavailableError):
+                    raise
+                yield f"data: {json.dumps({'error': 'VALORA could not complete this answer. Please try again.'})}\n\n"
                 yield "data: [DONE]\n\n"
 
         return _generator()
@@ -499,18 +598,18 @@ class IntelligenceService:
     async def history(
         self, estate_id: int, actor: User, *, page: int = 1, size: int = 20
     ) -> Page[EstateIntelligenceResponse]:
-        access = await self._require_member(actor, estate_id)
+        await self._require_admin(actor, estate_id)
         rows, total = await self._records.history(estate_id, offset=(page - 1) * size, limit=size)
         return Page(
-            items=[self._for_viewer(self._stored(row), access) for row in rows],
+            items=[self._stored(row).model_copy(update={'role': 'hoa_admin'}) for row in rows],
             total=total,
             page=page,
             size=size,
         )
 
     async def get_history(self, estate_id: int, briefing_id: int, actor: User) -> EstateIntelligenceResponse:
-        access = await self._require_member(actor, estate_id)
+        await self._require_admin(actor, estate_id)
         row = await self._records.get(estate_id, briefing_id)
         if row is None:
             raise NotFoundException('Intelligence briefing not found.')
-        return self._for_viewer(self._stored(row), access)
+        return self._stored(row).model_copy(update={'role': 'hoa_admin'})
