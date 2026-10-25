@@ -1,7 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { AiAnswerRenderer } from './AiAnswerRenderer';
+
+function LocationProbe() {
+  const location = useLocation();
+  return <output data-testid="location">{`${location.pathname} ${JSON.stringify(location.state)}`}</output>;
+}
 
 describe('AiAnswerRenderer', () => {
   it('turns common markdown into semantic reading structure without exposing markers', () => {
@@ -62,5 +68,70 @@ describe('AiAnswerRenderer', () => {
     expect(followUpBtn).toBeVisible();
     await user.click(followUpBtn);
     expect(handleFollowUp).toHaveBeenCalledWith('Which open issues are driving this?');
+  });
+
+  it('links authorized source citations to their existing record views', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <AiAnswerRenderer
+          role="hoa_admin"
+          content={{ evidence: ['WO-0042 (In Progress)', 'Complaint #12 (Sensor fault)'] }}
+        />
+        <LocationProbe />
+      </MemoryRouter>
+    );
+
+    await user.click(screen.getByRole('link', { name: /open work order 42/i }));
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/app/work-orders {"focusWorkOrderId":42}'
+    );
+    await user.click(screen.getByRole('link', { name: /open complaint 12/i }));
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/app/complaints {"focusComplaintId":12}'
+    );
+  });
+
+  it('does not offer complaint navigation to a service provider', () => {
+    render(
+      <MemoryRouter>
+        <AiAnswerRenderer
+          role="service_provider"
+          content={{ evidence: ['Assigned work order #42: in progress', 'Complaint #12: sensor fault'] }}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('link', { name: /open work order 42/i })).toBeVisible();
+    expect(screen.queryByRole('link', { name: /open complaint 12/i })).not.toBeInTheDocument();
+  });
+
+  it('provides an interactive action toolbar with feedback and sources toggle', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <AiAnswerRenderer
+          role="hoa_admin"
+          content={{
+            summary: 'Pressure valve issue resolved.',
+            evidence: ['WO-0042 (In Progress)'],
+          }}
+        />
+      </MemoryRouter>
+    );
+
+    // Feedback button
+    const helpfulBtn = screen.getByRole('button', { name: /mark answer as helpful/i });
+    expect(helpfulBtn).toBeVisible();
+    await user.click(helpfulBtn);
+    expect(screen.getByText('Feedback received')).toBeVisible();
+
+    // Sources accordion
+    const sourcesToggle = screen.getByRole('button', { name: /toggle sources/i });
+    expect(sourcesToggle).toBeVisible();
+    expect(sourcesToggle).toHaveAttribute('aria-expanded', 'false');
+    await user.click(sourcesToggle);
+    expect(sourcesToggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('Traceable Source Records')).toBeVisible();
   });
 });

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { IconAlert, IconClose } from './Icons';
 export function cx(...parts) {
@@ -80,10 +80,6 @@ export function Meter({ label, value, max = 100, barClass = 'bg-accent', caption
 }
 /* ---------------------------------------------------------------- forms */
 export function Field({ label, hint, error, children, }) {
-    // The hint and the error sit *outside* the label: inside it they are part of
-    // the control's accessible name (`getByLabelText('New password')` would read
-    // "New passwordAt least 8 characters" instead). The label still wraps the
-    // control, so the implicit association, and the click target, are kept.
     return (<div className="block">
       <label className="block">
         <span className="mb-1.5 block text-[12px] font-medium tracking-wide text-ink-soft uppercase">
@@ -98,8 +94,15 @@ const controlClass = 'w-full rounded-xs border border-ink/20 bg-surface px-3 py-
 export function Input({ className, ...rest }) {
     return <input className={cx(controlClass, className)} {...rest}/>;
 }
-// `ComponentPropsWithRef` so a caller can move focus into a revealed control
-// (React 19 passes `ref` through as an ordinary prop).
+export function PasswordInput({ className, ...rest }) {
+    const [show, setShow] = useState(false);
+    return (<div className="relative flex items-center">
+      <input type={show ? 'text' : 'password'} className={cx(controlClass, 'pr-28', className)} {...rest}/>
+      <button type="button" aria-pressed={show} onClick={() => setShow((s) => !s)} className="absolute right-2 px-2 py-1 text-xs font-semibold text-ink-muted hover:text-ink focus:outline-none">
+        {show ? 'Hide password' : 'Show password'}
+      </button>
+    </div>);
+}
 export function Select({ className, children, ...rest }) {
     return (<select className={cx(controlClass, 'appearance-none', className)} {...rest}>
       {children}
@@ -115,18 +118,9 @@ export function LoadingState({ label = 'Loading' }) {
       <span className="text-[13px]">{label}…</span>
     </div>);
 }
-/**
- * A reserved, muted shape standing in for content that has not arrived.
- *
- * Deliberately silent: it is `aria-hidden`, and the region that owns it carries
- * `aria-busy` plus a visually hidden polite status. A skeleton mirrors the
- * geometry of what replaces it, so the page does not jump when data lands, and
- * the pulse is removed globally under `prefers-reduced-motion` (see index.css).
- */
 export function Skeleton({ className }) {
     return <div aria-hidden="true" className={cx('animate-pulse bg-ink/10', className)}/>;
 }
-/** A paragraph-shaped skeleton: full lines, with a shorter last line. */
 export function SkeletonText({ lines = 3, className }) {
     return (<div aria-hidden="true" className={cx('space-y-2', className)}>
       {Array.from({ length: lines }, (_, index) => (<div key={index} className={cx('h-3 animate-pulse bg-ink/10', index === lines - 1 ? 'w-2/3' : 'w-full')}/>))}

@@ -7,8 +7,8 @@ import { ApiError } from '../lib/api';
 
 export function Login() {
   const { user, login, logout } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -22,10 +22,10 @@ export function Login() {
     setBusy(true);
     setError(null);
     try {
-      await login(email.trim(), password);
+      await login(email, password);
       navigate(from ?? '/welcome', { replace: true });
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause : new ApiError(0, 'Sign in failed.'));
+      setError(cause instanceof ApiError ? cause : new ApiError(500, 'Could not sign you in'));
     } finally {
       setBusy(false);
     }

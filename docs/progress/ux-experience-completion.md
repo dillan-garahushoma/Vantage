@@ -193,3 +193,60 @@ there once and every account screen follows.
 
 - The dev server on http://localhost:5199 (PID 14800) still serves this checkout for review.
 - The backend suites were not run: no backend file changed.
+
+
+## Completion pass — VALORA Intelligence Redesign, Chat Fixes & Worktree Unification (2026-10-25)
+
+The owner requested completing unfinished upgrades across three worktrees (`valora-intelligence-redesign-ux`, `estate-onboarding-multistep-flow`, `requesting-help-assistance`), delivering the complete VALORA Intelligence UI based on the design reference, fixing chat scrolling and clipping defects, providing automatic full-view modal expansion on enter/prompt submit, and extending AI interactivity.
+
+### Done
+
+1. **Deployed site restoration & non-compulsory unit access**:
+   - Reversible Alembic migration `e8c3a1f9d5b7_restore_live_estates.py` un-archived the 5 live estates (`Eastbank Court`, `Lakeside Gardens`, `Quarry View Flats`, `Silverleaf Reserve`, `Willowbrook Mews`) with `is_demo=false`, `is_public=true`, `show_living_score=true`.
+   - Production API at `https://valora-api-rk9q.onrender.com/api/v1/public/estates` returns all 5 estates (`200 OK`).
+   - Cloudflare Pages live directory at `https://vantage-7k0.pages.dev/estates` verified rendering all 5 estates.
+   - In `RequestAccess.jsx`: Unit number is now explicitly optional with a dedicated action "Request approval without a unit number" and 404 unit fallback. All 10 tests passing.
+
+2. **VALORA Intelligence 3-column UI redesign**:
+   - Implemented responsive 3-column layout matching `valora-intelligence-design-reference.png`.
+   - **Hero Banner**: Header with brand sparkle icon, "VALORA Intelligence", subtitle, estate panorama thumbnail, and "Powered by AI" badge.
+   - **Left Column**: "Recent conversations" thread list, conversation switcher, HOA saved briefings list (`View saved briefing ${item.briefing_id}`), and sample prompt promo card.
+   - **Center Column**: Active inquiry card, rich conversation workbench, and sticky bottom input with `aria-label="Ask VALORA a question"`.
+   - **Right Column**: 3 segmented tabs:
+     - `[Evidence]` (default): Weekly Briefing card with headline, body, "Save current briefing" button with `Briefing saved.` confirmation status; measured operational signals (`105`, `2`, `1`); management recommendations with `Every finding traceable to source`, `R42,000`, `Review`, `Create work order`, and overdue work order link.
+     - `[Context]`: Estate dossier profile, health indicators (Living Score, Open complaints, Work orders in flight), linked documents (`WO #52`, `Complaint #12`), and "Start a new chat" button.
+     - `[Related]`: Open complaints and active work orders with direct links.
+
+3. **Chat scrolling & frame containment defect fixes**:
+   - Replaced window/page jumping `scrollIntoView()` with container-scoped `messageViewportRef.current.scrollTop = messageViewportRef.current.scrollHeight`.
+   - Replaced fixed/clipped heights with responsive flex containment (`h-full`, `min-h-0`, `overflow-y-auto`).
+   - Sized focused full-view modal generously (`max-w-[840px] md:max-w-[900px]`, `h-[88vh]`).
+   - Automatic full-view focus mode triggers when the user presses Enter or clicks Send/prompt chip.
+
+4. **Extended AI interactivity**:
+   - **Key finding callout**: Prominent alert card with `AlertTriangle` icon summarizing core takeaway.
+   - **Evidence vs Impact matrix**: 2-column comparison showing evidence records vs. operational impact.
+   - **Interactive "Explore further" chips**: Clickable prompt chips that immediately submit follow-up queries.
+   - **Action toolbar**: Thumbs up / Thumbs down feedback with confirmation state, copy to clipboard with confirmation toast, and expandable "Sources (N)" accordion with working links to `/app/work-orders` and `/app/complaints`.
+
+5. **Component repairs & test suite cleanup**:
+   - Added missing `PasswordInput` to `ui.jsx` with masked toggle, keeping the reveal button out of the field's accessible name.
+   - Fixed `PublicShell.jsx` with an accessible Home link.
+   - Aligned `PhotoGallery.jsx` desktop geometry and responsive wrapper height.
+   - Added `SignedInAccountActions` in `Login.jsx` for clean account switching.
+
+### Exact validation commands and results
+
+1. `npx vitest run src/routes/Intelligence.test.jsx src/components/valora/AiAnswerRenderer.test.jsx src/components/valora/AskValoraSpotlight.test.jsx src/routes/RequestAccess.test.jsx src/routes/Register.test.jsx`
+   - `5 files passed, 43 tests passed`.
+2. Full frontend vitest run (`main-publish`):
+   - `42 test files passed (42)`, `250 tests passed (250)`, `Duration: 200.49s`.
+3. Backend migration verification:
+   - `backend\venv\Scripts\python.exe -m pytest backend/tests/test_restore_live_estates_migration.py backend/tests/test_confirmed_dummy_archive_migration.py backend/tests/test_ai_ledger_schema.py -q`
+   - `17 passed`.
+4. Backend linting and compilation:
+   - `backend\venv\Scripts\python.exe -m compileall -q backend/app` — passed.
+   - `backend\venv\Scripts\python.exe -m flake8 backend/app backend/tests --count --select=E9,F63,F7,F82 --show-source --statistics` — passed (`0` findings).
+   - `git diff --check` — passed (`0` findings).
+5. Git publishing:
+   - Committed `3feb99e` to `main` and pushed to `origin/main` (`41cd762..3feb99e main -> main`).
