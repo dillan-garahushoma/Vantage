@@ -149,18 +149,25 @@ class GatedLLMClient:
         system: str,
         user: str,
         messages: list[dict[str, str]] | None = None,
+        data_class: DataClass = DataClass.aggregate,
     ) -> AsyncIterator[str]:
         settings = self._settings
         if not settings.AI_ENABLED:
             raise AIUnavailableError("disabled")
+        if data_class == DataClass.personal and not settings.AI_PERSONAL_DATA_ALLOWED:
+            raise AIUnavailableError("policy")
         total_len = len(system) + len(user) + sum(len(m.get("content", "")) for m in (messages or []))
         if total_len > settings.AI_MAX_INPUT_CHARS:
             raise AIUnavailableError("policy")
         if self.inner is None or not hasattr(self.inner, "stream_text"):
             raise AIUnavailableError("disabled")
 
-        async for chunk in self.inner.stream_text(system=system, user=user, messages=messages):
-            yield chunk
+        try:
+            async with asyncio.timeout(settings.AI_TIMEOUT_SECONDS):
+                async for chunk in self.inner.stream_text(system=system, user=user, messages=messages):
+                    yield chunk
+        except asyncio.TimeoutError:
+            raise AIUnavailableError("timeout") from None
 
 
 def http_error_reason(exc: httpx.HTTPError) -> str:

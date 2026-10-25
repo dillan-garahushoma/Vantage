@@ -153,7 +153,9 @@ async def test_resident_receives_resident_view_without_recommendations():
         )
     )
     service._estates = SimpleNamespace(
-        get_by_id=AsyncMock(return_value=SimpleNamespace(estate_id=1, name="Silverleaf Reserve"))
+        get_by_id=AsyncMock(return_value=SimpleNamespace(
+            estate_id=1, name="Silverleaf Reserve", show_living_score=True
+        ))
     )
     service._records = SimpleNamespace(
         facts=AsyncMock(
@@ -167,6 +169,10 @@ async def test_resident_receives_resident_view_without_recommendations():
                 {"id": 42, "category": "Plumbing", "title": "Kitchen faucet leaking", "status": "reviewed", "logged_date": "2026-10-20"}
             ]
         ),
+        published_announcements=AsyncMock(return_value=[]),
+        published_score=AsyncMock(return_value={
+            "overall_score": 88, "as_of": "2026-10-20T08:00:00+00:00", "status": "published"
+        }),
     )
     actor = SimpleNamespace(user_id=10, role="resident")
     res = await service.get_intelligence(1, actor)
@@ -176,9 +182,11 @@ async def test_resident_receives_resident_view_without_recommendations():
     assert res.resident_view is not None
     assert len(res.resident_view.unit_issues) == 1
     assert res.resident_view.unit_issues[0].title == "Kitchen faucet leaking"
-    assert res.resident_view.living_score_label == "Optimal"
+    assert res.resident_view.living_score_label == "Published"
     assert "88/100" in res.resident_view.living_score_summary
-    assert res.resident_view.community_notices == []
+    assert res.operational_signals is None
+    assert res.facts == {}
+    service._records.facts.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -225,39 +233,10 @@ async def test_provider_receives_provider_view_with_work_orders():
     assert len(res.provider_view.assigned_work_orders) == 1
     assert res.provider_view.assigned_work_orders[0].id == 99
     assert res.provider_view.urgent_count == 1
-    assert "Contractor site access" in res.provider_view.instructions
-    assert "not recorded" in res.provider_view.instructions
-    assert "08:00" not in res.provider_view.instructions
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize('role', ['resident', 'service_provider'])
-async def test_stream_context_does_not_invent_estate_rules(monkeypatch, role):
-    from app.analytics.services import intelligence_service as module
-
-    captured = []
-
-    async def stream_text(**kwargs):
-        captured.append(kwargs['system'])
-        yield 'No estate rules have been recorded.'
-
-    monkeypatch.setattr(module, 'get_settings', lambda: SimpleNamespace(AI_ENABLED=True))
-    monkeypatch.setattr(module, 'get_llm_client', lambda _settings: SimpleNamespace(stream_text=stream_text))
-    service = IntelligenceService(AsyncMock())
-    service._auth = SimpleNamespace(resolve_access=AsyncMock(return_value=SimpleNamespace(
-        is_estate_admin=False, is_estate_provider=role == 'service_provider', membership_roles={role},
-    )))
-    service._estates = SimpleNamespace(get_by_id=AsyncMock(return_value=SimpleNamespace(name='Test complex')))
-    service._records = SimpleNamespace(
-        facts=AsyncMock(return_value={'counts': {}, 'latest_score': None}),
-        resident_signals=AsyncMock(return_value=[]), provider_signals=AsyncMock(return_value=[]),
-    )
-    generator = await service.stream_ask_valora(1, 'What are the estate rules?', SimpleNamespace(user_id=4))
-    assert [chunk async for chunk in generator]
-    assert len(captured) == 1
-    assert 'Test complex' in captured[0]
-    assert 'not recorded' in captured[0]
-    assert all(invented not in captured[0] for invented in ('22:00', '08:00', 'Tuesday'))
+    assert res.provider_view.instructions == ""
+    assert res.operational_signals is None
+    assert res.facts == {}
+    service._records.facts.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -284,6 +263,7 @@ async def test_stream_ask_valora_yields_sse_chunks():
             }
         ),
         resident_signals=AsyncMock(return_value=[]),
+        published_announcements=AsyncMock(return_value=[]),
     )
     actor = SimpleNamespace(user_id=10, role="resident")
     generator = await service.stream_ask_valora(1, "What are the quiet hours?", actor)
@@ -297,9 +277,12 @@ async def test_stream_ask_valora_yields_sse_chunks():
     assert all(c.startswith("data: ") for c in chunks)
     # The last chunk should be [DONE]
     assert chunks[-1] == "data: [DONE]\n\n"
-    # Content chunk must parse JSON with delta
-    first_data = json.loads(chunks[0].replace("data: ", "").strip())
-    assert "delta" in first_data
+    # Role-safe metadata precedes answer tokens so evidence and citations can render.
+    metadata = json.loads(chunks[0].replace("data: ", "").strip())
+    assert metadata["metadata"]["mode"] == "stored_records"
+    delta = next(json.loads(chunk.replace("data: ", "").strip())
+                 for chunk in chunks[1:] if '"delta"' in chunk)
+    assert "delta" in delta
 
     # Multi-turn history support
     history = [

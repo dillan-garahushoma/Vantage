@@ -163,6 +163,59 @@ async def test_personal_data_allowed_when_opted_in() -> None:
 
 
 @pytest.mark.asyncio
+async def test_streaming_personal_data_requires_explicit_opt_in() -> None:
+    class StreamingClient:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        async def stream_text(self, **_kwargs):
+            self.calls += 1
+            yield "answer"
+
+    inner = StreamingClient()
+    gated = GatedLLMClient(
+        make_settings(AI_ENABLED=True, AI_PERSONAL_DATA_ALLOWED=False),
+        inner,
+    )
+
+    with pytest.raises(AIUnavailableError) as exc:
+        _ = [chunk async for chunk in gated.stream_text(
+            system="system",
+            user="personal request",
+            data_class=DataClass.personal,
+        )]
+
+    assert exc.value.reason == "policy"
+    assert inner.calls == 0
+
+
+@pytest.mark.asyncio
+async def test_streaming_gate_enforces_timeout_and_cancels_provider() -> None:
+    class SlowStreamingClient:
+        def __init__(self) -> None:
+            self.cancelled = False
+
+        async def stream_text(self, **_kwargs):
+            try:
+                await asyncio.sleep(5)
+                yield "too late"
+            finally:
+                self.cancelled = True
+
+    inner = SlowStreamingClient()
+    gated = GatedLLMClient(
+        make_settings(AI_ENABLED=True, AI_TIMEOUT_SECONDS=0.05),
+        inner,
+    )
+
+    with pytest.raises(AIUnavailableError) as exc:
+        _ = [chunk async for chunk in gated.stream_text(system="system", user="question")]
+
+    assert exc.value.reason == "timeout"
+    assert inner.cancelled is True
+
+
+@pytest.mark.asyncio
 async def test_oversize_input_is_rejected_before_any_http() -> None:
     settings = make_settings(
         AI_ENABLED=True, AI_INSIGHTS_ENABLED=True, AI_MAX_INPUT_CHARS=50

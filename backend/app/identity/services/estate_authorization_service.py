@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.enums import UserRole
+from app.core import config as core_config
 from app.core.exceptions import ForbiddenException
 from app.identity.models.user import User
 from app.identity.repositories.estate_membership_repository import EstateMembershipRepository
@@ -55,6 +56,10 @@ class EstateAuthorizationService:
         self._memberships = EstateMembershipRepository(db)
         self._estates = EstateRepository(db)
 
+    @property
+    def _allow_demo(self) -> bool:
+        return core_config.get_settings().ENVIRONMENT in ('development', 'test')
+
     async def list_accessible_estates(self, actor: User | object) -> list[EstateAccessSummary]:
         """List the estates the actor may select, newest-safe and server-resolved.
 
@@ -74,6 +79,8 @@ class EstateAuthorizationService:
 
         estate_ids = sorted({m.estate_id for m in memberships if m.estate_id is not None})
         estates = await self._estates.get_many_by_ids(estate_ids)
+        if not self._allow_demo:
+            estates = {key: estate for key, estate in estates.items() if not estate.is_demo}
 
         grouped: dict[int, dict[str, set]] = {}
         for membership in memberships:
@@ -142,6 +149,11 @@ class EstateAuthorizationService:
         memberships = [m for m in memberships if m.membership_role in ACTIVE_MEMBERSHIP_ROLES]
         if not memberships or user_role in ('investor', 'estate_agent', 'casual_visitor'):
             raise ForbiddenException('You do not have access to this estate.')
+
+        if not self._allow_demo:
+            estate = await self._estates.get_by_id(estate_id)
+            if estate is None or estate.is_demo:
+                raise ForbiddenException('This estate is not available.')
 
         roles = frozenset(
             m.membership_role for m in memberships if getattr(m, "membership_role", None) is not None

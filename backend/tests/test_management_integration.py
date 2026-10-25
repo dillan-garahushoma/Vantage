@@ -72,8 +72,9 @@ async def test_priorities_are_grounded_manager_only_and_history_is_immutable(db_
     assert (await async_client.get(f"/api/v1/analytics/intelligence/history/{output['briefing_id']}", params=params)).json() == output
     app.dependency_overrides[get_current_user] = lambda: w.resident_a1
     safe = await async_client.get(f"/api/v1/analytics/intelligence/history/{output['briefing_id']}", params=params)
-    assert safe.status_code == 200 and safe.json()['recommendations'] == []
-    assert 'maintenance_priorities' not in safe.json()['facts']
+    assert safe.status_code == 403
+    assert 'recommendations' not in safe.json()
+    assert 'PRIVATE TENANT DETAILS' not in safe.text
 
 
 async def test_completed_job_cannot_be_edited_without_status(db_session, async_client):

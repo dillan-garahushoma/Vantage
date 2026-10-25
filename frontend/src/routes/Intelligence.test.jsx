@@ -16,7 +16,7 @@
  */
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ValoraChatProvider } from '../context/ValoraChatContext';
 import { priorityRecommendations, weeklyBriefing } from '../../test-fixtures/intelligence';
@@ -99,6 +99,7 @@ vi.mock('../context/EstateContext', () => ({
 import { Toaster } from '../components/ui/toast';
 import { AskValoraSpotlight } from '../components/valora/AskValoraSpotlight';
 import { Intelligence } from './Intelligence';
+import { WorkOrders } from './WorkOrders';
 const openComplaint = {
     id: 12,
     user_id: 3,
@@ -126,7 +127,12 @@ beforeEach(() => {
     mocks.streamAskValora.mockReset();
 
     // Default: streamAskValora fires onToken once then onDone.
-    mocks.streamAskValora.mockImplementation(async (_q, _ctx, { onToken, onDone }) => {
+    mocks.streamAskValora.mockImplementation(async (_q, _ctx, { onMeta, onToken, onDone }) => {
+        onMeta?.({
+            evidence: ['Complaint #12 · Submitted'],
+            related: ['What status is recorded for this issue?'],
+            mode: 'ai_assisted',
+        });
         onToken('VALORA has analysed the estate operational signals for this query.');
         onDone();
     });
@@ -137,6 +143,7 @@ beforeEach(() => {
     mocks.get.mockImplementation(async (path) => {
         if (path === '/api/v1/analytics/intelligence')
             return { briefing: weeklyBriefing, recommendations: priorityRecommendations,
+                role: 'hoa_admin',
                 operational_signals: { open_complaints: 105, work_orders_in_flight: 2, unresolved_incidents: 1 } };
         if (path === '/api/v1/analytics/intelligence/history')
             return { items: [{ estate_id: 1, estate_name: 'Greenhaven Estate', briefing_id: 88,
@@ -146,10 +153,25 @@ beforeEach(() => {
         if (path === '/api/v1/analytics/intelligence/history/88')
             return { estate_id: 1, estate_name: 'Greenhaven Estate', briefing_id: 88,
                 as_of: '2026-10-15T08:00:00Z', briefing: { ...weeklyBriefing, headline: 'Saved maintenance briefing' },
+                role: 'hoa_admin',
                 recommendations: [], operational_signals: { open_complaints: 3, work_orders_in_flight: 1, unresolved_incidents: 0 },
                 source: 'stored_records' };
         if (path === '/api/v1/complaints')
             return pageOf([openComplaint]);
+        if (path === '/api/v1/work-orders/52')
+            return {
+                id: 52,
+                complaint_id: 12,
+                provider_id: 5,
+                estate_id: 1,
+                status: 'overdue',
+                assigned_at: '2026-10-10T08:00:00Z',
+                estimated_completion_date: '2026-10-20',
+                job_cost: '9800.00',
+                completion_notes: null,
+                actual_completion_date: null,
+                resident_rating: null,
+            };
         if (path === '/api/v1/providers') {
             return pageOf([
                 {
@@ -177,15 +199,31 @@ function renderPage() {
           {/* The shell mounts this in `main.jsx`; a confirmed success is announced
                 there, so the submission test needs it here too. */}
           <Toaster />
+          <RouteProbe />
         </ValoraChatProvider>
       </MemoryRouter>
     );
+}
+function renderWorkOrdersWithFocusedRecord(workOrderId) {
+    return render(
+      <MemoryRouter initialEntries={[{
+          pathname: '/app/work-orders',
+          state: { focusWorkOrderId: workOrderId },
+      }]}>
+        <WorkOrders />
+        <RouteProbe />
+      </MemoryRouter>
+    );
+}
+function RouteProbe() {
+    const location = useLocation();
+    return <output data-testid="route-probe">{`${location.pathname} ${JSON.stringify(location.state)}`}</output>;
 }
 describe('VALORA Intelligence', () => {
     it('keeps the assistant available when the independent briefing request fails', async () => {
         mocks.get.mockRejectedValue(new Error('Briefing temporarily unavailable'));
         renderPage();
-        expect(await screen.findByText('Intelligence unavailable')).toBeVisible();
+        expect(await screen.findByText('Briefing unavailable')).toBeVisible();
         expect(screen.getByRole('textbox', { name: 'Ask VALORA a question' })).toBeEnabled();
     });
     it('uses server counts beyond the first page and can save a current briefing', async () => {
@@ -200,6 +238,8 @@ describe('VALORA Intelligence', () => {
     it('loads a saved briefing only from the estate-scoped history endpoint', async () => {
         const user = userEvent.setup();
         renderPage();
+        await waitFor(() => expect(mocks.get).toHaveBeenCalledWith(
+            '/api/v1/analytics/intelligence/history', { estate_id: 1, size: 10 }));
         await user.click(await screen.findByRole('button', { name: 'View saved briefing 88' }));
         expect(await screen.findByText('Saved maintenance briefing')).toBeVisible();
         expect(mocks.get).toHaveBeenCalledWith('/api/v1/analytics/intelligence/history/88', { estate_id: 1 });
@@ -208,7 +248,7 @@ describe('VALORA Intelligence', () => {
     it('renders an API denial without showing fictional recommendations', async () => {
         mocks.get.mockRejectedValue(new Error('Estate access denied'));
         renderPage();
-        expect(await screen.findByText('Intelligence unavailable')).toBeVisible();
+        expect(await screen.findByText('Briefing unavailable')).toBeVisible();
         expect(screen.getByText('Estate access denied')).toBeVisible();
         expect(screen.queryByText(priorityRecommendations[0].title)).not.toBeInTheDocument();
         expect(screen.queryByText('R42,000')).not.toBeInTheDocument();
@@ -221,15 +261,26 @@ describe('VALORA Intelligence', () => {
         });
         const user = userEvent.setup();
         renderPage();
-        // The user is hoa_admin+is_estate_admin; the right-rail panel shows the
-        // hoa_admin suggestion prompts.  Clicking one opens the Spotlight and sends.
-        await user.click(await screen.findByRole('button', {
+        // The selected estate is administered by an HOA member, so show the
+        // estate-operations prompts.
+        const suggestedPrompt = await screen.findByRole('button', {
             name: 'What is the operational risk summary for this week?',
-        }));
-        // The Spotlight opens and the error text is shown in the error bar.
+        });
+        expect(suggestedPrompt).toBeEnabled();
+        await user.click(suggestedPrompt);
+        await waitFor(() => expect(mocks.streamAskValora).toHaveBeenCalled());
+        // Keep the error and retryable question visible in the inline conversation.
         expect(await screen.findByText('Estate access denied')).toBeVisible();
         // No streamed AI answer should appear in the thread.
         expect(screen.queryByText('VALORA has analysed')).not.toBeInTheDocument();
+    });
+
+    it('keeps Ask VALORA available when the briefing endpoint fails', async () => {
+        mocks.get.mockRejectedValue(new Error('Briefing service unavailable'));
+        renderPage();
+        expect(await screen.findByText('Briefing service unavailable')).toBeVisible();
+        expect(screen.getByText('Ask VALORA')).toBeVisible();
+        expect(screen.getByRole('button', { name: /What is the operational risk summary/i })).toBeVisible();
     });
 
     it('renders the weekly briefing and every priority recommendation with its impact', async () => {
@@ -274,28 +325,64 @@ describe('VALORA Intelligence', () => {
         expect(body).toMatchObject({ complaint_id: 12, provider_id: 5, job_cost: 9800 });
         expect(await screen.findByText(/Work order raised/)).toBeVisible();
     });
-    it('answers a suggested prompt and shows the streamed response in the spotlight', async () => {
+    it('answers a suggested prompt inline and submits contextual follow-ups', async () => {
         const user = userEvent.setup();
         renderPage();
         // The hoa_admin suggestion buttons appear in the right-rail AskValora panel.
-        // Clicking one opens the Spotlight and immediately sends via streamAskValora.
+        // Clicking one starts the real stream in the inline conversation.
         await user.click(await screen.findByRole('button', {
             name: 'What is the operational risk summary for this week?',
         }));
-        // Responses stay inline beside their estate context; expanding is optional.
-        expect(screen.queryByRole('dialog', { name: 'Ask VALORA Intelligence' })).not.toBeInTheDocument();
-        await user.click(screen.getByRole('button', { name: 'Expand chat' }));
-        expect(await screen.findByRole('dialog', { name: 'Ask VALORA Intelligence' })).toBeVisible();
         // The user's own question appears as a message bubble.
-        const userBubbles = await screen.findAllByText('What is the operational risk summary for this week?');
-        expect(userBubbles.length).toBeGreaterThan(0);
+        expect(await screen.findByText(
+            'What is the operational risk summary for this week?',
+            { selector: 'p' }
+        )).toBeVisible();
         // The streamed AI answer appears in the assistant bubble.
         const aiBubbles = await screen.findAllByText('VALORA has analysed the estate operational signals for this query.');
         expect(aiBubbles.length).toBeGreaterThan(0);
-        // streamAskValora was called once with the correct estate context.
-        expect(mocks.streamAskValora).toHaveBeenCalledOnce();
+        expect(await screen.findByText('Complaint #12 · Submitted')).toBeVisible();
+        const followUp = screen.getByRole('button', { name: 'What status is recorded for this issue?' });
+        await user.click(followUp);
+        await waitFor(() => expect(mocks.streamAskValora).toHaveBeenCalledTimes(2));
+        expect(mocks.streamAskValora.mock.calls[1][0]).toBe('What status is recorded for this issue?');
+        // The stream retains the selected estate context for each turn.
         const [question, context] = mocks.streamAskValora.mock.calls[0];
         expect(question).toBe('What is the operational risk summary for this week?');
         expect(context).toMatchObject({ estateId: 1 });
+    });
+
+    it('opens an existing overdue work order instead of offering a duplicate assignment', async () => {
+        const defaultGet = mocks.get.getMockImplementation();
+        mocks.get.mockImplementation(async (...args) => {
+            const response = await defaultGet(...args);
+            if (args[0] === '/api/v1/analytics/intelligence') {
+                return {
+                    ...response,
+                    recommendations: response.recommendations.map((item, index) =>
+                        index === 0 ? { ...item, id: 'overdue_work_order-52' } : item
+                    ),
+                };
+            }
+            return response;
+        });
+        const user = userEvent.setup();
+        renderPage();
+
+        await user.click(await screen.findByRole('link', { name: 'Open work order' }));
+
+        expect(screen.getByTestId('route-probe')).toHaveTextContent(
+            '/app/work-orders {"focusWorkOrderId":52}'
+        );
+    });
+
+    it('loads the selected work-order detail through the estate-scoped endpoint', async () => {
+        renderWorkOrdersWithFocusedRecord(52);
+
+        await waitFor(() => expect(mocks.get).toHaveBeenCalledWith(
+            '/api/v1/work-orders/52', { estate_id: 1 }));
+        expect(await screen.findByText('WO-0052')).toBeVisible();
+        await waitFor(() => expect(screen.getByTestId('route-probe'))
+            .toHaveTextContent('/app/work-orders null'));
     });
 });

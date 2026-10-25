@@ -5,8 +5,8 @@ is why it is written the way it is:
 
 * every directory query is filtered by ``is_public`` in SQL
   (``EstateRepository.public_statement``), so an unpublished estate cannot be
-  returned even by a bug in the mapping layer. ``is_demo`` tracks score-data
-  origin; seeded demo fixtures stay private by setting ``is_public = false``;
+  returned even by a bug in the mapping layer. Outside development/test,
+  ``is_demo`` estates are excluded from lists, profiles and photo responses;
 * the DTOs live in :mod:`app.property.schemas.public_directory` and are an
   allow-list, so a new column cannot leak into a public response by accident;
 * the Living Score is published only when the estate set ``show_living_score``
@@ -52,6 +52,7 @@ class PublicDirectoryService:
         self._photos = EstatePhotoRepository(db)
         self._properties = PropertyRepository(db)
         self._snapshots = LivingScoreSnapshotRepository(db)
+        self._allow_demo = get_settings().ENVIRONMENT in ('development', 'test')
         self._upload_dir = Path(
             upload_dir if upload_dir is not None else get_settings().UPLOAD_DIR
         )
@@ -61,9 +62,9 @@ class PublicDirectoryService:
     ) -> tuple[list[PublicEstateListItem], int]:
         """One page of published estates, with unit counts and cover photos."""
         estates = await self._estates.list_public(
-            offset=(page - 1) * page_size, limit=page_size, q=q
+            offset=(page - 1) * page_size, limit=page_size, q=q, include_demo=self._allow_demo
         )
-        total = await self._estates.count_public(q=q)
+        total = await self._estates.count_public(q=q, include_demo=self._allow_demo)
         if not estates:
             return [], total
 
@@ -91,7 +92,7 @@ class PublicDirectoryService:
         estate = await self._estates.get_by_id(estate_id)
         # A private estate and an unknown estate are the same 404: the directory
         # never confirms that a private estate exists.
-        if estate is None or not estate.is_public:
+        if estate is None or not estate.is_public or (not self._allow_demo and estate.is_demo):
             raise NotFoundException(NOT_PUBLIC_MESSAGE)
 
         photos = await self._photos.list_for_estate(estate_id=estate_id)
@@ -116,6 +117,10 @@ class PublicDirectoryService:
         photo = await self._photos.get_by_public_id(public_id)
         if photo is None:
             raise NotFoundException(PHOTO_NOT_FOUND_MESSAGE)
+        if not self._allow_demo:
+            estate = await self._estates.get_by_id(photo.estate_id)
+            if estate is None or estate.is_demo:
+                raise NotFoundException(PHOTO_NOT_FOUND_MESSAGE)
         path = photo_path(self._upload_dir, public_id, thumb=size == "thumb")
         if not path.is_file():
             # A row whose file is missing is not served as a broken image.

@@ -6,12 +6,13 @@ async function intelligenceWorld(page, { denied = false, admin = true } = {}) {
     const estate = { estate_id: 1, estate_name: 'Fictional Musgrave Complex', suburb: 'Musgrave', city: 'Durban',
         province: 'KwaZulu-Natal', membership_roles: [user.role], property_ids: [], is_estate_admin: admin, is_estate_provider: false };
     let saved = false;
-    const briefing = () => ({ estate_id: 1, estate_name: estate.estate_name, source: 'stored_records',
+    const briefing = () => ({ estate_id: 1, estate_name: estate.estate_name, role: user.role, source: 'stored_records',
         as_of: '2026-10-21T10:00:00Z', briefing_id: saved ? 4 : null, template_version: 'operational-v1', data_origin: 'demo',
         briefing: { headline: 'Stored operational records for Fictional Musgrave Complex.',
-            body: 'There are 105 open complaints. Forecasts and savings are unavailable.', windowLabel: 'Current stored records',
-            signalsReviewed: 105, sources: 3, avoidableZar: 0 }, recommendations: [],
-        operational_signals: { open_complaints: 105, work_orders_in_flight: 0, unresolved_incidents: 0 },
+            body: admin ? 'There are 105 open complaints. Forecasts and savings are unavailable.' : 'Your own requests and published estate notices.', windowLabel: 'Current stored records',
+            signalsReviewed: admin ? 105 : 0, sources: admin ? 3 : 1, avoidableZar: null }, recommendations: [],
+        resident_view: admin ? null : { unit_issues: [], living_score_label: 'Not published', living_score_summary: '', community_notices: [] },
+        operational_signals: admin ? { open_complaints: 105, work_orders_in_flight: 0, unresolved_incidents: 0 } : null,
         limitations: ['Counts describe stored records, not a weekly activity total.'] });
     await page.route(/https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.abort());
     await page.addInitScript((value) => {
@@ -56,15 +57,17 @@ test('shows measured counts, saves a dated briefing and asks the authenticated A
 test('a backend denial never displays fictional pump or savings claims', async ({ page }) => {
     await intelligenceWorld(page, { denied: true });
     await page.goto('/intelligence');
-    await expect(page.getByText('Intelligence unavailable')).toBeVisible();
+    await expect(page.getByText('Briefing unavailable')).toBeVisible();
     await expect(page.getByText('Estate access denied.')).toBeVisible();
     await expect(page.getByText(/Pool Pump 02/)).toHaveCount(0);
     await expect(page.getByText('R42,000')).toHaveCount(0);
 });
 
-test('members can read safe aggregates while save controls require estate HOA capability', async ({ page }) => {
+test('residents see their personal assistant without management aggregates or save controls', async ({ page }) => {
     await intelligenceWorld(page, { admin: false });
     await page.goto('/intelligence');
-    await expect(page.getByText('105', { exact: true })).toBeVisible();
+    await expect(page.getByText('No open maintenance issues logged for your unit.')).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Ask VALORA a question' })).toBeEnabled();
+    await expect(page.getByText('105', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Save current briefing' })).toHaveCount(0);
 });

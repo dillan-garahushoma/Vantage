@@ -42,7 +42,8 @@ async def test_all_entrypoints_enforce_selected_estate_capability(db_session):
     for member in (w.cross_user, w.resident_b1, w.provider_user_b):
         assert (await s.get_intelligence(estate, member)).estate_id == estate
         assert (await s.ask_valora(estate, 'Show records', member)).estate_id == estate
-        assert (await s.history(estate, member)).total == 0
+        with pytest.raises(ForbiddenException):
+            await s.history(estate, member)
     for read in (lambda: s.get_intelligence(estate, w.hoa_admin_a),
                  lambda: s.ask_valora(estate, 'Show records', w.hoa_admin_a),
                  lambda: s.history(estate, w.hoa_admin_a),
@@ -148,7 +149,7 @@ async def test_http_generate_history_grounding_and_error_envelopes(db_session, a
         assert (await async_client.get(base + '/history', params=params)).json()['total'] == 1
         assert (await async_client.get(base + '/history', params=params | {'size': 101})).status_code == 422
         app.dependency_overrides[get_current_user] = lambda: w.resident_a1
-        assert (await async_client.get(base + '/history', params=params)).status_code == 200
+        assert (await async_client.get(base + '/history', params=params)).status_code == 403
         denied = await async_client.post(base + '/briefing/generate', params=params)
         assert denied.status_code == 403 and 'request_id' in denied.json()['detail']
         for bad_params in ({'estate_id': 2147483648}, params | {'size': 101}):

@@ -1419,7 +1419,14 @@
             "type": "array"
           },
           "operational_signals": {
-            "$ref": "#/components/schemas/OperationalSignalCounts"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperationalSignalCounts"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "provider_view": {
             "anyOf": [
@@ -1475,7 +1482,6 @@
           "as_of",
           "briefing",
           "recommendations",
-          "operational_signals",
           "source"
         ],
         "title": "EstateIntelligenceResponse",
@@ -1677,6 +1683,50 @@
           }
         },
         "title": "EstateProfileUpdate",
+        "type": "object"
+      },
+      "EstateRegistrationRequest": {
+        "additionalProperties": false,
+        "description": "Public onboarding for a new estate and its first HOA administrator.",
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "estate": {
+            "$ref": "#/components/schemas/EstateSignup"
+          },
+          "full_name": {
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Full Name",
+            "type": "string"
+          },
+          "password": {
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          },
+          "phoneno": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phoneno"
+          }
+        },
+        "required": [
+          "full_name",
+          "email",
+          "password",
+          "estate"
+        ],
+        "title": "EstateRegistrationRequest",
         "type": "object"
       },
       "EstateSignalItem": {
@@ -2755,22 +2805,6 @@
         "title": "MembershipJoinResponse",
         "type": "object"
       },
-      "MembershipProviderAddRequest": {
-        "additionalProperties": false,
-        "description": "An estate admin adding a registered service provider to their estate.\n\nThe email is the only input: the estate comes from ``?estate_id=`` and the\nprovider's own account and profile already exist (they registered\nthemselves). A ``user_id`` or ``provider_id`` here would let an admin bind\nthe wrong account.",
-        "properties": {
-          "email": {
-            "format": "email",
-            "title": "Email",
-            "type": "string"
-          }
-        },
-        "required": [
-          "email"
-        ],
-        "title": "MembershipProviderAddRequest",
-        "type": "object"
-      },
       "MembershipResponse": {
         "description": "One row of the admin's member list.",
         "properties": {
@@ -3764,6 +3798,144 @@
         "title": "PropertyUpdate",
         "type": "object"
       },
+      "ProviderApplicationCreateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "estate_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "full_name": {
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Full Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "phone": {
+            "maxLength": 20,
+            "minLength": 5,
+            "title": "Phone",
+            "type": "string"
+          },
+          "trade": {
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Trade",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estate_id",
+          "full_name",
+          "email",
+          "trade",
+          "phone"
+        ],
+        "title": "ProviderApplicationCreateRequest",
+        "type": "object"
+      },
+      "ProviderApplicationResponse": {
+        "properties": {
+          "application_id": {
+            "title": "Application Id",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "estate_id": {
+            "title": "Estate Id",
+            "type": "integer"
+          },
+          "estate_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estate Name"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "phone": {
+            "title": "Phone",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "trade": {
+            "title": "Trade",
+            "type": "string"
+          }
+        },
+        "required": [
+          "application_id",
+          "estate_id",
+          "full_name",
+          "email",
+          "trade",
+          "phone",
+          "status",
+          "created_at"
+        ],
+        "title": "ProviderApplicationResponse",
+        "type": "object"
+      },
       "ProviderIntelligenceView": {
         "properties": {
           "assigned_work_orders": {
@@ -3790,6 +3962,34 @@
           }
         },
         "title": "ProviderIntelligenceView",
+        "type": "object"
+      },
+      "ProviderInvitationAcceptRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "anyOf": [
+              {
+                "minLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          },
+          "token": {
+            "maxLength": 128,
+            "minLength": 32,
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "ProviderInvitationAcceptRequest",
         "type": "object"
       },
       "ProviderSignup": {
@@ -4276,7 +4476,7 @@
       },
       "ResidencyRequestCreate": {
         "additionalProperties": false,
-        "description": "A resident's request to be admitted to one unit of one estate.",
+        "description": "A resident's request to be admitted to an estate.",
         "properties": {
           "estate_id": {
             "exclusiveMinimum": 0.0,
@@ -4296,15 +4496,21 @@
             "title": "Note"
           },
           "unit_no": {
-            "maxLength": 10,
-            "minLength": 1,
-            "title": "Unit No",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 10,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit No"
           }
         },
         "required": [
-          "estate_id",
-          "unit_no"
+          "estate_id"
         ],
         "title": "ResidencyRequestCreate",
         "type": "object"
@@ -4414,14 +4620,20 @@
             "type": "string"
           },
           "unit_no": {
-            "title": "Unit No",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit No"
           }
         },
         "required": [
           "request_id",
           "estate_id",
-          "unit_no",
           "status",
           "applicant_name",
           "applicant_email",
@@ -6866,6 +7078,48 @@
         ]
       }
     },
+    "/api/v1/auth/provider-invitations/accept": {
+      "post": {
+        "description": "Create a provider account and its invited estate membership.",
+        "operationId": "identity_accept_provider_invitation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderInvitationAcceptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept Provider Invitation",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
     "/api/v1/auth/provision": {
       "post": {
         "operationId": "identity_provision_account",
@@ -7031,6 +7285,48 @@
           }
         },
         "summary": "Register",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/auth/register-estate": {
+      "post": {
+        "description": "Create a new private estate and its first HOA administrator.",
+        "operationId": "identity_register_estate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstateRegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register Estate",
         "tags": [
           "identity"
         ]
@@ -8749,65 +9045,6 @@
         ]
       }
     },
-    "/api/v1/memberships/providers": {
-      "post": {
-        "description": "Add an already-registered service provider to this estate, by email.\n\nThe service owns the one commit (membership + ``joined`` event) and answers a\nsingle uniform 404 for every email that is not a registered provider, 409\nwhen they are already a member, and 429 after five failed lookups.",
-        "operationId": "identity_add_provider_member",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "estate_id",
-            "required": true,
-            "schema": {
-              "exclusiveMinimum": 0,
-              "title": "Estate Id",
-              "type": "integer"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MembershipProviderAddRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MembershipResponse"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
-        "summary": "Add Provider Member",
-        "tags": [
-          "identity"
-        ]
-      }
-    },
     "/api/v1/memberships/{membership_id}": {
       "delete": {
         "description": "Remove a resident or provider membership of this estate.",
@@ -9497,6 +9734,233 @@
         "summary": "Get Living Score",
         "tags": [
           "property"
+        ]
+      }
+    },
+    "/api/v1/provider-applications": {
+      "get": {
+        "operationId": "identity_list_applications",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProviderApplicationResponse"
+                  },
+                  "title": "Response Identity List Applications",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Applications",
+        "tags": [
+          "identity"
+        ]
+      },
+      "post": {
+        "description": "Submit an application for HOA review; this does not create an account.",
+        "operationId": "identity_apply_to_estate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderApplicationCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderApplicationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply To Estate",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/provider-applications/{application_id}/approve": {
+      "post": {
+        "operationId": "identity_approve_application",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "title": "Application Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderApplicationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Approve Application",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/provider-applications/{application_id}/reject": {
+      "post": {
+        "operationId": "identity_reject_application",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "title": "Application Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "estate_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Estate Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderApplicationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Reject Application",
+        "tags": [
+          "identity"
         ]
       }
     },

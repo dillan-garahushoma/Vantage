@@ -35,15 +35,16 @@ class EstateRepository:
         return [row[0] for row in result.all()]
 
     @staticmethod
-    def public_statement(*, q: str | None = None) -> Select:
+    def public_statement(*, q: str | None = None, include_demo: bool = True) -> Select:
         """The estates the public directory may show, in a stable order.
 
-        Explicit publication is the visibility gate. ``is_demo`` describes the
-        origin of score data; it must not hide an estate its administrator has
-        published. Demo fixtures remain private by setting ``is_public`` false.
-        A pure function so the rule is testable without a database.
+        Explicit publication is required. The caller also excludes demonstration
+        records in operational environments, before counting or paginating.
+        Local test fixtures can opt into demo records.
         """
         stmt = select(Estate).where(Estate.is_public.is_(True))
+        if not include_demo:
+            stmt = stmt.where(Estate.is_demo.is_(False))
         if q:
             pattern = f"%{q.strip()}%"
             stmt = stmt.where(
@@ -55,19 +56,19 @@ class EstateRepository:
         return stmt.order_by(Estate.name.asc(), Estate.estate_id.asc())
 
     async def list_public(
-        self, *, offset: int, limit: int, q: str | None = None
+        self, *, offset: int, limit: int, q: str | None = None, include_demo: bool = True
     ) -> list[Estate]:
         result = await self._db.execute(
-            self.public_statement(q=q).offset(offset).limit(limit)
+            self.public_statement(q=q, include_demo=include_demo).offset(offset).limit(limit)
         )
         return list(result.scalars().all())
 
-    async def count_public(self, *, q: str | None = None) -> int:
+    async def count_public(self, *, q: str | None = None, include_demo: bool = True) -> int:
         # The public statement carries an ORDER BY for paging; a count that keeps
         # it is invalid SQL (PostgreSQL requires ordered columns in GROUP BY), so
         # it is dropped here rather than duplicated into a second statement.
         statement = (
-            self.public_statement(q=q)
+            self.public_statement(q=q, include_demo=include_demo)
             .order_by(None)
             .with_only_columns(func.count(Estate.estate_id))
         )

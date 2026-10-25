@@ -32,11 +32,23 @@ GET https://<actual-api-host>/api/v1/public/estates?page=1&page_size=6
 A healthy response is JSON with `items`, `total`, `page`, and `size`. Check:
 
 - A connection failure or CORS rejection: check `VITE_API_BASE_URL`, FastAPI availability, and `CORS_ORIGINS`.
-- `items: []` and `total: 0`: the API is reachable, but no estates qualify for public listing in that database/environment. The public query returns estates explicitly marked `is_public = true`. `is_demo` describes score-data origin and does not override publication.
+- `items: []` and `total: 0`: the API is reachable, but no estates qualify for public listing in that environment. Publication requires `is_public = true`. Production/staging also exclude `is_demo = true` from directories, profiles, photographs and estate access.
 - A small nonzero `total`: the homepage shows the first few featured published estates; **Find a complex** opens the paginated directory for the full published set.
 - Estates exist in Neon but are absent from the public endpoint: verify the target Render service is connected to the correct Neon database and that each intended estate is explicitly published. Do not change production flags or delete estate rows without first verifying the exact estate identities and publication intent.
 
-The public list is not meant to expose every database row: unpublished estates are excluded. Seeded demonstration fixtures remain private by setting `is_public = false`. A resident who chooses an estate in signup uses it as onboarding context only; the backend still validates the estate and unit and the HOA must approve the membership.
+The public list does not expose unpublished or archived sample estates. A resident's estate choice during signup is onboarding context only, and does not grant membership.
+
+## Archive the owner-confirmed dummy estates
+
+The migration `a5c7e9f1b3d5` archives Eastbank Court, Lakeside Gardens, Quarry View Flats, Silverleaf Reserve and Willowbrook Mews. The owner confirmed all five are dummy data on 25 October 2026. It saves their previous flags, marks them as demo records and removes their publication; it does not delete their operational history. Its downgrade restores the saved flags.
+
+After deploying this revision, run the normal migration release step in the backend's production environment:
+
+```sh
+python -m alembic -c alembic.ini upgrade head
+```
+
+Use the hosting service's configured environment; do not copy database credentials into a command or chat. Then verify the migration head is `a5c7e9f1b3d5`, the five profiles no longer appear in the public API and an archived estate cannot be selected by its old accounts. A new installation starts empty; create the actual estate and upload its own photographs through HOA setup. Demo seeding is refused outside development/test and requires a database explicitly named for demos.
 
 ## Smoke-check after deployment
 

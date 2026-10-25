@@ -132,7 +132,7 @@ class EstateIntelligenceResponse(BaseModel):
     as_of: datetime
     briefing: WeeklyBriefing
     recommendations: list[PriorityRecommendation]
-    operational_signals: OperationalSignalCounts
+    operational_signals: OperationalSignalCounts | None = None
     source: Literal["n8n", "live_llm", "sample_baseline", "stored_records"]
     briefing_id: int | None = None
     template_version: str = "operational-v1"
