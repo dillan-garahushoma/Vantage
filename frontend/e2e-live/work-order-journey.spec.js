@@ -24,7 +24,10 @@ test('an issue is assigned, worked, rated and recalculated end to end', async ({
     const problems = watchForErrors(page);
     const marker = `E2E-${stamp}-${testInfo.project.name}`;
     const description = `Burst pipe under the kitchen sink (${marker}) — water pooling in the passage.`;
-    const shot = (name) => page.screenshot({ path: `../docs/acceptance/${testInfo.project.name}-${name}.png` });
+    const shot = (name) => page.screenshot({ path: testInfo.outputPath(`${name}.png`) });
+    const complaintRecord = () => testInfo.project.name === 'mobile'
+        ? page.getByRole('button').filter({ hasText: marker })
+        : page.locator('tbody tr', { hasText: marker });
     /**
      * A phone must not be able to scroll sideways. This is measured on the real
      * screen with real data: a mock-API sweep cannot see an overflow caused by a
@@ -44,7 +47,7 @@ test('an issue is assigned, worked, rated and recalculated end to end', async ({
     /* ------------------------------------------------ the resident logs it */
     await switchUser(page, RESIDENT);
     await page.goto('/app/complaints');
-    await page.getByRole('button', { name: 'Log a complaint' }).click();
+    await page.locator('header').getByRole('button', { name: 'Log a complaint', exact: true }).click();
     const logForm = page.getByRole('dialog');
     await expect(logForm.getByRole('heading', { name: 'Log a complaint' })).toBeVisible();
     await logForm.getByLabel('Which unit?').selectOption({ index: 1 });
@@ -53,7 +56,7 @@ test('an issue is assigned, worked, rated and recalculated end to end', async ({
     await logForm.getByLabel('What is wrong?').fill(description);
     await logForm.getByRole('button', { name: 'Log complaint' }).click();
     await expect(logForm).toBeHidden({ timeout: 30_000 });
-    const residentRow = page.locator('tbody tr', { hasText: marker });
+    const residentRow = complaintRecord();
     await expect(residentRow).toBeVisible({ timeout: 30_000 });
     await assertNoHorizontalOverflow('the resident complaint list');
     // The list carries the reference in its first cell; the drawer's own title is
@@ -63,7 +66,7 @@ test('an issue is assigned, worked, rated and recalculated end to end', async ({
     expect(complaintId).toBeGreaterThan(0);
     await residentRow.click();
     const residentDrawer = page.getByRole('dialog');
-    await expect(residentDrawer.getByRole('heading', { name: `Complaint #${complaintId}` })).toBeVisible({ timeout: 30_000 });
+    await expect(residentDrawer.getByRole('heading', { name: `Issue details · #${complaintId}` })).toBeVisible({ timeout: 30_000 });
     // The resident's own view of the repair: honest about there being none yet.
     await expect(residentDrawer.getByText(/No work order has been raised/)).toBeVisible({
         timeout: 30_000,
@@ -73,7 +76,7 @@ test('an issue is assigned, worked, rated and recalculated end to end', async ({
     /* ------------------------------------------------- the HOA assigns it */
     await switchUser(page, ADMIN);
     await page.goto('/app/complaints');
-    const adminRow = page.locator('tbody tr', { hasText: marker });
+    const adminRow = complaintRecord();
     await expect(adminRow).toBeVisible({ timeout: 30_000 });
     await adminRow.click();
     const adminDrawer = page.getByRole('dialog');
@@ -119,7 +122,7 @@ test('an issue is assigned, worked, rated and recalculated end to end', async ({
     /* -------------------------------------------------- the resident rates it */
     await switchUser(page, RESIDENT);
     await page.goto('/app/complaints');
-    const ratedRow = page.locator('tbody tr', { hasText: marker });
+    const ratedRow = complaintRecord();
     await expect(ratedRow).toBeVisible({ timeout: 30_000 });
     await ratedRow.click();
     const ratingDrawer = page.getByRole('dialog');
@@ -138,7 +141,7 @@ test('an issue is assigned, worked, rated and recalculated end to end', async ({
     await switchUser(page, ADMIN);
     await page.goto('/app');
     const panel = livingScorePanel(page);
-    await expect(panel.getByRole('heading', { name: 'Estate quality of life' })).toBeVisible();
+    await expect(panel.getByText('Estate health', { exact: true })).toBeVisible();
     // The stored score is calculated by the engine; no seeded-data label is
     // presented as part of the live operational UI.
     await expect(panel.getByText('Demo data')).toHaveCount(0);
@@ -149,15 +152,12 @@ test('an issue is assigned, worked, rated and recalculated end to end', async ({
     // re-reads the stored one. No client-side arithmetic is involved at any point.
     const recalculated = page.waitForResponse((response) => response.url().includes('/api/v1/analytics/living-score/recalculate') &&
         response.request().method() === 'POST', { timeout: 60_000 });
-    await panel.getByRole('button', { name: /Recalculate now/ }).click();
-    expect((await recalculated).status()).toBe(201);
-    const asOfToday = new Date().toLocaleDateString('en-ZA', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        timeZone: 'Africa/Johannesburg',
-    });
-    await expect(panel.getByText(asOfToday).first()).toBeVisible({ timeout: 60_000 });
+    await panel.getByRole('button', { name: /^Recalculate$/ }).click();
+    const recalculationResponse = await recalculated;
+    expect(recalculationResponse.status()).toBe(201);
+    const stored = await recalculationResponse.json();
+    await expect(panel.getByText(Number(stored.overall_score).toLocaleString('en-ZA', { maximumFractionDigits: 1 }), { exact: true })).toBeVisible({ timeout: 60_000 });
+    await expect(panel.getByText(/^Updated /)).toBeVisible();
     await expect(panel.getByText(/\/ 100/).first()).toBeVisible();
     await shot('06-dashboard-after-recalculation');
     expect(problems).toEqual([]);

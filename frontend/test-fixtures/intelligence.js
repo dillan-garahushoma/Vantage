@@ -1,4 +1,4 @@
-// Fictional UI test fixtures only; never imported by production routes.
+// Controlled fictional fixtures for tests only. Never import from runtime source.
 export const weeklyBriefing = {
     headline: 'Three issues deserve attention this week.',
     body: 'Acting on two of them could prevent an estimated R86,000 in reactive maintenance.',

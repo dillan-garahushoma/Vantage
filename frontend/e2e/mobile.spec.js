@@ -460,7 +460,7 @@ async function overflowing(page) {
     });
 }
 async function measure(page, path, options = {}) {
-    await mockApi(page, options);
+    await mockApi(page, path === '/provider/work' ? { ...options, role: 'service_provider' } : options);
     await page.setViewportSize(VIEWPORT);
     await page.goto(path);
     // Settle: data loads are mocked, so this is about layout, not waiting on I/O.
@@ -470,11 +470,11 @@ async function measure(page, path, options = {}) {
     // Measuring a 404 proves only that the 404 has no overflow. The route under
     // test must render its own expected landmark first.
     const expectedHeadings = {
-        '/': /understand how your complex is being cared for/i,
+        '/': /see how your estate is cared for/i,
         '/estates': /find a complex/i,
-        '/estates/1': /ridge close estate/i,
-        '/estates/2': /ridge close estate/i,
-        '/estates/3': /ridge close estate/i,
+        '/estates/1': /^ridge close estate$/i,
+        '/estates/2': /^ridge close estate$/i,
+        '/estates/3': /^ridge close estate$/i,
         '/provider/work': /my work/i,
     };
     if (expectedHeadings[path]) {

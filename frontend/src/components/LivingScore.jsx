@@ -13,7 +13,7 @@ import { IconSparkle } from './Icons';
 export const LIVING_SCORE_FACTORS = [
     { key: 'resolution', label: 'Complaint resolution time', weight: 0.3, signal: 'How fast issues reach closed' },
     { key: 'frequency', label: 'Complaint frequency', weight: 0.25, signal: 'Issues logged per unit' },
-    { key: 'security', label: 'Security incidents', weight: 0.2, signal: 'Incidents normalised by estate size' },
+    { key: 'security', label: 'Security incidents', weight: 0.2, signal: 'Recorded incidents in the scoring window' },
     { key: 'satisfaction', label: 'Resident satisfaction', weight: 0.15, signal: 'Ratings on completed work orders' },
     { key: 'infrastructure', label: 'Infrastructure maintenance', weight: 0.1, signal: 'Resolved vs open work orders' },
 ];
@@ -43,7 +43,7 @@ export function LivingScoreDial({ score, size = 168 }) {
 function EmptyDial() {
     return (<div className="survey-grid flex h-[138px] w-[168px] shrink-0 items-center justify-center border border-dashed border-ink/25">
       <div className="text-center">
-        <span className="num block text-[34px] leading-none font-semibold text-ink-muted">——</span>
+        <span className="block text-sm font-semibold text-ink-muted">Not scored</span>
         <span className="num mt-1 block text-[11px] text-ink-muted">/ 100</span>
       </div>
     </div>);

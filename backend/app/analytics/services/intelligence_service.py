@@ -221,8 +221,8 @@ class IntelligenceService:
                 pending_count=pending_count,
                 urgent_count=urgent_count,
                 instructions=(
-                    "Contractor site access: Standard hours 08:00 - 17:00 weekdays. "
-                    "Check in with security gate. Quote active work order ID on entry."
+                    "Contractor site access instructions are not recorded. "
+                    "Confirm arrangements with the estate team before attending."
                 ),
             )
             briefing = WeeklyBriefing(
@@ -259,9 +259,9 @@ class IntelligenceService:
         latest_score = facts.get('latest_score')
         score_val = latest_score.get('overall_score') if latest_score else None
         score_summary = (
-            f"Estate Living Score is {score_val}/100. Infrastructure and community services are performing well."
+            f"Stored estate Living Score is {score_val}/100. Review Estate Health for its supporting evidence."
             if score_val is not None else
-            "Estate Living Score calibration is in progress from ongoing operational records."
+            "No numeric estate Living Score is currently available."
         )
         score_label = (
             "Optimal"
@@ -274,11 +274,7 @@ class IntelligenceService:
             unit_issues=[ResidentUnitIssue(**u) for u in unit_issues],
             living_score_label=score_label,
             living_score_summary=score_summary,
-            community_notices=[
-                "Quiet hours: 22:00 - 06:00 daily.",
-                "Refuse collection scheduled every Tuesday morning.",
-                "Visitor access codes can be generated via the Resident portal.",
-            ],
+            community_notices=[],
         )
         briefing = WeeklyBriefing(
             headline=f"Resident Health Overview · {estate.name}",
@@ -378,7 +374,7 @@ class IntelligenceService:
                 f"Living Score: {score_val if score_val is not None else 'Calibrating'}/100\n"
                 f"Resident logged requests ({len(unit_issues)}): "
                 + (", ".join(f"#{u['id']} {u['title']} (status: {u['status']})" for u in unit_issues[:5]) if unit_issues else "None")
-                + "\nEstate Rules: Quiet hours 22:00-06:00, refuse collection Tuesday morning.\n"
+                + "\nEstate rules are not recorded in this context. Do not infer quiet hours, refuse days or visitor procedures.\n"
             )
             system_prompt = (
                 "You are VALORA, an intelligent residential assistant for private estate living in South Africa. "
@@ -392,7 +388,7 @@ class IntelligenceService:
                 f"User Role: Service Provider (User #{actor.user_id})\n"
                 f"Assigned Work Orders ({len(wo_signals)}): "
                 + (", ".join(f"#{w['id']} {w['title']} (priority: {w['priority']}, status: {w['status']})" for w in wo_signals[:5]) if wo_signals else "None")
-                + "\nContractor site rules: Access hours 08:00 - 17:00 weekdays. Quote work order ID at security gate."
+                + "\nContractor site rules are not recorded in this context. Confirm access arrangements with the estate team."
             )
             system_prompt = (
                 "You are VALORA, an operations assistant for service contractors on private estates. "

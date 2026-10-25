@@ -19,7 +19,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ValoraChatProvider } from '../context/ValoraChatContext';
-import { priorityRecommendations, weeklyBriefing } from './intelligenceFixtures';
+import { priorityRecommendations, weeklyBriefing } from '../../test-fixtures/intelligence';
 
 const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), streamAskValora: vi.fn() }));
 
@@ -182,6 +182,12 @@ function renderPage() {
     );
 }
 describe('VALORA Intelligence', () => {
+    it('keeps the assistant available when the independent briefing request fails', async () => {
+        mocks.get.mockRejectedValue(new Error('Briefing temporarily unavailable'));
+        renderPage();
+        expect(await screen.findByText('Intelligence unavailable')).toBeVisible();
+        expect(screen.getByRole('textbox', { name: 'Ask VALORA a question' })).toBeEnabled();
+    });
     it('uses server counts beyond the first page and can save a current briefing', async () => {
         const user = userEvent.setup();
         renderPage();
@@ -276,7 +282,9 @@ describe('VALORA Intelligence', () => {
         await user.click(await screen.findByRole('button', {
             name: 'What is the operational risk summary for this week?',
         }));
-        // The Ask VALORA spotlight modal opens.
+        // Responses stay inline beside their estate context; expanding is optional.
+        expect(screen.queryByRole('dialog', { name: 'Ask VALORA Intelligence' })).not.toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: 'Expand chat' }));
         expect(await screen.findByRole('dialog', { name: 'Ask VALORA Intelligence' })).toBeVisible();
         // The user's own question appears as a message bubble.
         const userBubbles = await screen.findAllByText('What is the operational risk summary for this week?');

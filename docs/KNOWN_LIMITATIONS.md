@@ -8,17 +8,17 @@ things that are not built.
 
 ## Accounts and access
 
-1. **No email of any kind.** There is no address verification, no invitation
-   email, no "forgot password" email, and no notification email. A resident who
-   self-registers can use the account immediately (their address is unverified),
-   and a locked-out account is recovered by an operator running
-   `backend/scripts/reset_password.py --email … --apply`, which prints a new
-   password once. That is the interim: a real deployment needs a transactional
-   email provider before it can call itself self-service.
+1. **Production email delivery is not verified.** SMTP support, provider invitation
+   emails and account recovery are implemented. Local email delivery defaults to
+   disabled. Production must configure and verify its SMTP relay, sender and public
+   frontend URL before relying on invitations or password recovery. Resident email
+   verification is not implemented; estate membership still requires HOA approval
+   or a valid estate join code.
 2. **Public registration creates residents only.** An estate administrator
    account creates a new estate; a service provider account cannot join an estate
-   by itself — an HOA administrator adds a provider by email, and only a provider
-   who already has a linked provider profile can be added.
+   by itself. A provider can apply to a published estate, then its HOA reviews the
+   application and sends an account-setup invitation. Invitation delivery requires
+   working SMTP. Existing providers can also be linked by the HOA.
 3. **An HOA administrator cannot change a member's unit or role, or add a
    resident by email.** The API has no endpoint for any of those, so the members
    screen says so rather than offering a dead end. Moving a resident between units
@@ -29,10 +29,11 @@ things that are not built.
 
 ## Deployment and operations
 
-5. **No HTTPS and no hosting story.** `docker compose` is a local development and
-   demonstration stack: plain HTTP, one API process, one Postgres, one static
-   frontend. Nothing here has been hardened for the public internet, and there is
-   no TLS anywhere in the repository.
+5. **Production hosting needs an operational acceptance check.** The static frontend
+   and API run separately; configure their public HTTPS origins, CORS and database
+   connection as described in `DEPLOYMENT-VALORA-FRONTEND-API.md`. Local execution
+   uses native PostgreSQL, FastAPI and Vite; Docker is optional. Passing local tests
+   does not verify a deployed host's TLS, environment or persistent storage.
 6. **No automated backups, no monitoring, no log aggregation.** The pilot runbook
    documents a backup procedure; it has never been run against a real database
    (it says so itself).
@@ -71,7 +72,7 @@ things that are not built.
 
 13. **No linter and no accessibility tooling in CI.** The repository runs
     `compileall` and a targeted `flake8` (`E9,F63,F7,F82`) over the backend, and
-    the frontend has a typecheck, unit tests and Playwright specs — but there is
+    the JavaScript frontend has unit/contract tests and Playwright specs — but there is
     no ESLint, no style formatter, and no axe/Lighthouse pass. Accessibility is a
     design intent in the components (real labels, focus management, aria
     attributes, contrast-checked tokens), not a measured property of the app.

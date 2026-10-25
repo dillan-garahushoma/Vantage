@@ -16,6 +16,7 @@ seeder's guard) and "test" (the harness's guard).
 from __future__ import annotations
 
 import os
+from datetime import timedelta
 
 import pytest
 import pytest_asyncio
@@ -278,7 +279,8 @@ async def test_the_estate_is_backdated_and_scores_are_real_snapshots(seeded) -> 
     assert [snapshot.as_of for snapshot in snapshots] == sorted(
         snapshot.as_of for snapshot in snapshots
     )
-    assert (now - snapshots[-1].as_of).total_seconds() < 3600
+    # Compare to the seeder's anchor, not a clock that may cross an hour boundary.
+    assert snapshots[-1].as_of == estate.created_at + timedelta(days=DEMO_HISTORY_DAYS)
     assert snapshots[-1].status == "scored"
     assert summary["scores"][-1]["engine_version"] == "1.0.0"
 

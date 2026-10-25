@@ -76,8 +76,12 @@ async def current_database_name(db: AsyncSession) -> str:
     return str(result.scalar_one())
 
 
-def validate_seed_target(database_name: str, *, expect_database: str) -> None:
+def validate_seed_target(
+    database_name: str, *, expect_database: str, environment: str = "development"
+) -> None:
     """Refuse anything but the named, demo/dev database. Nothing is written."""
+    if environment not in ("development", "test"):
+        raise SeedGuardError("Demo seeding is allowed only in development or test. Nothing was seeded.")
     if database_name != expect_database:
         raise SeedGuardError(
             f"--expect-database {expect_database!r} does not match the connected "
@@ -90,7 +94,7 @@ def validate_seed_target(database_name: str, *, expect_database: str) -> None:
             f"The connected database {database_name!r} is not a demo database "
             "(its name must contain 'demo'). Nothing was seeded."
         )
-    if "demo" not in db_lower and database_name not in ("valora_db", "neondb"):
+    if "demo" not in db_lower:
         raise SeedGuardError(
             f"The connected database {database_name!r} is not a demo database "
             "(its name must contain 'demo'). Nothing was seeded."
@@ -494,8 +498,10 @@ async def seed_demo(
     image_dir: str | Path | None = None,
 ) -> dict[str, object]:
     """Provision all five fictional South African demo complexes."""
+    from app.core.config import get_settings
+
     target = await current_database_name(db)
-    validate_seed_target(target, expect_database=expect_database)
+    validate_seed_target(target, expect_database=expect_database, environment=get_settings().ENVIRONMENT)
 
     # Check if any complex already exists
     existing = await db.execute(

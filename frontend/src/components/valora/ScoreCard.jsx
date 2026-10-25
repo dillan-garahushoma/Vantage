@@ -23,8 +23,7 @@ export function ScoreCard({ value, label = 'Living Score', status, change, perio
               {label}
             </p>
             {empty ? (<p className="num mt-3 font-heading text-[2.1rem] leading-none font-extrabold tracking-[-0.03em] text-ink-muted">
-                ——
-                <span className="ml-1 text-[1.1rem] font-bold text-ink/25">/100</span>
+                <span className="text-base">{emptyLabel}</span>
               </p>) : (<p className="num mt-3 font-heading text-[3.2rem] leading-none font-extrabold tracking-[-0.04em] text-ink">
                 {value}
                 <span className="ml-1 text-[1.25rem] font-bold text-ink/30">/100</span>

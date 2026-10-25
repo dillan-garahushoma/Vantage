@@ -34,7 +34,7 @@ export function TopBar({ onOpenNav, onCreateWorkOrder, onLogComplaint }) {
         : [];
     const quickAction = user?.role === 'hoa_admin' && onCreateWorkOrder
         ? { label: 'Create work order', onClick: onCreateWorkOrder }
-        : user?.role === 'resident' && onLogComplaint
+        : user?.role === 'resident' && pathname !== '/app' && onLogComplaint
             ? { label: 'Log a complaint', onClick: onLogComplaint }
             : null;
 
@@ -81,9 +81,11 @@ export function TopBar({ onOpenNav, onCreateWorkOrder, onLogComplaint }) {
                     <button
                       key={item.to}
                       type="button"
-                      onMouseDown={() => {
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
                         navigate(item.to);
                         setQuery('');
+                        setFocused(false);
                       }}
                       className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[0.85rem] font-medium text-ink/75 transition-colors duration-150 hover:bg-canvas hover:text-brand-ink"
                     >

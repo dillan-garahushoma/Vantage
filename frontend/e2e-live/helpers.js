@@ -8,9 +8,9 @@ import { expect } from '@playwright/test';
  * owns two units in the same estate is `resident01` — the ADR-007 rule that a
  * resident may hold more than one unit.
  */
-export const ADMIN = { email: 'admin@example.com', password: 'ValoraDemo123!' };
-export const RESIDENT = { email: 'resident01@example.com', password: 'ValoraDemo123!' };
-export const PROVIDER = { email: 'provider01@example.com', password: 'ValoraDemo123!' };
+export const ADMIN = { email: process.env.E2E_ADMIN_EMAIL ?? 'hoa.silverleaf@example.com', password: process.env.E2E_PASSWORD ?? '' };
+export const RESIDENT = { email: process.env.E2E_RESIDENT_EMAIL ?? 'resident.sr01@example.com', password: process.env.E2E_PASSWORD ?? '' };
+export const PROVIDER = { email: process.env.E2E_PROVIDER_EMAIL ?? 'provider.sr01@example.com', password: process.env.E2E_PASSWORD ?? '' };
 /**
  * Signs in through the real form. Where the account *lands* is the role routing's
  * decision (an HOA administrator goes to the setup checklist, a resident without
@@ -18,11 +18,12 @@ export const PROVIDER = { email: 'provider01@example.com', password: 'ValoraDemo
  * this waits for any of those destinations rather than a single one.
  */
 export async function signIn(page, who) {
+    if (!who.password) throw new Error('Set E2E_PASSWORD for the isolated demo database before running live browser tests.');
     await page.goto('/login');
     await page.getByLabel('Email address').fill(who.email);
     await page.getByLabel('Password').fill(who.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
-    await expect(page).toHaveURL(/\/(welcome|app|admin\/setup|join|provider\/waiting)$/, { timeout: 30_000 });
+    await expect(page).toHaveURL(/\/(welcome|app|admin\/setup|join|provider\/(waiting|work))$/, { timeout: 30_000 });
 }
 /** Signs in and opens the estate dashboard, wherever the routing landed first. */
 export async function signInToDashboard(page, who) {
@@ -89,9 +90,7 @@ export function briefPanel(page) {
 }
 /** The dashboard's Living Score card, addressed by its own heading. */
 export function livingScorePanel(page) {
-    return page.locator('section', {
-        has: page.getByRole('heading', { name: 'Estate quality of life' }),
-    });
+    return page.locator('section[aria-labelledby="estate-health-summary"]');
 }
 /**
  * Opens a complaint the HOA can actually ask the AI layer about.

@@ -83,4 +83,4 @@ jobs:
       run: npm run build
     - name: Run frontend unit tests
       working-directory: frontend
-      run: npx vitest run
+      run: npm test

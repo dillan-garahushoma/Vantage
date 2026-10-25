@@ -115,14 +115,12 @@ test.describe('Resident approval flow', () => {
         await expect(page.getByRole('heading', { name: /ask to join your estate/i })).toBeVisible();
         await expect(page.getByText(/you will not have access until they approve it/i)).toBeVisible();
         await page.getByRole('button', { name: /zambezi country estate/i }).click();
-        await page.getByLabel(/unit number/i).fill('A-101');
         await page.getByLabel(/note to the estate office/i).fill('Lease starts 1 Nov');
         await page.getByRole('button', { name: /send request for approval/i }).click();
         const submit = calls.find((call) => call.pathname === '/api/v1/residency-requests' && call.method === 'POST');
         expect(submit, 'the request was posted').toBeTruthy();
         expect(JSON.parse(submit.body ?? '{}')).toEqual({
             estate_id: 4,
-            unit_no: 'A-101',
             note: 'Lease starts 1 Nov',
         });
         await expect(page.getByText(/request sent to zambezi country estate/i)).toBeVisible();

@@ -155,12 +155,13 @@ describe('ProviderWork — transitions', () => {
         expect(screen.getByText(/closed on the estate’s record/i)).toBeVisible();
         expect(screen.queryByRole('button', { name: /start this work|mark as completed/i })).toBeNull();
     });
-    it('filters by status in the browser and can clear the filter', async () => {
-        mocks.mine.mockResolvedValue(pageOf([order()]));
+    it('filters on the server before pagination and can clear the filter', async () => {
+        mocks.mine.mockImplementation(async (_estateId, params) => pageOf(params.status ? [] : [order()]));
         const user = userEvent.setup();
         renderWork();
         await screen.findByText('WO-0042');
         await user.selectOptions(screen.getByLabelText('Status'), 'completed');
+        await waitFor(() => expect(mocks.mine).toHaveBeenLastCalledWith(1, { page: 1, size: 20, status: 'completed' }));
         expect(await screen.findByText('No job with that status')).toBeVisible();
         await user.click(screen.getByRole('button', { name: /clear the filter/i }));
         await waitFor(() => expect(screen.getByText('WO-0042')).toBeVisible());

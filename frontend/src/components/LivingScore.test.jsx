@@ -128,7 +128,7 @@ describe('LivingScorePanel — no score yet', () => {
         expect(screen.getByText('Not enough data yet')).toBeVisible();
         expect(screen.getByText(/has not been scored yet/i)).toBeVisible();
         expect(screen.queryByText('0')).toBeNull();
-        expect(screen.getByText('——')).toBeVisible();
+        expect(screen.getByText('Not scored')).toBeVisible();
     });
     it('shows the published weights so the panel is useful while it waits', () => {
         renderPanel({

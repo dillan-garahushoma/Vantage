@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { AuthShell } from '../components/AuthShell';
+import { AuthShell, SignedInAccountActions } from '../components/AuthShell';
 import { Button, ErrorState, Field, Input } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../lib/api';
@@ -13,6 +13,7 @@ export function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [switchingAccount, setSwitchingAccount] = useState(false);
   const from = location.state?.from;
 
   async function submit(event) {
@@ -29,7 +30,7 @@ export function Login() {
     }
   }
 
-  if (user) {
+  if (user && !switchingAccount) {
     return (
       <AuthShell
         eyebrow="Your VALORA session"
@@ -37,24 +38,13 @@ export function Login() {
         intro="Continue to your workspace, or sign out first if you need to use a different account."
         cardTitle="Current account"
       >
-        <div className="space-y-4">
-          <div className="border-l-2 border-accent bg-canvas px-4 py-3">
-            <p className="font-medium text-ink">{user.full_name}</p>
-            <p className="mt-1 text-sm text-ink-muted">{user.email}</p>
-            <p className="mt-2 text-xs text-ink-muted">Your role and estate access come from approved membership.</p>
-          </div>
-          <Button type="button" variant="primary" className="w-full" onClick={() => navigate(from ?? '/welcome', { replace: true })}>
-            Continue to VALORA
-          </Button>
-          <Button type="button" variant="secondary" className="w-full" onClick={() => {
+        <SignedInAccountActions user={user} continueTo={from ?? '/welcome'} onSwitch={() => {
             logout();
+            setSwitchingAccount(true);
             setEmail('');
             setPassword('');
             setError(null);
-          }}>
-            Sign out and use another account
-          </Button>
-        </div>
+          }} />
       </AuthShell>
     );
   }
@@ -63,13 +53,7 @@ export function Login() {
     <AuthShell
       eyebrow="Estate access"
       title="Welcome back."
-      intro="Sign in to access the estates you belong to. Your workspace and permissions follow your approved estate membership."
-      points={[
-        ['Estate-scoped', 'A supplied estate identifier is never proof of access.'],
-        ['Roles from membership', 'HOA and provider capabilities require matching estate membership.'],
-        ['Secure access', 'Repeated failed attempts are rate-limited per account.'],
-      ]}
-      cardTitle="Sign in"
+      intro="Sign in to continue to your estate."
       footer={<p className="mt-5 text-[13px] text-ink-muted">
         Need an account?{' '}
         <Link to="/register" className="font-medium text-accent-ink hover:underline">Create an account</Link>.

@@ -92,6 +92,14 @@ describe('registrationPayload', () => {
 });
 
 describe('Register — role paths and safe permissions', () => {
+  it('requires an HOA manager to choose the province instead of assuming a location', async () => {
+    const user = userEvent.setup();
+    renderRegister();
+    await user.click(screen.getByRole('radio', { name: 'HOA / estate manager', exact: true }));
+    expect(screen.getByRole('combobox', { name: /^Province/ })).toHaveValue('');
+    await user.click(screen.getByRole('button', { name: 'Create estate and HOA account' }));
+    expect(screen.getByText('Choose a province.')).toBeVisible();
+  });
   it('shows resident, HOA manager and service provider account paths', () => {
     renderRegister();
     expect(screen.getByRole('radio', { name: /^resident/i })).toBeChecked();
@@ -121,6 +129,7 @@ describe('Register — role paths and safe permissions', () => {
     await user.type(screen.getByRole('textbox', { name: /estate name/i }), 'Ridge Close');
     await user.type(screen.getByRole('textbox', { name: /suburb/i }), 'Centurion');
     await user.type(screen.getByRole('textbox', { name: /city/i }), 'Tshwane');
+    await user.selectOptions(screen.getByRole('combobox', { name: /^Province/ }), 'Gauteng');
     await user.click(screen.getByRole('button', { name: /create estate and hoa account/i }));
 
     expect(mocks.registerEstate).toHaveBeenCalledWith({

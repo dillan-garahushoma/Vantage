@@ -19,7 +19,7 @@ const VALUE_CHAIN = [
   {
     step: '02',
     title: 'The HOA resolves it, visibly',
-    body: 'Complaints move through a fixed lifecycle — logged, reviewed, assigned, in progress, resolved, rated. Every transition is retained as evidence, so responsiveness is provable rather than claimed.',
+    body: 'Complaints move through a fixed lifecycle: logged, reviewed, assigned, in progress, resolved, rated. Every transition is retained as evidence, so responsiveness is provable rather than claimed.',
   },
   {
     step: '03',
@@ -92,7 +92,7 @@ function FeaturedEstates() {
               Find your residential complex
             </h2>
             <p className="mt-2 max-w-xl text-[14.5px] text-ink-soft">
-              Verified South African residential estates with auditable operational records and published Living Scores.
+              South African residential estates with profiles published by their administrators. Living Scores appear when the estate chooses to share them.
             </p>
           </div>
 
@@ -224,7 +224,7 @@ function FeaturedEstates() {
                           View complex overview <IconArrowRight size={15} />
                         </span>
                         <span className="rounded-full bg-ink/5 px-3 py-1 text-[12px] font-medium text-ink-soft">
-                          HOA Verified
+                          Published profile
                         </span>
                       </div>
                     </div>
@@ -373,27 +373,27 @@ export function Landing() {
             </h1>
 
             <p className="mt-5 max-w-[660px] text-[16px] leading-relaxed text-white/90 sm:text-[18px]">
-              VALORA turns maintenance complaints, resolution times, contractor performance and resident feedback into one accountable operational record—so estate teams and residents see what needs attention and what has changed.
+              VALORA turns maintenance complaints, resolution times, contractor performance and resident feedback into one accountable operational record. Estate teams and residents can see what needs attention and what has changed.
             </p>
 
             <form onSubmit={handleHeroSearch} className="mt-8 flex max-w-[580px] items-center gap-2 rounded-full border border-ink/20 bg-paper p-1.5 shadow-sm transition-all focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30">
-              <div className="flex flex-1 items-center gap-2.5 pl-3">
-                <IconSearch size={17} className="text-ink-muted" />
+              <div className="flex min-w-0 flex-1 items-center gap-2.5 pl-3">
+                <IconSearch size={17} className="shrink-0 text-ink-muted" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search estates by name or location..."
+                  placeholder="Estate name or location"
                   aria-label="Search estates by name or location"
-                  className="w-full bg-transparent py-2 text-[15px] text-ink placeholder:text-ink-muted/70 focus:outline-none sm:text-[16px]"
+                  className="min-w-0 w-full border-0 bg-transparent py-2 text-[15px] text-ink placeholder:text-ink-muted/70 focus:outline-none sm:text-[16px]"
                 />
               </div>
               <button
                 type="submit"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-accent px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:px-5"
                 aria-label="Search complexes"
               >
-                Find a complex <IconArrowRight size={16} />
+                Search <IconArrowRight size={16} className="hidden shrink-0 sm:block" />
               </button>
             </form>
 
@@ -471,7 +471,7 @@ export function Landing() {
             {
               role: 'Residents',
               tagline: 'Report an issue and watch it move.',
-              body: 'Log a maintenance request once. Track it through review, assignment, repair and resident rating — all from one screen.',
+              body: 'Log a maintenance request once. Track it through review, assignment, repair and resident rating from one screen.',
               cta: 'Get started as a resident',
               to: '/register',
               primary: true,
@@ -479,7 +479,7 @@ export function Landing() {
             {
               role: 'HOA Administrators',
               tagline: 'One command view for everything.',
-              body: 'Complaints, work orders, contractors, announcements and estate health — all managed inside one estate-scoped workspace.',
+              body: 'Manage complaints, work orders, contractors, announcements and estate health inside one estate-scoped workspace.',
               cta: 'Contact your estate admin',
               to: '/contact',
               primary: false,
@@ -568,13 +568,13 @@ export function Landing() {
       <section className="bg-ink text-paper">
         <div className="mx-auto max-w-[1200px] px-5 py-16">
           <Keyline className="opacity-40" />
-          <h2 className="mt-6 max-w-2xl text-[28px] leading-tight font-semibold sm:text-[34px]">
+          <h2 className="mt-6 max-w-2xl text-[28px] leading-tight font-semibold text-paper sm:text-[34px]">
             Ready to see your estate's real operational data?
           </h2>
           <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-paper/75">
-            Public registration always creates a resident — privileged estate roles are granted
-            through an existing membership, never self-selected. If your estate has not been
-            provisioned yet, your account will show that it is awaiting approval.
+            Create a resident account to request access, set up the estate you manage,
+            or apply to work at an estate as a service provider. Each workspace follows
+            your approved estate access.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <LinkButton to="/register" variant="primary" className="px-6 py-2.5">

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Activity, Award, Heart, MapPin, Share2, ShieldCheck, Trees } from 'lucide-react';
+import { Award, Building2, Heart, MapPin, Share2, ShieldCheck } from 'lucide-react';
 import { Keyline } from '../components/Brand';
 import { PublicShell } from '../components/PublicShell';
 import { PhotoGallery } from '../components/PhotoGallery';
@@ -328,15 +328,15 @@ function DetailBody({ estateId }) {
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-[15.5px] font-semibold text-ink">
-                    Managed by {detail.name} HOA
+                    Estate record
                   </h3>
                   <span className="inline-flex items-center gap-1 rounded-full bg-accent-wash px-2 py-0.5 text-[11px] font-medium text-accent-ink border border-accent-ink/20">
-                    <ShieldCheck size={12} className="text-accent-ink" />
-                    Operational Oversight
+                    <IconCheck size={12} className="text-accent-ink" />
+                    Published profile
                   </span>
                 </div>
                 <p className="mt-0.5 text-[13px] text-ink-muted">
-                  {detail.unit_count} residential units · Homeowners Association Administration
+                  {detail.unit_count} registered residential units
                 </p>
               </div>
             </div>
@@ -354,19 +354,19 @@ function DetailBody({ estateId }) {
                   <div>
                     <h3 className="text-[13.5px] font-semibold text-ink">{detail.suburb}, {detail.city}</h3>
                     <p className="mt-0.5 text-[12px] text-ink-muted leading-relaxed">
-                      Secure residential estate in {detail.province} with defined geographic bounds.
+                      Published location in {detail.province}.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ink/5 text-accent-ink">
-                    <ShieldCheck size={18} />
+                    <Building2 size={18} />
                   </div>
                   <div>
-                    <h3 className="text-[13.5px] font-semibold text-ink">Monitored Estate Security</h3>
+                    <h3 className="text-[13.5px] font-semibold text-ink">Registered homes</h3>
                     <p className="mt-0.5 text-[12px] text-ink-muted leading-relaxed">
-                      24/7 controlled resident access, gated entry, and verified visitor logging.
+                      {detail.unit_count} residential units recorded by the estate administrator.
                     </p>
                   </div>
                 </div>
@@ -377,24 +377,24 @@ function DetailBody({ estateId }) {
                   </div>
                   <div>
                     <h3 className="text-[13.5px] font-semibold text-ink">
-                      {detail.living_score ? `Living Score ${Number(detail.living_score.overall_score).toFixed(1)} / 100` : 'Operational Governance'}
+                      {detail.living_score?.overall_score != null ? `Living Score ${Number(detail.living_score.overall_score).toFixed(1)} / 100` : 'No published score'}
                     </h3>
                     <p className="mt-0.5 text-[12px] text-ink-muted leading-relaxed">
-                      {detail.living_score
+                      {detail.living_score?.overall_score != null
                         ? `Operational performance evaluated by VALORA engine (${displayLabel(detail.living_score.status)}).`
-                        : 'Active estate administration and operational health monitoring.'}
+                        : 'A score appears when the estate publishes a measured result.'}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ink/5 text-accent-ink">
-                    <Trees size={18} />
+                    <IconImages size={18} />
                   </div>
                   <div>
-                    <h3 className="text-[13.5px] font-semibold text-ink">Communal Living & Property</h3>
+                    <h3 className="text-[13.5px] font-semibold text-ink">Published photographs</h3>
                     <p className="mt-0.5 text-[12px] text-ink-muted leading-relaxed">
-                      {detail.unit_count} individual residential units sharing communal infrastructure.
+                      {photos.length} {photos.length === 1 ? 'photograph' : 'photographs'} uploaded by the estate.
                     </p>
                   </div>
                 </div>
@@ -450,7 +450,7 @@ function DetailBody({ estateId }) {
                   <p className="num text-[11px] font-semibold tracking-wider text-accent-ink uppercase">
                     Resident Portal
                   </p>
-                  <h2 className="mt-1 text-[17px] font-semibold text-ink">Verified Estate Membership</h2>
+                  <h2 className="mt-1 text-[17px] font-semibold text-ink">Estate membership</h2>
                 </div>
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-wash text-accent-ink">
                   <ShieldCheck size={18} />
@@ -461,7 +461,7 @@ function DetailBody({ estateId }) {
               <div className="mt-3.5 flex items-start gap-2 rounded-lg bg-accent-wash/60 p-3 text-[12px] text-ink-soft border border-accent-ink/15">
                 <IconCheck size={14} className="mt-0.5 shrink-0 text-accent-ink" />
                 <span className="leading-snug">
-                  Requests reviewed by HOA office · Instant access with official unit code
+                  Requests reviewed by the HOA office · Join codes issued by the estate
                 </span>
               </div>
 

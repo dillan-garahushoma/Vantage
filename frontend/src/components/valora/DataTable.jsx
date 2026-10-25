@@ -79,16 +79,21 @@ export function DataTable({ columns, rows, rowKey, searchKeys = [], searchPlaceh
             <table className="w-full min-w-[720px] border-separate border-spacing-0">
               <thead>
                 <tr>
-                  {columns.map((column) => (<th key={column.key} scope="col" style={column.width ? { width: column.width } : undefined} className={cn('border-b border-line px-4 py-3 text-left text-[0.7rem] font-semibold tracking-[0.1em] text-ink/45 uppercase', column.align === 'right' && 'text-right', column.sortable && 'cursor-pointer select-none hover:text-brand-ink')} onClick={column.sortable ? () => toggleSort(column.key) : undefined}>
-                      <span className={cn('inline-flex items-center gap-1.5', column.align === 'right' && 'flex-row-reverse')}>
+                  {columns.map((column) => (<th key={column.key} scope="col" aria-sort={sort?.key === column.key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined} style={column.width ? { width: column.width } : undefined} className={cn('border-b border-line px-4 py-3 text-left text-[0.7rem] font-semibold tracking-[0.1em] text-ink/45 uppercase', column.align === 'right' && 'text-right', column.sortable && 'select-none hover:text-brand-ink')}>
+                      {column.sortable ? <button type="button" aria-label={`Sort by ${column.header}`} onClick={() => toggleSort(column.key)} className={cn('inline-flex cursor-pointer items-center gap-1.5 text-inherit uppercase', column.align === 'right' && 'flex-row-reverse')}>
                         {column.header}
                         {column.sortable ? (sort?.key === column.key ? (sort.dir === 'asc' ? (<ArrowUp className="h-3 w-3"/>) : (<ArrowDown className="h-3 w-3"/>)) : (<ChevronsUpDown className="h-3 w-3 opacity-40"/>)) : null}
-                      </span>
+                      </button> : <span>{column.header}</span>}
                     </th>))}
                 </tr>
               </thead>
               <tbody>
-                {processed.map((row) => (<tr key={rowKey(row)} className={cn('transition-colors duration-150', onRowClick && 'cursor-pointer hover:bg-canvas/70')} onClick={onRowClick ? () => onRowClick(row) : undefined}>
+                {processed.map((row) => (<tr key={rowKey(row)} tabIndex={onRowClick ? 0 : undefined} onKeyDown={onRowClick ? (event) => {
+                    if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+                        event.preventDefault();
+                        onRowClick(row);
+                    }
+                } : undefined} className={cn('transition-colors duration-150', onRowClick && 'cursor-pointer hover:bg-canvas/70 focus-visible:bg-brand-wash')} onClick={onRowClick ? () => onRowClick(row) : undefined}>
                       {columns.map((column) => (<td key={column.key} className={cn('border-b border-line-soft px-4 py-3.5 align-middle text-[0.85rem] text-ink/75', column.align === 'right' && 'text-right')}>
                           {column.render ? column.render(row) : String(row[column.key] ?? '—')}
                         </td>))}

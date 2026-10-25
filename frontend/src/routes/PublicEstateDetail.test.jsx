@@ -62,6 +62,19 @@ beforeEach(() => {
     window.sessionStorage.clear();
 });
 describe('PublicEstateDetail', () => {
+    it('does not invent security services, HOA names or amenities absent from the API', async () => {
+        mocks.get.mockResolvedValue(detail({ description: null, living_score: null, unit_count: 3 }));
+        renderPage();
+        expect(await screen.findByRole('heading', { level: 1, name: 'Ridge Close' })).toBeVisible();
+        expect(screen.queryByText(/24\/7|verified visitor logging|monitored estate security|managed by ridge close hoa|communal infrastructure/i)).toBeNull();
+        expect(screen.getByText(/administrator has not written a description yet/i)).toBeVisible();
+    });
+    it('does not turn an unscored published snapshot into a zero in the highlights', async () => {
+        mocks.get.mockResolvedValue(detail({ living_score: { ...detail().living_score, overall_score: null, status: 'insufficient_data' } }));
+        renderPage();
+        await screen.findByRole('heading', { level: 1, name: 'Ridge Close' });
+        expect(screen.queryByText(/Living Score (0\.0|NaN) \/ 100/)).toBeNull();
+    });
     it('leads with what was published, and invents nothing to fill the gaps', async () => {
         mocks.get.mockResolvedValue(detail());
         renderPage();

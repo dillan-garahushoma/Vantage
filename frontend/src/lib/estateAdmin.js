@@ -157,6 +157,7 @@ export function listMyWorkOrders(estateId, params = {}) {
         estate_id: estateId,
         page: params.page ?? 1,
         size: params.size ?? 20,
+        ...(params.status ? { status: params.status } : {}),
     });
 }
 export function listEstateWorkOrders(estateId, params = {}) {

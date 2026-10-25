@@ -211,7 +211,7 @@ function ChatBody({
           <Button
             onClick={() => onAsk()}
             disabled={streaming || !value.trim()}
-            variant="ink"
+            variant="default"
             size="icon"
             className="h-10 w-10 shrink-0"
             aria-label="Send question"
@@ -264,8 +264,7 @@ export function AskValora({ className }) {
       return;
     }
 
-    // When starting a prompt, open the focused dialog so the conversation gets full attention
-    setExpanded(true);
+    // Keep the answer beside its estate context; expansion is an explicit action.
     setValue('');
     setError(null);
     setStreaming(true);
@@ -396,7 +395,7 @@ export function AskValora({ className }) {
       {/* ---- Inline card ---- */}
       <div
         className={cn(
-          'flex flex-col h-full overflow-hidden rounded-2xl border border-line bg-surface shadow-soft',
+          'flex max-h-[780px] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-soft',
           className
         )}
       >

@@ -1,6 +1,7 @@
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { useEstate } from '../../context/EstateContext';
 import { cn } from '../../lib/utils';
+import { EstateImage } from '../EstateImage';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 /**
@@ -22,12 +23,12 @@ export function EstateSwitcher({ className }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          'flex w-full items-center gap-2.5 border border-brand/10 bg-white/75 p-2 text-left transition-colors hover:border-brand/30 hover:bg-white focus-visible:outline-2 focus-visible:outline-brand',
+          'flex w-full items-center gap-2.5 rounded-xl border border-brand/10 bg-white/75 p-2.5 text-left transition-colors hover:border-brand/30 hover:bg-white focus-visible:outline-2 focus-visible:outline-brand',
           className,
         )}
         aria-label="Switch estate"
       >
-        <img src="/estate-hero.jpg" alt="" aria-hidden="true" className="h-10 w-11 shrink-0 object-cover" />
+        <EstateImage estate={active} compact className="h-10 w-11 shrink-0 rounded-lg" />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[0.75rem] font-semibold leading-snug text-ink">
             {active?.estate_name ?? 'Select an estate'}
@@ -50,7 +51,7 @@ export function EstateSwitcher({ className }) {
             <span className="min-w-0">
               <span className="block truncate text-[0.82rem] font-semibold text-ink">{estate.estate_name}</span>
               <span className="block truncate text-[0.68rem] text-ink/45">
-                {[estate.suburb, estate.city, estate.province].filter(Boolean).join(', ')} · {estate.property_ids.length} unit{estate.property_ids.length === 1 ? '' : 's'}
+                {[estate.suburb, estate.city, estate.province].filter(Boolean).join(', ')} · {estate.property_ids?.length ?? 0} linked unit{estate.property_ids?.length === 1 ? '' : 's'}
               </span>
             </span>
             {estate.estate_id === active?.estate_id ? <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" aria-label="Selected" /> : null}

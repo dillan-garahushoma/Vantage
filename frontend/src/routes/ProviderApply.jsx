@@ -8,13 +8,23 @@ import { useAsync } from '../lib/useAsync';
 
 const EMPTY = { estate_id: '', full_name: '', email: '', trade: '', phone: '', note: '' };
 
+async function loadApplicationEstates() {
+  const first = await listPublicEstates({ page: 1, page_size: 50 });
+  const items = [...first.items];
+  for (let page = 2; page <= first.pages; page += 1) {
+    const next = await listPublicEstates({ page, page_size: 50 });
+    items.push(...next.items);
+  }
+  return { ...first, items };
+}
+
 export function ProviderApply() {
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const navigate = useNavigate();
-  const directory = useAsync(() => listPublicEstates({ page: 1, page_size: 100 }), []);
+  const directory = useAsync(loadApplicationEstates, []);
 
   function update(key, value) {
     setForm((previous) => ({ ...previous, [key]: value }));

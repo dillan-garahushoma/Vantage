@@ -3,6 +3,7 @@ import { ArrowRight, Bell, CalendarDays, CheckCircle2, CircleAlert, Clock3, File
 import { Link } from 'react-router-dom';
 import { Chip, ErrorState, LoadingState } from '../components/ui';
 import { ComplaintDrawer } from '../components/ComplaintDrawer';
+import { EstateImage } from '../components/EstateImage';
 import { useAuth } from '../context/AuthContext';
 import { useEstateScope } from '../context/EstateContext';
 import { api, ApiError } from '../lib/api';
@@ -17,18 +18,11 @@ function EstateContextHero({ estate }) {
   const location = [estate?.suburb, estate?.city, estate?.province].filter(Boolean).join(' · ');
   return (
     <section className="relative min-h-[154px] overflow-hidden bg-brand-wash sm:min-h-[174px]" aria-label="Selected estate">
-      <img
-        src="/estate-hero.jpg"
-        alt="Contemporary residential architecture and landscaped grounds"
-        width="960"
-        height="420"
-        fetchPriority="high"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
+      <EstateImage estate={estate} className="absolute inset-0 h-full w-full" />
       <div className="absolute inset-0 bg-gradient-to-r from-[#241532]/80 via-[#241532]/35 to-transparent" />
       <div className="relative flex min-h-[154px] max-w-xl flex-col justify-end p-5 text-white sm:min-h-[174px] sm:p-6">
         <p className="text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-white/75">Your estate</p>
-        <h2 className="mt-1 font-heading text-xl font-semibold tracking-tight sm:text-2xl">{estate?.estate_name ?? 'Selected estate'}</h2>
+        <h2 className="mt-1 font-heading text-xl font-semibold tracking-tight text-white sm:text-2xl">{estate?.estate_name ?? 'Selected estate'}</h2>
         {location ? <p className="mt-1 text-xs text-white/80">{location}</p> : null}
       </div>
     </section>
@@ -267,7 +261,7 @@ export function AdminDashboard() {
       <header className="flex flex-col justify-between gap-3 border-b border-brand/10 pb-5 sm:flex-row sm:items-end">
         <div>
           <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-brand-ink">Welcome back</p>
-          <h1 className="mt-1 font-heading text-3xl font-semibold leading-tight tracking-[-0.045em] text-ink sm:text-[2.65rem]">
+          <h1 className="mt-1 font-heading text-2xl font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2rem]">
             {greeting}, <span className="text-brand-ink">{firstName}</span>
           </h1>
           <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-ink/55">
@@ -276,7 +270,7 @@ export function AdminDashboard() {
         </div>
       </header>
 
-      <section className="grid gap-0 overflow-hidden border border-brand/10 bg-white md:grid-cols-[1.12fr_0.88fr]" aria-label="Estate summary">
+      <section className="grid gap-0 overflow-hidden rounded-2xl border border-brand/10 bg-white md:grid-cols-[1.12fr_0.88fr]" aria-label="Estate summary">
         <EstateContextHero estate={estate} />
         <div className="flex items-center px-5 py-5 sm:px-6">
           <ScoreSummary
@@ -367,8 +361,8 @@ export function AdminDashboard() {
         </div>
 
         <aside className="min-w-0">
-          <section className="border border-brand/10 bg-white" aria-labelledby="estate-profile-heading">
-            <img src="/estate-hero.jpg" alt="Contemporary residential architecture" width="720" height="320" loading="lazy" className="h-[118px] w-full object-cover sm:h-[140px]" />
+          <section className="overflow-hidden rounded-2xl border border-brand/10 bg-white" aria-labelledby="estate-profile-heading">
+            <EstateImage estate={estate} className="h-[118px] w-full sm:h-[140px]" />
             <div className="p-4">
               <p className="text-[0.6rem] font-bold uppercase tracking-[0.15em] text-brand-ink">Selected estate</p>
               <h2 id="estate-profile-heading" className="mt-1 font-heading text-lg font-semibold text-ink">{estate?.estate_name ?? 'Estate profile'}</h2>

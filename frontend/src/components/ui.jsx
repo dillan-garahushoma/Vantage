@@ -37,7 +37,7 @@ export function LinkButton({ to, variant = 'secondary', className, children, ...
 }
 /* ----------------------------------------------------------- containers */
 export function Card({ children, className, as: Tag = 'div', }) {
-    return <Tag className={cx('hairline rounded-xs bg-surface', className)}>{children}</Tag>;
+    return <Tag className={cx('hairline rounded-xl bg-surface', className)}>{children}</Tag>;
 }
 export function SectionTitle({ title, hint, action, }) {
     return (<div className="mb-3 flex flex-wrap items-end justify-between gap-3">

@@ -68,7 +68,7 @@ function NavigationLink({ item, user, onNavigate }) {
       className={({ isActive }) => cn(
         'group relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-[0.82rem] font-medium transition-colors duration-150',
         isActive
-          ? 'bg-white text-brand-ink shadow-[inset_3px_0_0_#7041D8]'
+          ? 'bg-brand-wash text-brand-ink'
           : 'text-ink/65 hover:bg-white/70 hover:text-ink',
       )}
     >
@@ -150,7 +150,7 @@ export function SidebarHeader() {
   return (
     <div className="px-4 pb-4 pt-5">
       <NavLink to="/app" className="inline-flex rounded-sm px-1 py-1" aria-label="VALORA workspace home">
-        <Logo size={34} />
+        <Logo size={42} />
       </NavLink>
       <div className="mt-5">
         <EstateSwitcher />

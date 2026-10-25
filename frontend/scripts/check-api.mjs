@@ -39,8 +39,9 @@ try {
       failed = true
       continue
     }
-    const expected = readFileSync(join(scratch, file), 'utf8')
-    const actual = readFileSync(committed, 'utf8')
+    // Git's Windows checkout may use CRLF; vocabulary drift is independent of EOLs.
+    const expected = readFileSync(join(scratch, file), 'utf8').replace(/\r\n/g, '\n')
+    const actual = readFileSync(committed, 'utf8').replace(/\r\n/g, '\n')
     if (expected !== actual) {
       process.stderr.write(
         `check:api — src/api/generated/${file} is stale: it differs from the file generated from docs/openapi.json.\n` +

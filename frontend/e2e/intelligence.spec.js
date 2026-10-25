@@ -24,6 +24,7 @@ async function intelligenceWorld(page, { denied = false, admin = true } = {}) {
         if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204 });
         if (path === '/api/v1/auth/me') return route.fulfill({ json: user });
         if (path === '/api/v1/auth/estates') return route.fulfill({ json: { estates: [estate] } });
+        if (path === '/api/v1/analytics/intelligence/ask/stream') return route.fulfill({ contentType: 'text/event-stream', body: 'data: {"delta":"No stored Living Score snapshot is available for this estate."}\n\ndata: [DONE]\n\n' });
         if (path === '/api/v1/analytics/intelligence/ask') return route.fulfill({ json: {
             summary: 'No stored Living Score snapshot is available for this estate.',
             evidence: ['complaints [estate_id=1]: 105 open.'], recommendation: 'Review the cited records.', related: [], source: 'estate-domain' } });
@@ -47,7 +48,7 @@ test('shows measured counts, saves a dated briefing and asks the authenticated A
     await page.getByRole('button', { name: 'Save current briefing' }).click();
     await expect(page.getByText(/Saved briefing ·/)).toBeVisible();
     await expect(page.getByText(/Counts are frozen at the briefing date/)).toBeVisible();
-    await page.getByRole('button', { name: 'Why did our estate health score change?' }).click();
+    await page.getByRole('button', { name: 'What is the operational risk summary for this week?' }).click();
     await expect(page.getByText('No stored Living Score snapshot is available for this estate.')).toBeVisible();
     expect(errors).toEqual([]);
 });

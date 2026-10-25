@@ -933,7 +933,7 @@ async def test_public_provider_signup_is_rejected(
         ServiceProviderRepository,
     )
 
-    response = await signup_fixture(async_client,
+    response = await async_client.post(
         "/api/v1/auth/register",
         json=_register_body(
             account_type="service_provider",

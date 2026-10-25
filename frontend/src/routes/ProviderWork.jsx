@@ -38,7 +38,7 @@ function ProviderWorkOrderRow({ order, estateId, onChanged, }) {
             setBusy(false);
         }
     }
-    return (<li className="hairline rounded-xs bg-surface p-4">
+    return (<li className="hairline rounded-xl bg-surface p-5">
       <div className="flex flex-wrap items-center gap-3">
         <IconWrench size={17} className="shrink-0 text-ink-muted"/>
         <span className="num text-[13px] font-medium">WO-{String(order.id).padStart(4, '0')}</span>
@@ -129,12 +129,12 @@ function ProviderWorkBody() {
     const [status, setStatus] = useState('');
     const [page, setPage] = useState(1);
     const workOrders = useAsync(() => isProvider && scope
-        ? listMyWorkOrders(scope, { page, size: 20 })
-        : Promise.resolve(null), [scope, page, isProvider]);
+        ? listMyWorkOrders(scope, { page, size: 20, status })
+        : Promise.resolve(null), [scope, page, status, isProvider]);
     if (!isProvider) {
         return (<ErrorState title="This is the service provider’s own work list" message="Administrators see every work order in the estate from Work orders. This screen shows only what is assigned to the signed-in provider’s profile."/>);
     }
-    const items = (workOrders.data?.items ?? []).filter((order) => status ? order.status === status : true);
+    const items = workOrders.data?.items ?? [];
     const pages = workOrders.data?.pages ?? 0;
     const active = (workOrders.data?.items ?? []).filter((order) => order.status === 'in_progress').length;
     const awaitingStart = (workOrders.data?.items ?? []).filter((order) => order.status === 'assigned').length;
@@ -145,24 +145,22 @@ function ProviderWorkBody() {
         </p>
         <h1 className="mt-2 text-[26px] leading-tight font-semibold">My work</h1>
         <p className="mt-1 max-w-2xl text-[13.5px] text-ink-muted">
-          Jobs the estate’s administrators have assigned to your profile. Starting and completing them
-          is what moves the estate’s operational record forward — completion also resolves the
-          resident’s complaint.
+          Your assigned repairs, progress and completion notes in one place.
         </p>
       </header>
 
       <dl className="grid divide-y divide-line border-y border-line sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div className="px-4 py-3 first:pl-0">
           <dt className="text-[0.7rem] font-semibold tracking-[0.12em] text-ink-muted uppercase">Assigned</dt>
-          <dd className="num mt-1 text-[1.45rem] font-semibold text-ink">{workOrders.data?.total ?? 0}</dd>
+          <dd className="num mt-1 text-[1.45rem] font-semibold text-ink">{workOrders.loading || workOrders.error ? '—' : workOrders.data?.total ?? 0}</dd>
         </div>
         <div className="px-4 py-3">
-          <dt className="text-[0.7rem] font-semibold tracking-[0.12em] text-ink-muted uppercase">Ready to start</dt>
-          <dd className="num mt-1 text-[1.45rem] font-semibold text-ink">{awaitingStart}</dd>
+          <dt className="text-[0.7rem] font-semibold tracking-[0.12em] text-ink-muted uppercase">Ready to start · this page</dt>
+          <dd className="num mt-1 text-[1.45rem] font-semibold text-ink">{workOrders.loading || workOrders.error ? '—' : awaitingStart}</dd>
         </div>
         <div className="px-4 py-3 last:pr-0">
-          <dt className="text-[0.7rem] font-semibold tracking-[0.12em] text-ink-muted uppercase">In progress</dt>
-          <dd className="num mt-1 text-[1.45rem] font-semibold text-ink">{active}</dd>
+          <dt className="text-[0.7rem] font-semibold tracking-[0.12em] text-ink-muted uppercase">In progress · this page</dt>
+          <dd className="num mt-1 text-[1.45rem] font-semibold text-ink">{workOrders.loading || workOrders.error ? '—' : active}</dd>
         </div>
       </dl>
 
@@ -188,7 +186,7 @@ function ProviderWorkBody() {
 
       {workOrders.loading ? (<LoadingState label="Loading your work"/>) : workOrders.error ? (<ErrorState title="Could not load your work" message={workOrders.error.message} requestId={workOrders.error.requestId} action={<Button variant="secondary" onClick={workOrders.reload}>
               Try again
-            </Button>}/>) : (workOrders.data?.items.length ?? 0) === 0 ? (<EmptyState title="Nothing assigned to you yet" body="An administrator has to add your email to their estate and then assign a complaint to your provider profile. Both steps are theirs; there is nothing to do from here but check again." action={<Button variant="secondary" onClick={workOrders.reload}>
+            </Button>}/>) : items.length === 0 && !status ? (<EmptyState title="Nothing assigned to you yet" body="An administrator has to add your email to their estate and then assign a complaint to your provider profile. Both steps are theirs; there is nothing to do from here but check again." action={<Button variant="secondary" onClick={workOrders.reload}>
               Check again
             </Button>}/>) : items.length === 0 ? (<EmptyState title="No job with that status" body="Clear the status filter to see everything assigned to you." action={<Button variant="secondary" onClick={() => setStatus('')}>
               Clear the filter

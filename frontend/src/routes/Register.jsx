@@ -50,7 +50,7 @@ const EMPTY = {
   estateName: '',
   estateSuburb: '',
   estateCity: '',
-  estateProvince: 'Gauteng',
+  estateProvince: '',
   estateDescription: '',
 };
 
@@ -365,6 +365,7 @@ export function Register() {
                       id={id}
                       type="radio"
                       name="account_type"
+                      aria-label={item.label}
                       value={item.value}
                       aria-describedby={`${id}_blurb`}
                       checked={selected}
@@ -399,7 +400,7 @@ export function Register() {
 
               <Field label="Full name" error={errors.full_name}>
                 <Input name="full_name" autoComplete="name" value={form.full_name}
-                  onChange={(event) => update('full_name', event.target.value)} placeholder="Thandi Nkosi" required />
+                  onChange={(event) => update('full_name', event.target.value)} placeholder="Your full name" required />
               </Field>
 
               <Field label="Email address" error={errors.email}>
@@ -480,6 +481,7 @@ export function Register() {
             <Field label="Province" error={errors.estateProvince}>
               <Select name="estate_province" value={form.estateProvince}
                 onChange={(event) => update('estateProvince', event.target.value)} required>
+                <option value="">Choose a province</option>
                 {PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
               </Select>
             </Field>

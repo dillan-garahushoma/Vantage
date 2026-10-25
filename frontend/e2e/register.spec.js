@@ -34,18 +34,15 @@ test.describe('the account-type picker', () => {
     });
     test('the description and the card body both choose the account type', async ({ page }) => {
         await page.goto('/register');
-        const heading = page.getByRole('heading', { name: /account$/ });
         // The description of the provider card.
-        await page.getByText('Do the work.').click();
-        await expect(page.getByRole('heading', { name: 'Service provider account' })).toBeVisible();
-        await expect(page.getByLabel(/^trade/i)).toBeVisible();
+        await page.getByText('Apply to an estate. Its HOA reviews your details before account setup.').click();
+        await expect(page.getByRole('link', { name: 'Apply to work at an estate' })).toHaveAttribute('href', '/provider/apply');
         // The empty space inside the administrator card, away from its text.
-        const adminCard = card(page, 'Estate administrator');
+        const adminCard = card(page, 'HOA / estate manager');
         const box = (await adminCard.boundingBox());
         await adminCard.click({ position: { x: box.width - 12, y: box.height - 10 } });
-        await expect(page.getByRole('heading', { name: 'Estate administrator account' })).toBeVisible();
         await expect(page.getByLabel(/estate name/i)).toBeVisible();
-        await expect(heading).toBeVisible();
+        await expect(page.getByRole('radio', { name: 'HOA / estate manager', exact: true })).toBeChecked();
     });
     test('the chosen card is marked by more than colour alone', async ({ page }) => {
         await page.goto('/register');
@@ -78,10 +75,10 @@ test.describe('the account-type picker', () => {
         });
         // The 16px dot is easy to miss; the card the choice belongs to is not.
         const focusColor = await themeColor(page, '--color-accent');
-        expect(await ring('Resident')).toBe(`dotted 2px ${focusColor}`);
+        await expect.poll(() => ring('Resident')).toBe(`dotted 2px ${focusColor}`);
         await page.keyboard.press('ArrowDown');
-        await expect(page.getByRole('radio', { name: 'Estate administrator' })).toBeChecked();
-        expect(await ring('Estate administrator')).toBe(`dotted 2px ${focusColor}`);
+        await expect(page.getByRole('radio', { name: 'HOA / estate manager' })).toBeChecked();
+        await expect.poll(() => ring('HOA / estate manager')).toBe(`dotted 2px ${focusColor}`);
         // And only one card wears it. `outline-style: none` is the whole test: an
         // unfocused card still reports a default width, just nothing painted.
         expect(await ring('Resident')).toContain('none ');
@@ -95,7 +92,7 @@ test.describe('the account-type picker', () => {
         await page.getByLabel(/full name/i).fill('Thandi Nkosi');
         await page.getByLabel(/email address/i).fill('thandi@example.co.za');
         await page.getByLabel(/^password/i).fill('aGoodPassword1');
-        await page.getByRole('button', { name: /create account/i }).click();
+        await page.getByRole('button', { name: 'Create resident account' }).click();
         await expect(page.getByText('An account with that email already exists.')).toBeVisible();
         // The notice carries a 2px signal bar over a hairline border — a utility
         // overriding a `.hairline`. While `.hairline` sat in the utilities layer it
@@ -110,8 +107,8 @@ test.describe('the account-type picker', () => {
     test('stays inside a 390px viewport', async ({ page }) => {
         await page.setViewportSize({ width: 390, height: 844 });
         await page.goto('/register');
-        await page.getByText('Do the work.').click();
-        await expect(page.getByRole('heading', { name: 'Service provider account' })).toBeVisible();
+        await page.getByText('Apply to an estate. Its HOA reviews your details before account setup.').click();
+        await expect(page.getByRole('link', { name: 'Apply to work at an estate' })).toBeVisible();
         const widths = await page.evaluate(() => ({
             scroll: document.documentElement.scrollWidth,
             client: document.documentElement.clientWidth,

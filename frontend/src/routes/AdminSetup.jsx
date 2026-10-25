@@ -53,7 +53,7 @@ function ChecklistPanel({ input, onPublish, publishing }) {
   const doneCount = items.filter((i) => i.done).length;
 
   return (
-    <div className="sticky top-6 flex flex-col gap-3">
+    <div className="flex flex-col gap-3 self-start lg:sticky lg:top-24">
       {/* Glass progress card */}
       <div
         style={{

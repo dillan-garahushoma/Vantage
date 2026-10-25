@@ -21,6 +21,7 @@ export function AppShell() {
   const [navOpen, setNavOpen] = useState(false);
   const [creatingWorkOrder, setCreatingWorkOrder] = useState(false);
   const [loggingComplaint, setLoggingComplaint] = useState(false);
+  const [recordsVersion, setRecordsVersion] = useState(0);
 
   if (!user) return null;
 
@@ -36,7 +37,7 @@ export function AppShell() {
         />
 
         <main className="mx-auto max-w-[1540px] px-4 pt-5 pb-28 sm:px-6 lg:px-7 lg:pb-12">
-          <Outlet context={{
+          <Outlet key={recordsVersion} context={{
             onCreateWorkOrder: user.role === 'hoa_admin' ? () => setCreatingWorkOrder(true) : undefined,
             onLogComplaint: user.role === 'resident' ? () => setLoggingComplaint(true) : undefined,
           }} />
@@ -56,9 +57,12 @@ export function AppShell() {
       />
       <MobileNavSheet open={navOpen} onOpenChange={setNavOpen} />
 
-      <CreateWorkOrderDialog open={creatingWorkOrder} onOpenChange={setCreatingWorkOrder} />
+      <CreateWorkOrderDialog open={creatingWorkOrder} onOpenChange={setCreatingWorkOrder} onCreated={() => setRecordsVersion((version) => version + 1)} />
       {loggingComplaint ? (
-        <LogComplaintDrawer onClose={() => setLoggingComplaint(false)} onDone={() => setLoggingComplaint(false)} />
+        <LogComplaintDrawer onClose={() => setLoggingComplaint(false)} onDone={() => {
+          setLoggingComplaint(false);
+          setRecordsVersion((version) => version + 1);
+        }} />
       ) : null}
     </div>
   );

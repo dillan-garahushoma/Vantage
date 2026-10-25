@@ -45,7 +45,7 @@ export function HealthPillars({ pillars, expandedDefault = false, showWeights = 
               <div className="flex shrink-0 items-center gap-3">
                 <div className="text-right">
                   <p className="num font-heading text-[1.15rem] leading-none font-extrabold text-ink">
-                    {measured ? pillar.score : '——'}
+                    {measured ? pillar.score : 'Not scored'}
                   </p>
                   {measured && pillar.trend !== undefined ? (<p className={cn('num mt-1 inline-flex items-center gap-0.5 text-[0.7rem] font-bold', pillar.trend >= 0 ? 'text-mint-ink' : 'text-signal-ink')}>
                       <TrendIcon className="h-3 w-3"/>

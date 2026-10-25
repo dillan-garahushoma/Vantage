@@ -47,9 +47,9 @@ export function Methodology() {
         <h2 className="text-[22px] font-semibold text-ink">Calculation rules</h2>
         <ol className="mt-4 space-y-4">
           {[
-            'All five pillars must have at least one data point before a score is published. An estate with no complaints recorded shows "Insufficient data", not zero.',
+            'A score requires measured pillars covering at least 50% of the total weight. Pillars without sufficient evidence are excluded and the backend normalises the remaining weights. Below that coverage, the result is "Insufficient data", not zero.',
             'The engine runs over a rolling 90-day window. Data older than 90 days does not contribute to the current score.',
-            'Recalculation is an explicit manager action. A stored score is never silently overwritten by background processes.',
+            'Recalculation creates a new stored snapshot. Existing snapshots remain unchanged, whether recalculation is requested by a manager or an operator.',
             'Resolution times, incident frequency, provider ratings and satisfaction signals feed their respective pillars — never into each other\'s weight.',
           ].map((rule, i) => (
             <li key={i} className="flex gap-4">
@@ -62,9 +62,8 @@ export function Methodology() {
         </ol>
 
         <p className="mt-8 text-[12.5px] text-ink-muted border-t border-line pt-5">
-          Formula version: PRD §8.1. Machine learning has not been introduced. When it is, the
-          existing weight structure will be preserved as a baseline and the methodology page will be
-          updated to reflect the change.
+          Living Score engine v1.0.0 uses deterministic rules over recorded estate activity.
+          AI assistance does not calculate or change the score. Historical snapshots keep their recorded engine version.
         </p>
 
         <Keyline className="my-10" />

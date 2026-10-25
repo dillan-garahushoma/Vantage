@@ -138,7 +138,7 @@ export function FormattedMarkdown({ content, className = '' }) {
       return;
     }
 
-    // 4. Key-Value Metadata lines, e.g. **Estate:** Silverleaf | **Status:** ...
+    // 4. Key-Value Metadata lines, e.g. **Estate:** … | **Status:** …
     if (trimmed.startsWith('**') && trimmed.includes(':**')) {
       flushList();
       elements.push(

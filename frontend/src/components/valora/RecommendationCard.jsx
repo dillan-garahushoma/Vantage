@@ -29,9 +29,9 @@ export function RecommendationCard({ recommendation, index = 0, onReview, onActi
 
       <div className="mt-4 flex flex-wrap items-center gap-2 pl-2">
         <StatusChip status={confidence} size="sm"/>
-        <span className="num text-[0.7rem] font-semibold text-ink/45">
+        {confidenceValue != null ? <span className="num text-[0.7rem] font-semibold text-ink/45">
           {confidenceValue}% confidence
-        </span>
+        </span> : null}
         <span className="text-ink/20">·</span>
         <span className="text-[0.7rem] font-medium text-ink/45">{id}</span>
       </div>
@@ -60,9 +60,9 @@ export function RecommendationCard({ recommendation, index = 0, onReview, onActi
       </div>
 
       <div className="mt-4 flex items-start gap-2.5 rounded-xl bg-canvas p-3 pl-3">
-        <span className="num mt-px font-heading text-[0.95rem] font-extrabold text-mint-ink">
+        {savingsZar != null ? <span className="num mt-px font-heading text-[0.95rem] font-extrabold text-mint-ink">
           {zar(savingsZar)}
-        </span>
+        </span> : null}
         <span className="text-[0.78rem] leading-snug text-ink/60">{impact}</span>
       </div>
 
@@ -73,7 +73,7 @@ export function RecommendationCard({ recommendation, index = 0, onReview, onActi
         </Button>
         {canAction ? (<Button variant="ink" onClick={() => onAction(recommendation)} className="h-9 px-4 text-[0.8rem]">
             <Wrench className="h-3.5 w-3.5"/>
-            Create work order
+            {id.startsWith('overdue_work_order-') ? 'View work orders' : 'Create work order'}
           </Button>) : null}
       </div>
     </Surface>);
