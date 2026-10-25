@@ -478,7 +478,10 @@ async function measure(page, path, options = {}) {
         '/provider/work': /my work/i,
     };
     if (expectedHeadings[path]) {
-        await expect(page.getByRole('heading', { name: expectedHeadings[path] })).toBeVisible();
+        // Level 1, because the estate name is the page title and also appears in
+        // sub-headings ("Managed by Ridge Close Estate HOA"), which made a plain
+        // name match ambiguous rather than proving the route rendered.
+        await expect(page.getByRole('heading', { level: 1, name: expectedHeadings[path] })).toBeVisible();
     }
     const offenders = await overflowing(page);
     const widths = await page.evaluate(() => ({
@@ -514,10 +517,16 @@ const ROUTES = [
     '/admin/members',
     '/provider/work',
 ];
+// `/provider/work` is provider-only: signed in as the default administrator it
+// renders an access notice, so the sweep measured the notice rather than the work
+// list. These routes need the session they are written for.
+const ROUTE_SESSIONS = {
+    '/provider/work': { role: 'service_provider' },
+};
 test.describe('mobile sweep at 390px', () => {
     for (const path of ROUTES) {
         test(`${path} does not scroll sideways`, async ({ page }) => {
-            await measure(page, path);
+            await measure(page, path, ROUTE_SESSIONS[path]);
         });
     }
     test('a resident with no estate sees the join screen within the viewport', async ({ page }) => {
@@ -525,5 +534,47 @@ test.describe('mobile sweep at 390px', () => {
     });
     test('a provider with no estate sees the waiting screen within the viewport', async ({ page }) => {
         await measure(page, '/provider/waiting', { estates: [], role: 'service_provider' });
+    });
+});
+/**
+ * A phone narrower than the 390px sweep above. The public header carried the
+ * wordmark plus three entry actions, and `hidden sm:inline-flex` on a
+ * `LinkButton` lost to the button's own `inline-flex` — two unprefixed display
+ * utilities resolve by stylesheet order, not class order — so the directory
+ * shortcut stayed on screen and pushed the header 11px past a 360px viewport.
+ * The 390px sweep was wide enough to hide it, which is why this one is narrower.
+ */
+test.describe('narrow phones at 360px', () => {
+    const NARROW = { width: 360, height: 740 };
+    test('the public header fits and drops the directory shortcut', async ({ page }) => {
+        await mockApi(page);
+        await page.setViewportSize(NARROW);
+        await page.goto('/');
+        await page.waitForLoadState('networkidle');
+        const header = page.locator('header');
+        await expect(header.getByRole('link', { name: 'Create account' })).toBeVisible();
+        await expect(header.getByRole('link', { name: 'Find a complex' })).toBeHidden();
+        const widths = await page.evaluate(() => ({
+            scroll: document.documentElement.scrollWidth,
+            client: document.documentElement.clientWidth,
+        }));
+        expect(widths.scroll, `homepage overflows at ${NARROW.width}px`).toBeLessThanOrEqual(widths.client);
+    });
+    test('the comparison table scrolls instead of clipping its last column', async ({ page }) => {
+        await mockApi(page);
+        await page.setViewportSize(NARROW);
+        await page.goto('/');
+        await page.waitForLoadState('networkidle');
+        const scroller = page.locator('table').first().locator('..');
+        await scroller.scrollIntoViewIfNeeded();
+        await expect(scroller).toHaveCSS('overflow-x', 'auto');
+        // Scrolling to the end must bring the "On VALORA" column into view; a
+        // clipping wrapper leaves the last column permanently unreachable.
+        const reachable = await scroller.evaluate((element) => {
+            element.scrollLeft = element.scrollWidth;
+            const cell = element.querySelector('tbody tr:last-child td:last-child');
+            return { right: Math.round(cell.getBoundingClientRect().right), viewport: window.innerWidth };
+        });
+        expect(reachable.right).toBeLessThanOrEqual(reachable.viewport);
     });
 });

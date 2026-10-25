@@ -19,7 +19,7 @@ const VALUE_CHAIN = [
   {
     step: '02',
     title: 'The HOA resolves it, visibly',
-    body: 'Complaints move through a fixed lifecycle: logged, reviewed, assigned, in progress, resolved, rated. Every transition is retained as evidence, so responsiveness is provable rather than claimed.',
+    body: 'Complaints move through a fixed lifecycle — logged, reviewed, assigned, in progress, resolved, rated. Every transition is retained as evidence, so responsiveness is provable rather than claimed.',
   },
   {
     step: '03',
@@ -92,7 +92,7 @@ function FeaturedEstates() {
               Find your residential complex
             </h2>
             <p className="mt-2 max-w-xl text-[14.5px] text-ink-soft">
-              South African residential estates with profiles published by their administrators. Living Scores appear when the estate chooses to share them.
+              Verified South African residential estates with auditable operational records and published Living Scores.
             </p>
           </div>
 
@@ -136,30 +136,14 @@ function FeaturedEstates() {
             ))}
           </div>
         ) : directory.error ? (
-          <div className="mt-8 border-y border-ink/15 bg-surface px-5 py-7 sm:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-[14.5px] font-semibold text-ink">
-                The public catalogue could not be loaded.
-              </p>
-              <p role="alert" className="mt-2 text-sm leading-relaxed text-ink-soft">
-                {directory.error.message}
-              </p>
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={directory.reload}
-                  className="inline-flex min-h-10 items-center justify-center border border-ink/20 px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-accent hover:bg-accent-wash hover:text-accent-ink"
-                >
-                  Try again
-                </button>
-                <Link
-                  to="/estates"
-                  className="inline-flex min-h-10 items-center justify-center px-4 py-2 text-sm font-semibold text-accent-ink hover:underline"
-                >
-                  Open directory <IconArrowRight size={15} />
-                </Link>
-              </div>
-            </div>
+          <div className="mt-8 rounded-2xl border border-ink/15 bg-surface p-8 text-center">
+            <p className="text-[14.5px] text-ink-soft">
+              The public catalogue could not be reached right now.{' '}
+              <Link to="/estates" className="font-medium text-accent-ink underline">
+                Open directory
+              </Link>
+              .
+            </p>
           </div>
         ) : estates.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-ink/15 bg-surface p-10 text-center">
@@ -224,7 +208,7 @@ function FeaturedEstates() {
                           View complex overview <IconArrowRight size={15} />
                         </span>
                         <span className="rounded-full bg-ink/5 px-3 py-1 text-[12px] font-medium text-ink-soft">
-                          Published profile
+                          HOA Verified
                         </span>
                       </div>
                     </div>
@@ -356,7 +340,7 @@ export function Landing() {
   return (
     <PublicShell>
       {/* ------------------------------------------------------------ hero */}
-      <section className="relative isolate flex min-h-[620px] items-center overflow-hidden bg-ink sm:min-h-[660px] lg:min-h-[720px]">
+      <section className="relative isolate flex min-h-[620px] items-center overflow-hidden bg-ink lg:min-h-[min(760px,calc(100svh-72px))]">
         <img
           src="/estate-hero.jpg"
           alt=""
@@ -364,45 +348,46 @@ export function Landing() {
           fetchPriority="high"
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div aria-hidden="true" className="absolute inset-0 bg-ink/55" />
-
-        <div className="relative mx-auto w-full max-w-[1200px] px-5 py-16 sm:py-20 lg:py-24">
-          <div className="max-w-[960px]">
-            <h1 className="font-display text-[40px] leading-[1.04] font-semibold tracking-tight text-white sm:text-[52px] lg:text-[60px]">
-              See how your estate is cared for.
+        <div className="absolute inset-0 bg-ink/60" aria-hidden="true" />
+        <div className="relative z-10 mx-auto w-full max-w-[1200px] px-5 py-16 lg:py-20">
+          <div className="max-w-[700px]">
+            <h1 className="max-w-[680px] text-[40px] leading-[1.04] font-semibold tracking-tight text-white sm:text-[56px]">
+              Understand how your complex is being cared for.
             </h1>
-
-            <p className="mt-5 max-w-[660px] text-[16px] leading-relaxed text-white/90 sm:text-[18px]">
-              VALORA turns maintenance complaints, resolution times, contractor performance and resident feedback into one accountable operational record. Estate teams and residents can see what needs attention and what has changed.
+            <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-paper/90">
+              VALORA turns maintenance, repairs and resident feedback into a clear record of what needs attention and what has changed.
             </p>
-
-            <form onSubmit={handleHeroSearch} className="mt-8 flex max-w-[580px] items-center gap-2 rounded-full border border-ink/20 bg-paper p-1.5 shadow-sm transition-all focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30">
-              <div className="flex min-w-0 flex-1 items-center gap-2.5 pl-3">
-                <IconSearch size={17} className="shrink-0 text-ink-muted" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Estate name or location"
-                  aria-label="Search estates by name or location"
-                  className="min-w-0 w-full border-0 bg-transparent py-2 text-[15px] text-ink placeholder:text-ink-muted/70 focus:outline-none sm:text-[16px]"
-                />
-              </div>
+            {/* The owner asked for a rounded, see-through search bar, so this control is a
+            glass pill rather than the soft-radius surface `DESIGN.md` tiles elsewhere. The
+            fill is translucent white over the hero photograph, which is why the text,
+            placeholder and icon are white and the focus ring is white rather than violet. */}
+            <form onSubmit={handleHeroSearch} className="mt-8 flex min-h-14 max-w-xl items-center gap-3 rounded-full border border-white/25 bg-white/10 p-1.5 pl-5 backdrop-blur-md transition-colors focus-within:border-white/45 focus-within:bg-white/15 focus-within:ring-2 focus-within:ring-white/60">
+              <IconSearch size={18} className="shrink-0 text-white/75"/>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search complex, suburb or city"
+                aria-label="Search complex, suburb or city"
+                className="min-w-0 flex-1 bg-transparent text-[14px] text-white placeholder:text-white/70 focus:outline-none"/>
+              {/* Below `sm` the label gives way to the arrow alone: a pill carrying the
+              full label left the input about 105px on a 390px phone, which truncated the
+              placeholder. `aria-label` keeps the accessible name at every width. */}
               <button
                 type="submit"
-                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-accent px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:px-5"
-                aria-label="Search complexes"
+                aria-label="Find a complex"
+                className="flex min-h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-full bg-accent px-0 text-[13px] font-medium text-white transition-colors hover:bg-accent/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto sm:px-5"
               >
-                Search <IconArrowRight size={16} className="hidden shrink-0 sm:block" />
+                <span className="hidden sm:inline">Find a complex</span>
+                <IconArrowRight size={16}/>
               </button>
             </form>
-
-            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-[14px] text-white/90">
-              <Link to="/estates" className="font-medium text-white underline decoration-white/50 underline-offset-4 hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13.5px] text-paper">
+              <Link to="/estates" className="font-medium underline underline-offset-4 hover:text-white">
                 Browse all complexes
               </Link>
-              <Link to="/login" className="hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
-                Already registered? Sign in
+              <Link to="/login" className="text-paper/90 hover:text-white hover:underline">
+                Sign in
               </Link>
             </div>
           </div>
@@ -471,7 +456,7 @@ export function Landing() {
             {
               role: 'Residents',
               tagline: 'Report an issue and watch it move.',
-              body: 'Log a maintenance request once. Track it through review, assignment, repair and resident rating from one screen.',
+              body: 'Log a maintenance request once. Track it through review, assignment, repair and resident rating — all from one screen.',
               cta: 'Get started as a resident',
               to: '/register',
               primary: true,
@@ -479,7 +464,7 @@ export function Landing() {
             {
               role: 'HOA Administrators',
               tagline: 'One command view for everything.',
-              body: 'Manage complaints, work orders, contractors, announcements and estate health inside one estate-scoped workspace.',
+              body: 'Complaints, work orders, contractors, announcements and estate health — all managed inside one estate-scoped workspace.',
               cta: 'Contact your estate admin',
               to: '/contact',
               primary: false,
@@ -525,8 +510,11 @@ export function Landing() {
             The operational record exists inside the community that runs on it
           </h2>
 
-          <div className="mt-8 overflow-hidden rounded-2xl border border-ink/15 bg-surface">
-            <table className="w-full border-collapse text-left text-[13.5px]">
+          {/* Scrolls sideways on phones instead of clipping the "On VALORA" column;
+              the table keeps a readable minimum rather than squeezing three
+              columns into 320px. */}
+          <div className="scrollbar-slim mt-8 overflow-x-auto rounded-2xl border border-ink/15 bg-surface">
+            <table className="w-full min-w-[540px] border-collapse text-left text-[13.5px]">
               <thead>
                 <tr>
                   <th className="border-b border-ink/15 bg-paper px-5 py-3 text-[11px] font-medium tracking-wider text-ink-muted uppercase">
@@ -568,13 +556,13 @@ export function Landing() {
       <section className="bg-ink text-paper">
         <div className="mx-auto max-w-[1200px] px-5 py-16">
           <Keyline className="opacity-40" />
-          <h2 className="mt-6 max-w-2xl text-[28px] leading-tight font-semibold text-paper sm:text-[34px]">
+          <h2 className="mt-6 max-w-2xl text-[28px] leading-tight font-semibold sm:text-[34px]">
             Ready to see your estate's real operational data?
           </h2>
           <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-paper/75">
-            Create a resident account to request access, set up the estate you manage,
-            or apply to work at an estate as a service provider. Each workspace follows
-            your approved estate access.
+            Public registration always creates a resident — privileged estate roles are granted
+            through an existing membership, never self-selected. If your estate has not been
+            provisioned yet, your account will show that it is awaiting approval.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <LinkButton to="/register" variant="primary" className="px-6 py-2.5">

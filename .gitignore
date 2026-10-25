@@ -52,3 +52,5 @@ frontend/.main-deploy-check/
 tmp/
 frontend/tmp/
 frontend/.main-deploy-check/
+
+.taste-skill/

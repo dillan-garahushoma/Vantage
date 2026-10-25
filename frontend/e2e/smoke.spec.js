@@ -15,13 +15,15 @@ test('the landing page renders without console errors', async ({ page }) => {
     });
     page.on('pageerror', (error) => consoleErrors.push(error.message));
     await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1, name: /see how your estate is cared for/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Browse all complexes', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /understand how your complex is being cared for/i })).toBeVisible();
+    // The hero action is the search form's submit button, not a link: the old
+    // "Find your complex" link was replaced by the search control.
+    await expect(page.getByRole('button', { name: /find a complex/i })).toBeVisible();
     expect(consoleErrors).toEqual([]);
 });
 test('the sign-in route renders its form', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('heading', { level: 1, name: 'Welcome back.' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Sign in' })).toBeVisible();
     await expect(page.getByLabel('Email address')).toBeVisible();
     await expect(page.getByLabel('Password')).toBeVisible();
 });

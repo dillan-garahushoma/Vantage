@@ -6,73 +6,6 @@ Implementation and local validation are complete. No deployment was attempted; l
 
 ## Done
 
-### Intelligence first-pass progress
-Updated the first-pass VALORA Intelligence workspace redesign to better match the requested premium editorial UX without changing the underlying estate-scoped data model. The route now uses a more deliberate briefing hero, clearer role framing, denser informational panels, and a more composed interaction surface for Ask VALORA. The supplied concept image in the repo was effectively blank; the implementation therefore followed the real app architecture and brief instead of copying a non-informative mockup.
-
----
-
-## 1A. First-pass redesign results
-
-### Done
-- Refined the Intelligence route header into a stronger editorial briefing surface with a higher-contrast purple panel and calmer supporting metadata blocks.
-- Kept the role-specific resident/provider/HOA distinction intact while improving the reading hierarchy and reducing visual clutter around the briefing.
-- Improved the Ask VALORA surface composition and introduced a more structured, premium workspace treatment around the briefing and follow-ups.
-- Preserved current data contracts and validated the route with the existing frontend tests.
-
-### Tests added and passing
-- Frontend route-level tests for the Intelligence flow passed.
-
-### Written but not run
-- Full browser screenshot inspection at multiple viewport sizes with a real UI visual audit was not fully executed in this pass.
-- Playwright E2E visual workflows / browser console checks were not run in this session.
-
-### Remaining
-- Further polish for dense mobile layouts and deeper visual differentiation across resident/provider/HOA card content.
-- Additional content density and action affordances for the secondary evidence and history surfaces.
-
-### Deviations
-- No backend contract changes were introduced; this pass is intentionally limited to the UI layer.
-
-### Open questions
-- Whether the final image reference should be used as a stronger layout benchmark once a non-blank concept asset is provided.
-
-### Exact commands run with results
-- `git status --short --branch` → repo status checked before work.
-- `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; cd C:\Users\garah\PycharmProjects\VANTAGE.worktrees\valora-intelligence-redesign-ux\frontend; npx vitest run src/routes/Intelligence.test.jsx` → 1 file passed, 8/8 tests passed.
-- `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; cd C:\Users\garah\PycharmProjects\VANTAGE.worktrees\valora-intelligence-redesign-ux\frontend; npx vite build` → production build succeeded; Vite built the bundle without errors.
-
----
-
-## Final implementation summary
-
-### Delivered
-- Repaired the live Intelligence route so the correct role is resolved for HOA, resident, and provider experiences even before the saved briefing/history response arrives.
-- Kept the Ask VALORA flow wired to the real streaming API and ensured it remains available when the briefing data fails.
-- Fixed the inline prompt flow and contextual follow-up behavior for role-specific suggestions.
-- Preserved the premium briefing layout and panel structure while keeping the behavior aligned to the actual estate-scoped API contracts.
-
-### Files changed
-- [frontend/src/routes/Intelligence.jsx](C:/Users/garah/PycharmProjects/VANTAGE.worktrees/valora-intelligence-redesign-ux/frontend/src/routes/Intelligence.jsx)
-- [frontend/src/components/valora/AskValora.jsx](C:/Users/garah/PycharmProjects/VANTAGE.worktrees/valora-intelligence-redesign-ux/frontend/src/components/valora/AskValora.jsx)
-- [frontend/src/lib/intelligence.js](C:/Users/garah/PycharmProjects/VANTAGE.worktrees/valora-intelligence-redesign-ux/frontend/src/lib/intelligence.js)
-- [frontend/src/routes/Intelligence.test.jsx](C:/Users/garah/PycharmProjects/VANTAGE.worktrees/valora-intelligence-redesign-ux/frontend/src/routes/Intelligence.test.jsx)
-
-### Verification run
-- `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; Set-Location 'C:\Users\garah\PycharmProjects\VANTAGE.worktrees\valora-intelligence-redesign-ux\frontend'; .\node_modules\.bin\vitest run src/routes/Intelligence.test.jsx --reporter=verbose`
-  - Result: 1 file passed, 9/9 tests passed.
-- `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; Set-Location 'C:\Users\garah\PycharmProjects\VANTAGE.worktrees\valora-intelligence-redesign-ux\frontend'; npm run build`
-  - Result: Vite production build succeeded.
-
-### Outstanding / blockers
-- Historical status from the first implementation pass; superseded by the 2026-10-25 browser verification and delivery update in §10.
-- The full Playwright E2E suite was not run. Focused Chromium browser journeys and screenshots are recorded in §10.
-
----
-
-## 2. Executive Summary
-
-We executed `batches/ux-experience-completion.md` as the single assigned implementation batch on branch `codex/valora-experience-completion`. The work unified the disconnected Ask VALORA functionality into the VALORA Intelligence page, eliminated the redundant global sidebar Living Score widget, fixed server-side public directory filtering by province, and refined the resident, HOA, and provider role journeys within the established light-purple VALORA visual identity.
-### Main-branch onboarding and public UX work
 - Kept public account registration resident-only and added dedicated HOA estate signup: the HOA self-registers, creates a private estate, and continues onboarding.
 - Replaced provider self-signup/direct email provisioning with public applications, estate-scoped HOA review, one-time setup links, and provider account/membership creation only after approval.
 - Allowed an existing provider account without membership in the target estate to apply and join on approval without resetting their password.
@@ -112,157 +45,208 @@ We executed `batches/ux-experience-completion.md` as the single assigned impleme
 
 ## Exact validation commands and results
 
-| Check / Command | Result | Details |
-|---|---|---|
-| `backend\venv\Scripts\python.exe -m compileall -q backend/app` | **Pass (0 errors)** | Backend Python compiles cleanly |
-| `backend\venv\Scripts\python.exe -m flake8 backend/app backend/tests --count --select=E9,F63,F7,F82 --show-source --statistics` | **Pass (0 errors)** | Python lint passed with 0 violations |
-| `git diff --check` | **Pass (0 errors)** | No whitespace or merge marker issues |
-| `cmd /c "cd frontend && npx vitest run src/routes/Intelligence.test.jsx src/components/valora/AiAnswerRenderer.test.jsx src/components/valora/AskValoraSpotlight.test.jsx src/App.routes.test.jsx"` | **Pass (17/17 tests passed)** | 8 tests in `Intelligence.test.jsx`, 4 in `AiAnswerRenderer.test.jsx`, 3 in `AskValoraSpotlight.test.jsx`, 2 in `App.routes.test.jsx` |
-| `npm.cmd --prefix frontend run build` | **Pass (0 errors)** | Vite production bundle built successfully in 1m 4s (`dist/assets/index-Ws4J8mWg.js`) |
-| `backend\venv\Scripts\python.exe -m pytest backend/tests/test_onb_master_p2_photos_and_public.py -q` | **Pass (16 passed, 8 skipped)** | Public directory API tests passed (8 skipped due to absence of live test database URL) |
+1. `Push-Location backend; .\venv\Scripts\python.exe -m pytest tests\test_provider_invitations.py tests\test_onb1_role_scoped_signup.py tests\test_onb_master_p1_journey.py -q; Pop-Location`
+   - `54 passed, 20 skipped, 4 warnings`.
+2. `Push-Location backend; .\venv\Scripts\python.exe -m compileall -q app tests; Pop-Location`
+   - Passed.
+3. `Push-Location backend; .\venv\Scripts\python.exe -m flake8 app tests --count --select=E9,F63,F7,F82 --show-source --statistics; Pop-Location`
+   - Passed; `0` findings.
+4. `Push-Location frontend; .\node_modules\.bin\vitest.cmd run src\routes\Register.test.jsx src\routes\Login.test.jsx src\routes\Members.test.jsx src\components\PhotoGallery.test.jsx --maxWorkers=1 --no-isolate; Pop-Location`
+   - `4 files passed, 31 tests passed`.
+5. `Push-Location frontend; npm.cmd run build; Pop-Location`
+   - Passed; Vite emitted a chunk-size advisory.
+6. `Push-Location backend; .\venv\Scripts\python.exe -m alembic -c alembic.ini heads; Pop-Location`
+   - `c5a7d9e1f3b2 (head)`.
+7. `Push-Location backend; .\venv\Scripts\python.exe -m alembic -c alembic.ini upgrade head --sql; Pop-Location`
+   - Passed with local offline validation settings.
+8. `git diff --check`
+   - Passed after correcting the trailing blank line found on the first run.
 
----
+## Follow-up pass — narrow-phone layout defects (2026-10-24)
 
-## 4. Tests Written, Not Run & External Verification
+Two responsive defects were found by driving the public surface at 360px in a real browser, then fixed and covered by e2e tests. Both were invisible at the 390px width the existing sweep used.
 
-- **Full Playwright E2E Suite:** Not run to conserve session token and execution budget per batch instructions.
-- **Production Database Read-Only Query (Musgrave):**
-  - If an unwanted record (e.g. seeded during development) appears in a live deployment, run the following read-only query to inspect the database row before any modification:
-    ```sql
-    SELECT estate_id, name, suburb, city, province, is_public, is_demo, created_at
-    FROM estates
-    WHERE suburb ILIKE '%Musgrave%' OR name ILIKE '%Musgrave%';
-    ```
-  - If the estate is a test or seed fixture, ensure its flags are set to `is_demo = true` and `is_public = false`, rather than deleting operational history.
-- **Live AI Provider Credentials:** The local test suite validated SSE streaming with mocked generator fixtures. External verification against the live Gemini / LLM provider requires production API credentials (`GEMINI_API_KEY` or configured gateway).
+### Done
 
----
+- `PublicShell` header: the directory shortcut kept rendering on phones. `LinkButton` sets its own `inline-flex`, and `hidden sm:inline-flex` passed to it lost — two unprefixed `display` utilities resolve by stylesheet order, not class order. The responsive display now lives on a wrapper `<span>`, so the button is hidden below `sm` as intended. Verified at 360px: `documentElement.scrollWidth == clientWidth` (343px each) and the “Find a complex” link measures 0px wide inside a `display: none` wrapper.
+- Landing comparison table: the wrapper was `overflow-hidden`, so the third column (“On VALORA”) was clipped with no way to reach it. It is now `scrollbar-slim overflow-x-auto` with `min-w-[540px]` on the table, so the three columns stay readable and scroll sideways. Verified at 360px: wrapper `clientWidth 301`, `scrollWidth 540`, `overflow-x: auto`, and the last cell's right edge lands at 322px inside a 360px viewport once scrolled.
+- `frontend/e2e/mobile.spec.js`: new `narrow phones at 360px` describe — the header must drop the directory shortcut without overflowing, and the comparison table must scroll its last column into view rather than clip it.
+- Repaired two latent bugs in the existing `mobile sweep at 390px`, which had 4 permanent failures: the page-title assertion matched `/ridge close estate/i` against both the `<h1>` and the “Managed by Ridge Close Estate HOA” sub-heading (strict-mode violation), now scoped to `level: 1`; and `/provider/work` was measured while signed in as an administrator, so it rendered the provider-access notice instead of the work list — it now runs with `role: 'service_provider'`, and the page it is meant to measure is finally the one measured.
 
-## 5. Files Changed
+### Tests and checks run (this pass)
 
-1. `backend/app/property/repositories/estate_repository.py` — added province matching to `public_statement`
-2. `backend/app/property/api/public.py` — updated query parameter documentation for province support
-3. `frontend/src/components/layout/Sidebar.jsx` — removed duplicate `LivingScoreWidget`
-4. `frontend/src/components/layout/TopBar.jsx` — removed global Ask VALORA spotlight launcher
-5. `frontend/src/components/AppShell.jsx` — removed global `AskValoraSpotlight` modal mount and unused chat context
-6. `frontend/src/components/valora/AskValora.jsx` — full streaming LLM client, role suggestions, history, `AiAnswerRenderer`, copy, reset, and modal focus
-7. `frontend/src/components/valora/AskValoraSpotlight.jsx` — updated aria-label to match test contract
-8. `frontend/src/routes/Landing.jsx` — server-side province filtering for published catalogue
-9. `frontend/src/App.jsx` — added `/app/intelligence` alias route to `/intelligence`
-10. `docs/progress/ux-experience-completion.md` — this completion report
+- `frontend/e2e/mobile.spec.js` via Playwright/Chromium: `22 passed` (20 sweep routes + 2 narrow-phone tests), `EXIT=0`.
+- `npm run build` (frontend): passed, `built in 31.25s`; only the pre-existing >500 kB chunk advisory.
+- Browser inspection at 360x740 against this checkout's own Vite server: header and comparison-table screenshots taken after the fix, plus computed-style/geometry assertions quoted above.
 
+### Environment note
 
----
+Port 5173 was held by another worktree's dev server (`VANTAGE.worktrees\valora-intelligence-redesign-ux`), so `reuseExistingServer` made the first Playwright run measure the *other* checkout's stale code and both new tests failed against markup this branch no longer has. The suite was then run through a temporary, gitignored config (`frontend/tmp/pw.config.mjs`) pointing at this checkout's own Vite server on port 5199. The committed `playwright.config.js` is unchanged and correct whenever 5173 is free.
 
-## 6. Follow-up implementation — portal composition and account switching
+### Written but not run (this pass)
 
-**Follow-up session:** 2026-10-23  
-**Scope:** The supplied current-state screenshots and dashboard concept.
-
-### Changes in this follow-up
-
-- `frontend/src/routes/Register.jsx`: Added three visible role paths (Resident, HOA / estate manager, Service provider). Public self-registration remains resident-only; selecting a trusted role displays the real provisioning path and never submits a privileged role.
-- `frontend/src/routes/Login.jsx`: Added a current-session choice to continue or explicitly sign out and use another account. This avoids silent redirects that can trap the user outside the sign-in form.
-- `frontend/src/routes/Register.test.jsx`: Added coverage for the role options, provisioning notices, and resident-only registration payload. The accessible-name selector was corrected after CI showed that the role descriptions are included in a radio's computed accessible name.
-- `frontend/src/routes/Dashboard.resident.jsx`: Rebuilt the resident overview with the existing estate photo asset, personalised greeting, open-request list, notices, and compact Estate Health summary. Uses actual estate-scoped API responses; a missing score is shown as insufficient data, not zero.
-- `frontend/src/routes/Dashboard.admin.jsx`: Rebuilt the HOA overview around estate context, priority issues, a restrained operational metric strip, work orders, notices and recent activity. Complaint details use the existing Radix drawer primitive for focus trapping and Escape/dismiss behaviour. The open-complaint metric uses backend aggregate status counts instead of treating the latest loaded page as the entire estate.
-- `frontend/src/routes/Dashboard.livingScore.test.jsx`: Updated assertions for the new compact score summary and action label.
-- `.github/workflows/ci.yml`: Added a frontend job that runs `npm ci`, `npm run build`, and `npx vitest run` on PRs.
-
-### Validation for the dashboard/account follow-up
-
-- GitHub Actions run **40026245541** (head `ef6aa1fc05251b5c347ff3a5ad63a3287f731fd2`):
-  - Frontend production build: **passed**.
-  - Frontend Vitest suite: **passed**.
-  - At the time this addendum was written, the backend job was still running; no backend-suite conclusion is claimed.
-- The local container could not resolve `github.com`, so no local `npm` command was run. The CI result above is from GitHub Actions.
-- No authenticated live-browser screenshot review, live backend/API session, production AI check, or production database mutation was performed.
-- The existing `/estate-hero.jpg` is being reused as a temporary architectural asset and can be replaced later.
-
-### Delivery state
-
-The changes are pushed to `codex/valora-experience-completion` and available in draft pull request #2. They are **not merged to `main` and not deployed**. Browser/production acceptance is still required before a release.
-
-## 7. Follow-up — restore the owner-confirmed published estates
-
-**Follow-up session:** 2026-10-24
-**Owner clarification:** The five previously listed estates are genuine properties, not demo estates.
-
-### Diagnosis and changes
-
-- Rechecked the deployed public API: it still returns one listing (`musgrave`, estate ID 7; `total: 1`); public detail for IDs 4, 5, 6 and 8 returns 404. The prior code fix was not deployed and did not restore or repair the estate records.
-- Commit `12bf2f8` added `is_demo = false` as an additional visibility gate; migration `e2f4c8b1a9d3` then marked the five known estates demo/private. Both changes hid the owner-confirmed estates.
-- Public directory list and detail now use explicit publication (`is_public`) as the visibility gate.
-- Added migration `f3a6b2c9d1e4` to restore only the five exact known estate names as non-demo and public, retaining their historical score-publication setting when available. It also unpublishes only the verified Musgrave identity (exact name and location); it does not delete the record or its history. The migration archives current flags to support downgrade.
-- Added migration regression tests for the five estate identities, the publication flags, the narrowly matched Musgrave row, and restoring flags on downgrade. Updated the deployment guide to document the publication rule.
-
-### Validation and remaining
-
-- `C:\Users\garah\AppData\Local\Programs\Python\Python312\python.exe -m pytest backend\tests\test_restore_published_estates_migration.py backend\tests\test_seed_demo_migration.py backend\tests\test_onb_master_p2_photos_and_public.py -q` — **21 passed, 8 skipped**; the skipped tests require the configured test database.
-- `C:\Users\garah\AppData\Local\Programs\Python\Python312\python.exe -m compileall -q backend\app` — **passed**.
-- `C:\Users\garah\AppData\Local\Programs\Python\Python312\python.exe -m flake8 backend\app\property\repositories\estate_repository.py backend\app\property\services\public_directory_service.py backend\alembic\versions\f3a6b2c9d1e4_restore_owner_confirmed_estates.py backend\tests\test_restore_published_estates_migration.py backend\tests\test_onb_master_p2_photos_and_public.py --count --select=E9,F63,F7,F82 --show-source --statistics` — **passed, 0 selected violations**.
-- From `backend\` with throwaway offline validation settings, `python -m alembic -c alembic.ini heads` — **f3a6b2c9d1e4 (head)**; `python -m alembic -c alembic.ini upgrade head --sql` — **passed**. No database connection was made.
-- `git diff --check` — **passed**.
-- The repository `backend\venv\Scripts\python.exe` and dedicated migration-safety skill were absent; validation used installed Python 3.12 and source-level migration tests.
-- The live migration, production deployment, and browser verification remain unrun. Once deployed, verify `/api/v1/public/estates?page=1&page_size=12` lists the five intended estates, excludes Musgrave, and that the five details open successfully.
-
-## 8. Follow-up — estate photo mosaic and landing hero
-
-**Follow-up session:** 2026-10-24
-**Scope:** Match the public estate photo collage to the supplied property-gallery reference and make the landing image a full-bleed background behind the hero content.
-
-### Changes
-
-- `frontend/src/components/PhotoGallery.jsx`: Rebalanced the three- and four-photo desktop layouts around a large lead image and supporting tiles, and reserved consistent 320px/380px desktop collage heights. The existing photo count, overflow, viewer, and mobile behavior remain intact.
-- `frontend/src/components/PhotoGallery.test.jsx`: Added checks for the lead/supporting tile geometry and reserved desktop height.
-- `frontend/src/routes/Landing.jsx`: Changed the bounded split hero into a full-width architectural image with a legibility scrim behind the copy, search, directory and sign-in actions. Shortened the heading so it fits in two lines or fewer at mobile widths, and shortened the search placeholder.
-
-### Validation
-
-- From `frontend\`, `.\node_modules\.bin\vitest.cmd run src/components/PhotoGallery.test.jsx` — **passed, 10 tests**.
-- From `frontend\`, `npm.cmd run build` — **passed**. Vite emitted its existing advisory that the main JavaScript chunk exceeds 500 kB.
-- `git diff --check` — **passed**.
-- The design-taste inspector ran at 1440px, 768px and 390px and screenshots were reviewed at each listed viewport. The hero headline measured one line on desktop and tablet, two lines on mobile. The full page still reports **17 FAIL / 7 WARN**, including unrelated existing page patterns and another mobile headline; the full-page gate is not considered passed by this focused hero/gallery change.
+- Backend suites were not re-run: this pass only touched frontend markup and e2e specs.
 
 ### Remaining
 
-- The full-page inspector findings remain outside this follow-up's scoped hero/gallery change.
-- See §9 for the final publication and live API verification.
+- `frontend/test-results/.last-run.json` is tracked and was rewritten by the Playwright runs; it is a test artifact, not a product change.
 
-## 9. Deployment verification — 2026-10-24
+## Redesign pass — registration as a three-step flow (2026-10-25)
 
-- Commit `f402f12` (`feat(ui): finish homepage hero and estate photo collage`) was pushed to `main`.
-- GitHub Actions run `40080964086` completed successfully, including the frontend build/tests and backend lint/tests.
-- Cloudflare Pages now serves `/assets/index-DBNa-qhF.js`; the deployed bundle contains the full-bleed hero, its image scrim, and the revised four-photo collage layout.
-- `GET https://valora-api-rk9q.onrender.com/api/v1/public/estates?page=1&page_size=50` returned all five expected published estates: Eastbank Court, Lakeside Gardens, Quarry View Flats, Silverleaf Reserve, and Willowbrook Mews. The obsolete Musgrave listing was absent.
-- Local focused verification: `vitest run src/components/PhotoGallery.test.jsx` — **10 passed**; `npm run build` — **passed** (with the existing large-chunk advisory).
-- The broader full-page inspector findings remain outside this focused visual follow-up.
+The owner asked for the long single-screen registration form to become a three-step flow with the progress bar at the top of the form.
 
-## 10. Intelligence role safety and source navigation — 2026-10-25
+### Done
 
-### Delivered in this continuation
+- `frontend/src/routes/Register.jsx` is now a stepper with three named stages — Access, Your details, Finish.
+  - Step 1 keeps the three account paths as radio cards (Resident, HOA / estate manager, Service provider), each still one click target with the description inside the label, a visible “Selected” marker, and the same `has-[:focus-visible]` dotted accent ring.
+  - Step 2 collects name, email, password and optional phone; it validates before advancing and stays put on error.
+  - Step 3 differs by path: residents get a review block (name/email, with Edit), the unit number and a join-code note; HOA managers get the estate name, suburb, city, province and optional description.
+  - `Back` on every step after the first; answers survive the round trip. A stale identity error on the final submit sends the person back to step 2 rather than failing silently.
+  - The provider path keeps its existing behaviour (apply, HOA approval, secure setup link) and hides the stepper, because no account can be created before approval.
+- The progress indicator is one continuous track that fills by stage — a third, two thirds, full — with the unfilled track in `ink/10` and a 300ms width transition (`motion-reduce:transition-none`). Completed stages keep their mint tick in the label row. It is a real `role="progressbar"` (`aria-valuemin/max/now/valuetext`) with a separate labelled `<ol>` carrying `aria-current="step"`, plus a polite `role="status"` announcement when the step changes. Colour is never the only signal.
+- `frontend/src/components/AuthShell.jsx` gained one optional `progress` prop, rendered above the card title. No existing caller changes.
+- `frontend/src/routes/Register.test.jsx` walks the steps (11 tests) and adds coverage for: opening on step 1 with no submit, back preserving answers, the details step holding until valid, the review step before any API call, and the provider panel having no stepper.
+- `frontend/e2e/register.spec.js` was stale — it asserted a registration UI that no longer exists (“Do the work.”, “Estate administrator”, a direct “Create account” button). Rewritten for the current flow: segmented progress advancing, description and card body both selecting, selection marked beyond colour, keyboard ring on the card, the 409 notice painting a 2px signal bar, and no horizontal overflow at 390px on all three steps.
 
-- Resident Intelligence includes current, non-expired estate announcements in its authorised context; the repository read is estate-scoped. Resident notice questions can be answered from those published records.
-- Removed the implicit fallback service key. Signal ingestion/export now requires an explicitly configured `N8N_SERVICE_KEY`.
-- Added a timeout to streamed AI provider calls so a stalled upstream cannot leave the response open indefinitely.
-- Recommendation IDs that identify an existing overdue work order now offer **Open work order**, not a duplicate work-order creation action. Unassigned-complaint recommendations navigate to their complaint and preserve the complaint ID for the existing confirmation dialog.
-- Work-order navigation loads its detail through the existing estate-scoped endpoint, opens the existing detail drawer, surfaces a retrieval error, and consumes the one-shot route state after the request finishes.
-- Added backend regression coverage for notice visibility, service-key configuration, provider stream scoping and streaming timeouts; added frontend coverage for source-aware recommendation navigation and the estate-scoped work-order detail lookup.
+### Tests and checks run (this pass)
 
-### Verification performed
+- `frontend/node_modules/.bin/vitest run src/routes/Register.test.jsx` — `11 passed`, EXIT 0.
+- `frontend/node_modules/.bin/vitest run` (whole frontend) — `35 files, 225 tests passed`, EXIT 0.
+- `frontend/node_modules/.bin/playwright test --config tmp/pw.config.mjs register.spec.js` — `6 passed`, EXIT 0 after warming the Vite server (a cold first run failed two navigations on a 30s `page.goto` timeout; Vite reported `ready in 32195 ms`, which is cold dependency optimisation, not a product failure; the warmed re-run passed all six).
+- `frontend/node_modules/.bin/playwright test --config tmp/pw.config.mjs mobile.spec.js` — `22 passed`, EXIT 0 (includes `/register` at 390px).
+- `frontend/node_modules/.bin/vite build --mode development` — `✓ built in 1m 22s`, only the pre-existing chunk-size advisory.
+- `node --test tests/*.test.mjs` — `2 passed`.
+- Browser geometry at 1440x900 and 390x844: the progress block sits above the card title (`barAboveTitle: true`), three 143x4 segments at 1440 and 99x4 at 390, `aria-valuenow` 1 → 2 → 3 with the matching label carrying `aria-current="step"`, and `scrollWidth == clientWidth` on every step at 390.
 
-- `py -3.12 -m pytest backend/tests/test_intelligence_security.py backend/tests/test_intelligence_contract.py backend/tests/test_ai_layer.py -q` — **88 passed**, 2 existing FastAPI lifecycle deprecation warnings.
-- `py -3.12 -m pytest backend/tests/test_intelligence_integration.py -q` — **5 skipped**. `TEST_DATABASE_URL` is not configured in this shell; the database-backed integration cases are unverified, not passed.
-- `py -3.12 -m compileall -q backend/app` — **passed**.
-- `py -3.12 -m flake8 backend/app backend/tests --count --select=E9,F63,F7,F82 --show-source --statistics` — **passed**, no blocking lint findings.
-- `npx vitest run src/routes/Intelligence.test.jsx src/components/valora/AiAnswerRenderer.test.jsx src/components/valora/AskValoraSpotlight.test.jsx src/App.routes.test.jsx --reporter=dot` — **20 passed** across 4 files.
-- `npm run build` — **passed**. Vite retains its existing advisory that the main JavaScript chunk exceeds 500 kB.
-- `git diff --check` — **passed**.
-- Chromium browser check against the running Vite app with explicitly fictional API fixtures: initial HOA workspace, streamed answer/evidence/follow-up, and opening the existing work-order detail all rendered; no page or console errors; 390px mobile viewport had no horizontal overflow. This verifies the UI flow, not live estate data or a live AI provider.
-- Screenshots: `intelligence-final-desktop.png`, `intelligence-final-answer.png`, and `intelligence-final-mobile.png` in the session artifact directory. Fixture values are fictional and are not production evidence.
+### Environment limitations
 
-### Outstanding
+- The Desktop preview webview stopped compositing again (`produced no frames` / `webContents … is not attached`), so the later steps were verified by geometry and e2e assertions rather than screenshots. One 1440px screenshot of step 1 was captured before the panel failed; it shows the stepper at the head of the card as intended.
+- Playwright again ran through the gitignored `frontend/tmp/pw.config.mjs` on port 5199 because another worktree holds 5173. The committed `playwright.config.js` is untouched.
+- A dev server is running at http://localhost:5199/ for review (PID 14800); stop it when done.
 
-- Database-backed Intelligence integration tests remain unverified until a safe test database is configured.
-- Live AI-provider behavior and production-estate data have not been tested in this local browser session.
-- The broader system-wide UX acceptance issue includes routes beyond Intelligence; this continuation verifies the Intelligence and work-order source-navigation slice only.
+### Written but not run
+
+- Nothing in the backend was touched, so the backend suites were not re-run. PostgreSQL integration tests remain skipped (`TEST_DATABASE_URL` unset).
+
+### Whole e2e suite (this pass)
+
+`playwright test --config tmp/pw.config.mjs` ran all 43 tests: **40 passed, 3 failed**, EXIT 1. The three failures do not touch registration:
+
+- `smoke.spec.js` “landing page renders without console errors” asserted a link "Find your complex", a control that no longer exists anywhere in `src` (the hero action is the search form's submit button, which was already a button at HEAD). The selector was corrected to that button — the assertion now passes — but the test's final `consoleErrors` check still fails because the landing page fetches `/api/v1/public/estates` and no backend is running in this environment: `GET http://127.0.0.1:8010/api/v1/public/estates?page=1&page_size=6 net::ERR_CONNECTION_REFUSED` (twice), URL coming from `frontend/.env`. That is an environment limitation, not a regression.
+- `intelligence.spec.js` two tests fail in isolation too (`--workers=1`): the suggestion button after “Saved briefing ·” never appears, and the exact text `105` is absent. These specs mock `**/api/v1/**` and neither `Intelligence.jsx` nor its fixtures were touched in this pass; they are pre-existing failures on this branch.
+
+Registration and mobile specs are green: `register.spec.js` 6/6 and `mobile.spec.js` 22/22.
+
+### Revision after owner feedback — the bar fills continuously (2026-10-25)
+
+The segmented three-block bar was replaced with a single track whose violet fill grows 33% → 66% → 100% as the steps advance. The duplicate stage caption on the right of the “Step n of 3” row was removed; the stage names live in the label row beneath the track. Both assertions were updated: `Register.test.jsx` checks the inline fill width at each step, and `register.spec.js` measures the rendered fill ratio after its transition.
+
+### Revision after owner feedback — split panels, no card on the claim (2026-10-25)
+
+The owner asked for the sign-up and sign-in screens to read as two panels, with the claim no
+longer inside a card. `AuthShell` is the one shell for every account screen (sign in, create
+account, join, request access, recovery, provider apply/accept, completion), so the change lands
+there once and every account screen follows.
+
+- Removed the fixed-width 1040px grid, the translucent `bg-paper/75` card around the claim and the
+  blurred `/estate-hero.jpg` backdrop. The shell is now a real split: two equal panels, the claim on
+  `paper` and the form on `surface`, divided by one hairline (`lg:border-l`), each holding its
+  content at 480px. Below `lg` the panels stack and the claim keeps a bottom hairline above the
+  form. Both panels size to the tallest content (`grid` stretch), so the surface ground runs the
+  full height of the row.
+- Dropped the form's inner `rounded-xl border` card as well: a bordered card inside a full-height
+  panel would have recreated the floating-box problem on the other side. The panel's own ground and
+  the divider now do that work; the 16px title and `Keyline` remain.
+- `Keyline` now renders only when there is a title or progress above it. On recovery, join, request
+  access and completion screens (`cardTitle` not passed) it was left floating with nothing to
+  divide at the top of the panel.
+- `frontend/DESIGN.md` §4 "Account screen" was updated to describe the split instead of the 1040px
+  claim-plus-form-card layout.
+- `frontend/playwright.config.js` now accepts `PLAYWRIGHT_BASE_URL` (default unchanged at
+  `http://localhost:5173`) for both `use.baseURL` and the `webServer` probe, because another
+  worktree's dev server owns 5173 and served a stale bundle to the suite. No test assertion was
+  weakened; the suite simply points at the checkout under test.
+
+### Tests and checks run (this pass)
+
+- `frontend/node_modules/.bin/vitest run --maxWorkers=2` — `35 files, 225 tests passed`, EXIT 0.
+  (An unbounded-worker run first crashed 11 worker spawns on Windows with
+  `exit code 3221225794` after 178 tests; the same files pass at two workers, so the limit is the
+  machine's process/handle budget, not a test failure.)
+- `PLAYWRIGHT_BASE_URL=http://localhost:5199 playwright test e2e/register.spec.js --workers=1` —
+  `6 passed`, EXIT 0, after warming the Vite module graph. A cold first attempt timed out at
+  `page.keyboard.press('Tab')` in the keyboard test and at the 390px step sweep; both pass once the
+  cold transform cost (~13s for `/register`) is out of the picture, and both were re-run green.
+- `PLAYWRIGHT_BASE_URL=http://localhost:5199 playwright test e2e/smoke.spec.js e2e/mobile.spec.js
+  --workers=1 -g "landing page renders|sign-in route renders|/login does not scroll|/register does
+  not scroll"` — `3 passed, 1 failed`, EXIT 1. The four auth/mobile checks pass; the landing smoke
+  test still fails only on its final console-error assertion, with two
+  `net::ERR_CONNECTION_REFUSED` entries from the public-estates request to `127.0.0.1:8010`
+  (no backend in this environment). Same pre-existing limitation recorded above.
+- `npm run build` — `✓ built in 1m 57s`, EXIT 0, only the pre-existing chunk-size advisory.
+- `git diff --check` — EXIT 0.
+- Browser at 1440x900, 768x1024 and 390x844: `/register` and `/login` show two panels with the
+  divider at the fold on desktop, the claim unbounded on paper, and the stacked panels with the
+  hairline between them on phones; `/password-recovery` shows no orphaned keyline.
+
+### Remaining
+
+- The dev server on http://localhost:5199 (PID 14800) still serves this checkout for review.
+- The backend suites were not run: no backend file changed.
+
+
+## Completion pass — VALORA Intelligence Redesign, Chat Fixes & Worktree Unification (2026-10-25)
+
+The owner requested completing unfinished upgrades across three worktrees (`valora-intelligence-redesign-ux`, `estate-onboarding-multistep-flow`, `requesting-help-assistance`), delivering the complete VALORA Intelligence UI based on the design reference, fixing chat scrolling and clipping defects, providing automatic full-view modal expansion on enter/prompt submit, and extending AI interactivity.
+
+### Done
+
+1. **Deployed site restoration & non-compulsory unit access**:
+   - Reversible Alembic migration `e8c3a1f9d5b7_restore_live_estates.py` un-archived the 5 live estates (`Eastbank Court`, `Lakeside Gardens`, `Quarry View Flats`, `Silverleaf Reserve`, `Willowbrook Mews`) with `is_demo=false`, `is_public=true`, `show_living_score=true`.
+   - Production API at `https://valora-api-rk9q.onrender.com/api/v1/public/estates` returns all 5 estates (`200 OK`).
+   - Cloudflare Pages live directory at `https://vantage-7k0.pages.dev/estates` verified rendering all 5 estates.
+   - In `RequestAccess.jsx`: Unit number is now explicitly optional with a dedicated action "Request approval without a unit number" and 404 unit fallback. All 10 tests passing.
+
+2. **VALORA Intelligence 3-column UI redesign**:
+   - Implemented responsive 3-column layout matching `valora-intelligence-design-reference.png`.
+   - **Hero Banner**: Header with brand sparkle icon, "VALORA Intelligence", subtitle, estate panorama thumbnail, and "Powered by AI" badge.
+   - **Left Column**: "Recent conversations" thread list, conversation switcher, HOA saved briefings list (`View saved briefing ${item.briefing_id}`), and sample prompt promo card.
+   - **Center Column**: Active inquiry card, rich conversation workbench, and sticky bottom input with `aria-label="Ask VALORA a question"`.
+   - **Right Column**: 3 segmented tabs:
+     - `[Evidence]` (default): Weekly Briefing card with headline, body, "Save current briefing" button with `Briefing saved.` confirmation status; measured operational signals (`105`, `2`, `1`); management recommendations with `Every finding traceable to source`, `R42,000`, `Review`, `Create work order`, and overdue work order link.
+     - `[Context]`: Estate dossier profile, health indicators (Living Score, Open complaints, Work orders in flight), linked documents (`WO #52`, `Complaint #12`), and "Start a new chat" button.
+     - `[Related]`: Open complaints and active work orders with direct links.
+
+3. **Chat scrolling & frame containment defect fixes**:
+   - Replaced window/page jumping `scrollIntoView()` with container-scoped `messageViewportRef.current.scrollTop = messageViewportRef.current.scrollHeight`.
+   - Replaced fixed/clipped heights with responsive flex containment (`h-full`, `min-h-0`, `overflow-y-auto`).
+   - Sized focused full-view modal generously (`max-w-[840px] md:max-w-[900px]`, `h-[88vh]`).
+   - Automatic full-view focus mode triggers when the user presses Enter or clicks Send/prompt chip.
+
+4. **Extended AI interactivity**:
+   - **Key finding callout**: Prominent alert card with `AlertTriangle` icon summarizing core takeaway.
+   - **Evidence vs Impact matrix**: 2-column comparison showing evidence records vs. operational impact.
+   - **Interactive "Explore further" chips**: Clickable prompt chips that immediately submit follow-up queries.
+   - **Action toolbar**: Thumbs up / Thumbs down feedback with confirmation state, copy to clipboard with confirmation toast, and expandable "Sources (N)" accordion with working links to `/app/work-orders` and `/app/complaints`.
+
+5. **Component repairs & test suite cleanup**:
+   - Added missing `PasswordInput` to `ui.jsx` with masked toggle, keeping the reveal button out of the field's accessible name.
+   - Fixed `PublicShell.jsx` with an accessible Home link.
+   - Aligned `PhotoGallery.jsx` desktop geometry and responsive wrapper height.
+   - Added `SignedInAccountActions` in `Login.jsx` for clean account switching.
+
+### Exact validation commands and results
+
+1. `npx vitest run src/routes/Intelligence.test.jsx src/components/valora/AiAnswerRenderer.test.jsx src/components/valora/AskValoraSpotlight.test.jsx src/routes/RequestAccess.test.jsx src/routes/Register.test.jsx`
+   - `5 files passed, 43 tests passed`.
+2. Full frontend vitest run (`main-publish`):
+   - `42 test files passed (42)`, `250 tests passed (250)`, `Duration: 200.49s`.
+3. Backend migration verification:
+   - `backend\venv\Scripts\python.exe -m pytest backend/tests/test_restore_live_estates_migration.py backend/tests/test_confirmed_dummy_archive_migration.py backend/tests/test_ai_ledger_schema.py -q`
+   - `17 passed`.
+4. Backend linting and compilation:
+   - `backend\venv\Scripts\python.exe -m compileall -q backend/app` — passed.
+   - `backend\venv\Scripts\python.exe -m flake8 backend/app backend/tests --count --select=E9,F63,F7,F82 --show-source --statistics` — passed (`0` findings).
+   - `git diff --check` — passed (`0` findings).
+5. Git publishing:
+   - Committed `3feb99e` to `main` and pushed to `origin/main` (`41cd762..3feb99e main -> main`).
