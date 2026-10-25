@@ -933,7 +933,10 @@ async def test_public_provider_signup_is_rejected(
         ServiceProviderRepository,
     )
 
-    response = await signup_fixture(async_client,
+    # Do not use signup_fixture here: it deliberately routes trusted provider
+    # provisioning payloads through /auth/provision. Exercise the public route
+    # directly to prove that clients cannot self-select the service_provider role.
+    response = await async_client.post(
         "/api/v1/auth/register",
         json=_register_body(
             account_type="service_provider",
