@@ -77,7 +77,7 @@ export function AuthShell({
             {aside}
           </section>
 
-          <section className="min-w-0 self-start rounded-xl border border-line bg-surface p-5 sm:p-6">
+          <section className="min-w-0 self-start rounded-2xl border border-white/70 bg-surface p-5 shadow-[0_24px_70px_-20px_rgba(35,30,70,0.24),0_8px_24px_-12px_rgba(35,30,70,0.16)] ring-1 ring-black/[0.025] sm:p-7">
             {cardTitle ? (
               <h2 className="text-[16px] font-semibold text-ink">{cardTitle}</h2>
             ) : null}
