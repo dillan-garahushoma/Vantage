@@ -3,8 +3,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.common.enums import AvailabilityStatus
-
 
 class PropertyResponse(BaseModel):
     unit_id: int = Field(..., serialization_alias="id")
