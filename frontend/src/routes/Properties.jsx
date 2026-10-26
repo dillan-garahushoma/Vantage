@@ -13,7 +13,6 @@ function CreatePropertyDrawer({ onClose, onDone }) {
     const [form, setForm] = useState({
         unit_no: '',
         street_address: '',
-        suburb: '',
         size_m2: '',
         bedrooms: '',
         bathrooms: '',
@@ -31,7 +30,6 @@ function CreatePropertyDrawer({ onClose, onDone }) {
                 estate_id: estateId,
                 unit_no: form.unit_no.trim(),
                 street_address: form.street_address.trim(),
-                suburb: form.suburb.trim() || null,
                 size_m2: form.size_m2 === '' ? null : Number(form.size_m2),
                 bedrooms: form.bedrooms === '' ? null : Number(form.bedrooms),
                 bathrooms: form.bathrooms === '' ? null : Number(form.bathrooms),
@@ -45,9 +43,7 @@ function CreatePropertyDrawer({ onClose, onDone }) {
             setBusy(false);
         }
     }
-    const invalid = form.unit_no.trim() === '' ||
-        form.complex_name.trim() === '' ||
-        form.street_address.trim() === '';
+    const invalid = form.unit_no.trim() === '' || form.street_address.trim() === '';
     return (<Drawer open onClose={onClose} title="Add a unit" subtitle="Registered against the estate you are scoped to" footer={<div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>
             Cancel
@@ -65,9 +61,6 @@ function CreatePropertyDrawer({ onClose, onDone }) {
         </div>
         <Field label="Street address">
           <Input value={form.street_address} onChange={(e) => update('street_address', e.target.value)} placeholder="7 Ridge Close"/>
-        </Field>
-        <Field label="Suburb (optional)">
-          <Input value={form.suburb} onChange={(e) => update('suburb', e.target.value)} placeholder="Centurion"/>
         </Field>
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Size m²">
