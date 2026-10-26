@@ -351,3 +351,67 @@ async def test_unconfigured_service_key_cannot_bypass_estate_admin_membership(mo
             estate_id=1,
             internal_key='fc8ae306102a72c25f5cb398ee92796dd1cb24124276847014af5a05b718bf71',
         )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("question", "expected"),
+    [
+        ("What is the status of my maintenance requests?", "status: in_progress"),
+        ("How do I report a new maintenance issue?", "open Complaints"),
+        ("When can I expect my repair to be completed?", "does not have a verified completion estimate"),
+        ("Are there any published estate notices?", "Water interruption"),
+        ("Is a Living Score published for my estate?", "not currently published"),
+    ],
+)
+async def test_resident_intelligence_answers_common_tasks_from_authorized_context(question, expected):
+    service = IntelligenceService(AsyncMock())
+    service._auth = SimpleNamespace(resolve_access=AsyncMock(return_value=SimpleNamespace(
+        is_estate_admin=False, is_estate_provider=False, membership_roles={'resident'}
+    )))
+    service._estates = SimpleNamespace(get_by_id=AsyncMock(return_value=SimpleNamespace(
+        name='Example Estate', is_demo=False, show_living_score=False
+    )))
+    service._records = SimpleNamespace(
+        facts=AsyncMock(side_effect=AssertionError('Resident question read estate-wide facts')),
+        resident_signals=AsyncMock(return_value=[{
+            'id': 41, 'title': 'Kitchen tap leak', 'status': 'in_progress',
+            'logged_date': '2026-10-20T08:00:00+00:00', 'category': 'plumbing',
+        }]),
+        published_announcements=AsyncMock(return_value=[{
+            'title': 'Water interruption', 'message': 'Supply is scheduled to resume at 14:00.',
+        }]),
+    )
+
+    answer = await service.ask_valora(1, question, SimpleNamespace(user_id=9))
+
+    assert expected.casefold() in answer.summary.casefold()
+    assert answer.source == 'estate-domain'
+    assert answer.estate_id == 1
+    service._records.facts.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_resident_unknown_question_does_not_fabricate_policies_or_other_residents_data():
+    service = IntelligenceService(AsyncMock())
+    service._auth = SimpleNamespace(resolve_access=AsyncMock(return_value=SimpleNamespace(
+        is_estate_admin=False, is_estate_provider=False, membership_roles={'resident'}
+    )))
+    service._estates = SimpleNamespace(get_by_id=AsyncMock(return_value=SimpleNamespace(
+        name='Example Estate', is_demo=False, show_living_score=False
+    )))
+    service._records = SimpleNamespace(
+        facts=AsyncMock(side_effect=AssertionError('Resident question read estate-wide facts')),
+        resident_signals=AsyncMock(return_value=[]),
+        published_announcements=AsyncMock(return_value=[]),
+    )
+
+    answer = await service.ask_valora(
+        1, 'What are the estate quiet hours and other residents complaints?',
+        SimpleNamespace(user_id=9),
+    )
+
+    assert 'I can help you track your own maintenance requests' in answer.summary
+    assert 'private requests' in answer.summary
+    assert answer.recommendation == ''
+    service._records.facts.assert_not_called()
