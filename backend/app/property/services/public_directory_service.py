@@ -154,7 +154,9 @@ class PublicDirectoryService:
             if photo is None:
                 raise NotFoundException(PHOTO_NOT_FOUND_MESSAGE)
             estate = await self._estates.get_by_id(photo.estate_id)
-            if estate is None or not estate.is_public or (not self._allow_demo and estate.is_demo):
+            # Preserve the existing unlisted-photo contract for estate albums.
+            # Unit-listing photos above are served only while their listing is public.
+            if estate is None or (not self._allow_demo and estate.is_demo):
                 raise NotFoundException(PHOTO_NOT_FOUND_MESSAGE)
         path = photo_path(self._upload_dir, public_id, thumb=size == "thumb")
         if not path.is_file():
