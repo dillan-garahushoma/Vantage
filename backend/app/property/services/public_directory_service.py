@@ -134,7 +134,14 @@ class PublicDirectoryService:
                     photos=photos_by_unit.get(unit.unit_id, []),
                 )
                 for unit in units
-                if unit.bedrooms is not None and unit.bathrooms is not None and unit.size_m2 is not None
+                if unit.bedrooms is not None
+                and unit.bathrooms is not None
+                and unit.size_m2 is not None
+                and bool(unit.public_listing_id)
+                and bool((unit.listing_title or "").strip())
+                and bool((unit.listing_description or "").strip())
+                and bool(unit.amenities)
+                and bool(photos_by_unit.get(unit.unit_id))
             ],
             living_score=await self._living_score_summary(estate),
         )
