@@ -144,11 +144,39 @@ async function request(path, options = {}) {
     }
     return payload;
 }
+async function requestBlob(path, params) {
+    if (!API_CONFIGURED) {
+        throw new ApiError(0, 'VALORA could not connect because this deployment has no API address configured.', 'API_BASE_URL_MISSING');
+    }
+    const headers = {};
+    const token = session.token();
+    if (token) headers.Authorization = `Bearer ${token}`;
+    let response;
+    try {
+        response = await fetch(buildUrl(path, params), { headers });
+    } catch {
+        throw new ApiError(0, 'Cannot reach the VALORA API. Is the backend running?');
+    }
+    if (!response.ok) {
+        const text = await response.text();
+        let payload = null;
+        try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }
+        const detail = payload?.detail;
+        const message = typeof detail === 'string' ? detail : detail?.message ?? `Request failed (${response.status}).`;
+        if (response.status === 401) {
+            session.clear();
+            onUnauthorized?.();
+        }
+        throw new ApiError(response.status, message, detail?.code, detail?.request_id);
+    }
+    return response.blob();
+}
 export const api = {
     contact: (payload) => request('/api/v1/contact', {
         method: 'POST', body: payload, anonymous: true,
     }),
     get: (path, params) => request(path, { params }),
+    blob: (path, params) => requestBlob(path, params),
     post: (path, body, params) => request(path, { method: 'POST', body, params }),
     upload: (path, formData, params) => request(path, { method: 'POST', body: formData, params }),
     patch: (path, body, params) => request(path, { method: 'PATCH', body, params }),
