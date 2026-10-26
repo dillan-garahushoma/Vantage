@@ -299,46 +299,104 @@ class IntelligenceService:
         )
 
     async def ask_valora(self, estate_id: int, question: str, actor: User) -> AskValoraResponse:
+        """Answer from role-authorized records; residents receive personal, actionable guidance."""
         access = await self._require_member(actor, estate_id)
+        q = question.casefold()
+
         if not access.is_estate_admin:
             personal = await self.get_intelligence(estate_id, actor)
             if personal.role == "service_provider":
                 jobs = personal.provider_view.assigned_work_orders if personal.provider_view else []
-                summary = (
-                    "Your assigned work orders: " + "; ".join(
-                        f"#{job.id} {job.title} — {job.status}, due {job.due_date or 'date not recorded'}"
-                        for job in jobs
+                if any(term in q for term in ("due", "deadline", "overdue", "when")):
+                    matching = [job for job in jobs if job.due_date]
+                    summary = (
+                        "Recorded due dates for your assigned work: "
+                        + "; ".join(f"#{job.id} {job.title}: {job.due_date} ({job.status})" for job in matching)
+                        if matching else
+                        "I couldn't find a recorded due date for your currently assigned work. Check the work order or contact the assigning HOA."
                     )
-                    if jobs
-                    else "There are no work orders currently assigned to your provider account."
-                )
+                else:
+                    summary = (
+                        "Your assigned work orders: " + "; ".join(
+                            f"#{job.id} {job.title} — {job.status}, due {job.due_date or 'date not recorded'}"
+                            for job in jobs
+                        ) if jobs else
+                        "There are no work orders currently assigned to your provider account."
+                    )
                 related = ["Your assigned work orders"]
-            else:
-                issues = personal.resident_view.unit_issues if personal.resident_view else []
-                notices = personal.resident_view.community_notices if personal.resident_view else []
+                return AskValoraResponse(
+                    summary=summary, evidence=personal.evidence, recommendation="",
+                    related=related, source="estate-domain", as_of=personal.as_of,
+                    estate_id=estate_id, limitations=personal.limitations,
+                )
+
+            view = personal.resident_view
+            issues = view.unit_issues if view else []
+            notices = view.community_notices if view else []
+            score_summary = view.living_score_summary if view else ""
+            score_published = bool(view and view.living_score_label == "Published" and score_summary)
+            issue_terms = ("request", "complaint", "repair", "maintenance", "issue", "status", "progress", "update", "fixed", "resolved")
+            notice_terms = ("announcement", "announcements", "notice", "notices", "water interruption", "pool", "closure", "community update")
+            score_terms = ("living score", "score", "community health", "estate health")
+            reporting_terms = ("report", "log", "submit", "raise", "new issue", "new complaint", "leak", "broken", "not working")
+            timeline_terms = ("how long", "when will", "timeline", "when can", "eta", "expected resolution")
+
+            if any(term in q for term in notice_terms):
+                summary = (
+                    "Current published estate notices: " + " ".join(notices)
+                    if notices else
+                    "There are no active published estate notices in VALORA right now. For urgent building or safety matters, contact your estate office or the appropriate emergency service."
+                )
+                related = ["Your maintenance requests", "Published Living Score"]
+            elif any(term in q for term in score_terms):
+                summary = score_summary if score_published else (
+                    "A Living Score is not currently published for this estate, so I can't give you a verified score. "
+                    "You can still use VALORA to follow your own requests and read published community notices."
+                )
+                related = ["Your maintenance requests", "Published estate notices"]
+            elif any(term in q for term in reporting_terms) and not any(term in q for term in ("my request", "my complaint", "my repair", "status", "progress", "update")):
+                summary = (
+                    "You can report a new issue in VALORA: open Complaints, choose the unit linked to your account, describe what happened, and attach clear photos or evidence if relevant. "
+                    "After submitting, return to your request list to follow its recorded status. If the unit isn't available to select, ask your HOA to link it to your account."
+                )
+                related = ["Your maintenance requests", "Published estate notices"]
+            elif any(term in q for term in timeline_terms):
+                matching = [issue for issue in issues if issue.status.casefold() not in {"resolved", "rated", "closed"}]
+                if matching:
+                    summary = (
+                        "VALORA does not have a verified completion estimate for your request"
+                        + ("s" if len(matching) > 1 else "") + ". "
+                        + "; ".join(f"#{issue.id} {issue.title}: recorded status is {issue.status}" for issue in matching)
+                        + ". The estate team or assigned provider must confirm the expected date."
+                    )
+                else:
+                    summary = "I can't verify a completion timeline from your current request records. Check any active request for updates or contact your estate office for an estimate."
+                related = ["Your maintenance requests"]
+            elif any(term in q for term in issue_terms):
+                matching = issues
+                if any(term in q for term in ("open", "unresolved", "still active")):
+                    matching = [issue for issue in issues if issue.status.casefold() not in {"resolved", "rated", "closed"}]
+                elif any(term in q for term in ("resolved", "closed", "fixed", "completed")):
+                    matching = [issue for issue in issues if issue.status.casefold() in {"resolved", "rated", "closed"}]
                 summary = (
                     "Your recorded maintenance requests: " + "; ".join(
-                        f"#{issue.id} {issue.title} — {issue.status}"
-                        for issue in issues
-                    )
-                    if issues
-                    else "There are no maintenance requests recorded for your account."
+                        f"#{issue.id} {issue.title} — status: {issue.status} (logged {issue.logged_date or 'date not recorded'})"
+                        for issue in matching
+                    ) if matching else
+                    "I couldn't find a matching request in your account's records. If you haven't reported the issue yet, use Complaints to log it. If you already submitted it, check that you're viewing the correct estate."
                 )
-                score_summary = personal.resident_view.living_score_summary if personal.resident_view else ""
-                if any(term in question.casefold() for term in ("announcement", "notice")):
-                    summary = (
-                        "Published estate announcements: " + " ".join(notices)
-                        if notices
-                        else "There are no active published estate announcements."
-                    )
-                    related = ["Published estate announcements"]
-                elif "score" in question.casefold() and score_summary:
-                    summary = score_summary
-                    related = ["Published Living Score"]
-                else:
-                    related = ["Your maintenance requests"]
-                    if personal.resident_view and personal.resident_view.living_score_label == "Published":
-                        related.append("Published Living Score")
+                related = ["Report a maintenance issue", "Published estate notices"]
+            else:
+                summary = (
+                    "I can help you track your own maintenance requests, explain their recorded status, find published estate notices, and check whether a Living Score is available. "
+                    "I can't see private requests from other residents or promise a repair date that the estate hasn't recorded."
+                )
+                related = [
+                    "What is the status of my maintenance requests?",
+                    "Are there any published estate notices?",
+                    "Is a Living Score published for my estate?",
+                ]
+
             return AskValoraResponse(
                 summary=summary,
                 evidence=personal.evidence,
@@ -353,11 +411,10 @@ class IntelligenceService:
         current = await self._current(
             estate_id,
             include_priorities=any(
-                word in question.casefold() for word in ('priority', 'priorities', 'overdue', 'maintenance')
+                word in q for word in ('priority', 'priorities', 'overdue', 'maintenance')
             ),
         )
         facts = current.facts
-        q = question.casefold()
         summary = current.briefing.body
         if 'score' in q or 'health' in q:
             latest, previous = facts.get('latest_score'), facts.get('previous_score')
