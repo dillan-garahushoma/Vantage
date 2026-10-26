@@ -89,6 +89,19 @@ class PropertyRepository:
         )
         return {row[0]: int(row[1]) for row in result.all()}
 
+    async def list_public_available(self, *, estate_id: int) -> list[Property]:
+        """Published units that are currently available, ordered for stable public display."""
+        result = await self._db.execute(
+            select(Property)
+            .where(
+                Property.estate_id == estate_id,
+                Property.is_public_listing.is_(True),
+                Property.availability_status == "available",
+            )
+            .order_by(Property.unit_id)
+        )
+        return list(result.scalars().all())
+
     async def get_by_id(self, unit_id: int) -> Property | None:
         result = await self._db.execute(select(Property).where(Property.unit_id == unit_id))
         return result.scalar_one_or_none()
