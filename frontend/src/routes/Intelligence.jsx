@@ -227,15 +227,15 @@ function IntelligenceBody() {
       ) : null}
 
       {/* -------------------- Main 3-Column Grid -------------------- */}
-      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)_340px] items-start">
+      <div className={cn("grid gap-6 items-start", isResident ? "grid-cols-1" : isHoaAdmin ? "xl:grid-cols-[240px_minmax(0,1fr)_320px]" : "grid-cols-1")}>
         {/* ==================== LEFT COLUMN (Recent & History) ==================== */}
-        <aside className="space-y-4 xl:sticky xl:top-24">
+        {isHoaAdmin ? {isHoaAdmin ? <aside className="space-y-4 xl:sticky xl:top-24">
           <Surface className="space-y-4" padded={true}>
             <div className="flex items-center justify-between border-b border-line pb-3">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-brand" />
                 <h2 className="font-heading text-xs font-bold tracking-wider text-ink uppercase">
-                  Recent conversations
+                  Saved briefings
                 </h2>
               </div>
               <button
@@ -248,38 +248,6 @@ function IntelligenceBody() {
               </button>
             </div>
 
-            {/* Conversation Threads */}
-            <div className="space-y-2">
-              <div className="rounded-xl border border-brand-soft/60 bg-brand-wash/20 p-2.5 transition-colors">
-                <p className="text-xs font-semibold text-ink truncate">
-                  Water pressure in Block B
-                </p>
-                <div className="mt-1 flex items-center justify-between text-[10px] text-ink/50">
-                  <span>Active inquiry</span>
-                  <span>4 records</span>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-line bg-canvas/40 p-2.5 transition-colors hover:border-brand-soft">
-                <p className="text-xs font-medium text-ink/80 truncate">
-                  Estate health summary
-                </p>
-                <div className="mt-1 flex items-center justify-between text-[10px] text-ink-muted">
-                  <span>Score breakdown</span>
-                  <span>90 days</span>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-line bg-canvas/40 p-2.5 transition-colors hover:border-brand-soft">
-                <p className="text-xs font-medium text-ink/80 truncate">
-                  Security incident analysis
-                </p>
-                <div className="mt-1 flex items-center justify-between text-[10px] text-ink-muted">
-                  <span>Gate relay logs</span>
-                  <span>1 issue</span>
-                </div>
-              </div>
-            </div>
 
             {/* Saved Briefings for HOA Admin */}
             {isHoaAdmin ? (
@@ -332,27 +300,12 @@ function IntelligenceBody() {
               </div>
             ) : null}
 
-            {/* Promo / Sample prompt tip */}
-            <div className="rounded-xl border border-line bg-canvas p-3 text-xs">
-              <p className="font-semibold text-ink">Get deeper insights</p>
-              <p className="mt-1 text-ink/65 text-[11px] leading-relaxed">
-                Try asking about historical complaint trends or contractor turnaround times.
-              </p>
-              <button
-                type="button"
-                onClick={() => setChatKey((k) => k + 1)}
-                className="mt-2 inline-flex items-center gap-1 font-semibold text-brand-ink hover:underline"
-              >
-                <span>Try a sample question</span>
-                <ArrowRight className="h-3 w-3" />
-              </button>
-            </div>
           </Surface>
-        </aside>
+        </aside> : null}
 
         {/* ==================== CENTER COLUMN (AI Conversation Workbench) ==================== */}
         <main className="space-y-4">
-          <Surface className="h-[min(680px,80vh)] min-h-[500px] overflow-hidden" padded={false}>
+          <Surface className={cn("overflow-hidden", isResident ? "min-h-[420px] md:min-h-[480px]" : "h-[min(680px,80vh)] min-h-[500px]")} padded={false}>
             <AskValora key={`${estateId}-${chatKey}`} estateId={estateId} role={resolvedRole} />
           </Surface>
         </main>
@@ -631,7 +584,7 @@ function IntelligenceBody() {
               </div>
             )}
           </Surface>
-        </aside>
+        </aside> : null}
       </div>
 
       {/* -------------------- Resident Scoped Extra Info -------------------- */}
@@ -640,7 +593,7 @@ function IntelligenceBody() {
           <Surface>
             <div className="flex items-center justify-between border-b border-line pb-3">
               <h2 className="font-heading text-sm font-bold text-ink">
-                Your Logged Requests & Unit Health
+                Your maintenance requests
               </h2>
               <span className="rounded-full bg-brand-wash px-2.5 py-0.5 text-xs font-semibold text-brand-ink">
                 {intelligence?.resident_view?.unit_issues?.length ?? 0} tracked
@@ -649,7 +602,10 @@ function IntelligenceBody() {
             {(intelligence?.resident_view?.unit_issues ?? []).length === 0 ? (
               <div className="py-6 text-center text-ink/60">
                 <CheckCircle2 className="mx-auto h-6 w-6 text-mint-ink" />
-                <p className="mt-2 text-xs font-medium">No open maintenance issues logged for your unit.</p>
+                <p className="mt-2 text-xs font-medium">No maintenance requests are recorded for your account.</p>
+                <Link to="/app/complaints" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-ink hover:underline">
+                  Report a maintenance issue <ArrowRight className="h-3 w-3" />
+                </Link>
               </div>
             ) : (
               <div className="mt-2 divide-y divide-line-soft">
@@ -673,7 +629,7 @@ function IntelligenceBody() {
               </span>
               <div>
                 <p className="text-sm font-semibold text-ink">
-                  How Living Score Protects Property Values
+                  Community health
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-ink/65">
                   {intelligence?.resident_view?.living_score_summary || 'A Living Score has not been published for this estate.'}
@@ -799,8 +755,11 @@ function IntelligenceBody() {
       ) : null}
 
       <p className="text-[11px] text-ink/40 text-center pt-2">
-        Scope: {estate?.estate_name ?? 'no estate selected'} · recommendations are advisory and never
-        written back to the estate’s records without a work order.
+        {isResident
+          ? "VALORA uses your own request records and information published by your estate. It cannot see other residents' private requests."
+          : isProvider
+            ? "VALORA uses work assigned to your provider account. Confirm site instructions with the assigning estate team when records are incomplete."
+            : `Scope: ${estate?.estate_name ?? 'no estate selected'} · recommendations are advisory and never written back to estate records without an authorised action.`}
       </p>
     </div>
   );
