@@ -18,6 +18,7 @@ class PropertyResponse(BaseModel):
     listing_description: str | None = None
     amenities: list[str] = Field(default_factory=list)
     is_public_listing: bool = False
+    public_listing_id: str | None = None
     availability_status: str = "not_available"
 
     model_config = {
