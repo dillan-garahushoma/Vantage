@@ -107,6 +107,7 @@ function DetailSkeleton() {
 function SectionNav({ hasScore }) {
     const items = [
         { href: '#photos', label: 'Photographs' },
+        { href: '#available-units', label: 'Available units' },
         { href: '#highlights', label: 'Highlights' },
         { href: '#about', label: 'About' },
         ...(hasScore ? [{ href: '#living-score', label: 'Living Score' }] : []),
