@@ -19,7 +19,14 @@ def upgrade() -> None:
     op.add_column("properties", sa.Column("listing_description", sa.Text(), nullable=True))
     op.add_column("properties", sa.Column("amenities", sa.JSON(), server_default=sa.text("'[]'"), nullable=False))
     op.add_column("properties", sa.Column("is_public_listing", sa.Boolean(), server_default=sa.text("false"), nullable=False))
+    op.add_column("properties", sa.Column("public_listing_id", sa.String(length=32), nullable=True))
+    op.create_unique_constraint("uq_properties_public_listing_id", "properties", ["public_listing_id"])
     op.add_column("properties", sa.Column("availability_status", sa.String(length=20), server_default=sa.text("'not_available'"), nullable=False))
+    op.create_check_constraint(
+        "ck_properties_availability_status",
+        "properties",
+        "availability_status IN ('available', 'occupied', 'not_available')",
+    )
     op.create_index(
         "ix_properties_public_units",
         "properties",
@@ -48,6 +55,9 @@ def downgrade() -> None:
     op.drop_index("ix_property_photos_property_id_position", table_name="property_photos")
     op.drop_table("property_photos")
     op.drop_index("ix_properties_public_units", table_name="properties")
+    op.drop_constraint("ck_properties_availability_status", "properties", type_="check")
+    op.drop_constraint("uq_properties_public_listing_id", "properties", type_="unique")
+    op.drop_column("properties", "public_listing_id")
     op.drop_column("properties", "availability_status")
     op.drop_column("properties", "is_public_listing")
     op.drop_column("properties", "amenities")
