@@ -430,6 +430,8 @@ describe('VALORA Intelligence', () => {
 
         expect(await screen.findByText('Kitchen tap leak')).toBeVisible();
         expect(screen.getByText('Your maintenance requests')).toBeVisible();
+        expect(screen.getByText('Estate notices')).toBeVisible();
+        expect(screen.getByText('Water interruption')).toBeVisible();
         expect(screen.queryByText('Recent conversations')).not.toBeInTheDocument();
         expect(screen.queryByText('Pool Pump 02')).not.toBeInTheDocument();
         expect(screen.queryByText('105', { exact: true })).not.toBeInTheDocument();
