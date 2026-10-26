@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.pagination import Page
@@ -16,6 +16,8 @@ from app.property.schemas.property import (
     PropertyUpdate,
 )
 from app.property.services.property_service import PropertyService
+from app.property.services.property_photo_service import PropertyPhotoService
+from app.property.domain.photo_pipeline import MAX_UPLOAD_BYTES
 
 router = APIRouter(prefix="/properties", tags=["property"])
 
@@ -112,4 +114,54 @@ async def create_units_bulk(
     """
     return await PropertyService(db).create_units_bulk(
         payload, estate_id=estate_id, actor=current_user
+    )
+
+
+
+@router.get("/{unit_id}/photos")
+async def list_unit_photos(
+    unit_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: CurrentUser,
+    estate_id: Annotated[int, Query(gt=0)],
+) -> list[dict]:
+    """List photos for a unit within the caller's authorised estate."""
+    return await PropertyPhotoService(db).list_photos(
+        property_id=unit_id, estate_id=estate_id, actor=current_user
+    )
+
+
+@router.post("/{unit_id}/photos", status_code=status.HTTP_201_CREATED)
+async def upload_unit_photo(
+    unit_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: CurrentUser,
+    estate_id: Annotated[int, Query(gt=0)],
+    file: Annotated[UploadFile, File(description="JPEG, PNG or WebP, at most 5 MB")],
+    caption: Annotated[str | None, Form(max_length=140)] = None,
+) -> dict:
+    """Upload a unit showcase photo; only an HOA administrator of that estate may write."""
+    data = await file.read(MAX_UPLOAD_BYTES + 1)
+    return await PropertyPhotoService(db).upload_photo(
+        property_id=unit_id,
+        estate_id=estate_id,
+        actor=current_user,
+        filename=file.filename,
+        content_type=file.content_type,
+        data=data,
+        caption=caption,
+    )
+
+
+@router.delete("/{unit_id}/photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_unit_photo(
+    unit_id: int,
+    photo_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: CurrentUser,
+    estate_id: Annotated[int, Query(gt=0)],
+) -> None:
+    """Delete a unit showcase photo; only an HOA administrator of that estate may write."""
+    await PropertyPhotoService(db).delete_photo(
+        property_id=unit_id, photo_id=photo_id, estate_id=estate_id, actor=current_user
     )
