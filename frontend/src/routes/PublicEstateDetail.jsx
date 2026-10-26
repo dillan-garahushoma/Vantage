@@ -7,7 +7,7 @@ import { PhotoGallery } from '../components/PhotoGallery';
 import { IconArrowRight, IconCheck, IconClose, IconImages, IconPin } from '../components/Icons';
 import { Button, Card, ErrorState, LinkButton, Skeleton, SkeletonText, cx } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
-import { getPublicEstate } from '../lib/publicDirectory';
+import { getPublicEstate, publicPhotoUrl } from '../lib/publicDirectory';
 import { rememberPublicEstate } from '../lib/publicEstateSelection';
 import { scoreBand } from '../lib/display';
 import { displayLabel } from '../lib/format';
@@ -341,6 +341,46 @@ function DetailBody({ estateId }) {
               </div>
             </div>
           </div>
+
+          {/* Unit inventory: one complex profile, with its available residences beneath it. */}
+          <section id="available-units" className="scroll-mt-[122px]">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="num text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-ink">The residences</p>
+                <h2 className="mt-2 text-[22px] font-semibold tracking-tight text-ink">Available units</h2>
+                <p className="mt-1 text-[13px] text-ink-muted">Choose a residence within {detail.name}. Each listing has its own features and photographs.</p>
+              </div>
+              <span className="num text-[12px] text-ink-muted">{(detail.available_units ?? []).length} available</span>
+            </div>
+            {(detail.available_units ?? []).length ? (
+              <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                {detail.available_units.map((unit, index) => (
+                  <article key={unit.title + '-' + index} className="group overflow-hidden rounded-2xl border border-ink/15 bg-surface transition-shadow hover:shadow-md">
+                    <div className="grid grid-cols-2 gap-1 bg-paper">
+                      {unit.photos?.length ? unit.photos.slice(0, 2).map((photo) => (
+                        <img key={photo.public_id} src={publicPhotoUrl(photo.public_id, 'thumb')} alt={photo.caption || unit.title} loading="lazy" className="aspect-[4/3] h-full w-full object-cover" />
+                      )) : <div className="col-span-2 flex aspect-[16/7] items-center justify-center border-b border-ink/10 px-5 text-center text-[12px] text-ink-muted">Unit photographs coming soon</div>}
+                      {unit.photos?.length === 1 ? <div className="aspect-[4/3] bg-ink/5" aria-hidden="true" /> : null}
+                    </div>
+                    <div className="p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <h3 className="text-[17px] font-semibold leading-snug text-ink">{unit.title}</h3>
+                        <span className="rounded-full border border-mint/30 bg-mint-wash px-2.5 py-1 text-[11px] font-medium text-mint-ink">Available</span>
+                      </div>
+                      <p className="mt-2 text-[12.5px] text-ink-muted">{unit.bedrooms} bedrooms <span aria-hidden="true">·</span> {unit.bathrooms} bathrooms <span aria-hidden="true">·</span> {Number(unit.size_m2).toLocaleString()} m²</p>
+                      {unit.description ? <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">{unit.description}</p> : null}
+                      {unit.amenities?.length ? <ul className="mt-4 flex flex-wrap gap-2" aria-label="Unit amenities">{unit.amenities.map((amenity) => <li key={amenity} className="rounded-md border border-ink/10 bg-paper px-2.5 py-1 text-[11.5px] text-ink-soft">{amenity}</li>)}</ul> : null}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-5 border-y border-ink/15 py-8">
+                <h3 className="text-[15px] font-semibold text-ink">No units currently listed</h3>
+                <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-ink-muted">This complex has {detail.unit_count} registered units, but its management team has not published any currently available residences. Check back later or contact the estate office.</p>
+              </div>
+            )}
+          </section>
 
           {/* Highlights section */}
           <section id="highlights" className="scroll-mt-[122px]">
