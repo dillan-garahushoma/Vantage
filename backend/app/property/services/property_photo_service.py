@@ -60,9 +60,9 @@ class PropertyPhotoService:
         clean_caption = (caption or "").strip()[:140] or None
         position = await self._photos.count_for_property(property_id=property_id)
         self._upload_dir.mkdir(parents=True, exist_ok=True)
-        full_path.write_bytes(full_bytes)
-        thumb_path.write_bytes(thumb_bytes)
         try:
+            full_path.write_bytes(full_bytes)
+            thumb_path.write_bytes(thumb_bytes)
             photo = await self._photos.add(
                 property_id=property_id, public_id=public_id, content_type=STORED_CONTENT_TYPE,
                 width=width, height=height, bytes=len(full_bytes), caption=clean_caption,
