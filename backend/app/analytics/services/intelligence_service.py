@@ -84,7 +84,7 @@ def _resident_answer(
 ) -> tuple[str, list[str]]:
     """Build resident guidance only from their own records and published estate information."""
     q = question.casefold()
-    active_statuses = {"resolved", "rated", "closed", "completed"}
+    completed_statuses = {"resolved", "rated", "closed", "completed"}
     emergency_terms = (
         "fire", "smoke", "gas leak", "break-in", "break in", "intruder",
         "someone is hurt", "medical emergency", "immediate danger",
@@ -94,17 +94,25 @@ def _resident_answer(
         "community update", "estate update",
     )
     score_terms = ("living score", "community health", "estate health", "estate score")
-    timeline_terms = ("how long", "when will", "timeline", "when can", "eta", "expected resolution", "when is it fixed")
-    issue_terms = ("request", "complaint", "repair", "maintenance", "issue", "status", "progress", "update", "fixed", "resolved", "completed")
-    report_verbs = re.search(r"\b(report|log|submit|raise|file)\b", q)
+    timeline_terms = (
+        "how long", "when will", "when can", "timeline", "eta",
+        "expected resolution", "when is it fixed",
+    )
+    issue_terms = (
+        "request", "complaint", "repair", "maintenance", "issue", "status",
+        "progress", "update", "fixed", "resolved", "completed",
+    )
+    reporting_verb = re.search(r"\b(report|log|submit|raise|file)\b", q)
     reporting_request = bool(
-        report_verbs
+        reporting_verb
         or any(phrase in q for phrase in (
             "new issue", "new complaint", "how do i complain", "how can i complain",
             "report a leak", "report broken", "report damage",
         ))
         or (
-            any(term in q for term in ("leak", "broken", "not working", "damaged", "overflow", "blocked", "faulty"))
+            any(term in q for term in (
+                "leak", "broken", "not working", "damaged", "overflow", "blocked", "faulty",
+            ))
             and not any(term in q for term in (
                 "status", "progress", "update", "already submitted", "already reported",
                 "my request", "my complaint", "when will", "when can",
@@ -114,8 +122,9 @@ def _resident_answer(
 
     if any(term in q for term in emergency_terms):
         return (
-            "If there is immediate danger, contact local emergency services and your estate's security team now; do not wait for VALORA or assume this chat is monitored live. "
-            "For a non-urgent property issue, submit a complaint with the location and any relevant photos.",
+            "If there is immediate danger, contact local emergency services and your estate's security team now; "
+            "do not wait for VALORA or assume this chat is monitored live. For a non-urgent property issue, "
+            "submit a complaint with the location and any relevant photos.",
             ["Report a maintenance issue", "Published estate notices"],
         )
 
@@ -127,8 +136,9 @@ def _resident_answer(
     if any(term in q for term in access_terms):
         return (
             "Your resident access and unit assignment must be verified by the estate administrator. "
-            "Check that you selected the correct estate and account; if your unit is missing or access is pending, contact your HOA/estate office to verify your membership. "
-            "I can't approve membership or change your unit assignment from this assistant.",
+            "Check that you selected the correct estate and account; if your unit is missing or access is pending, "
+            "contact your HOA/estate office to verify your membership. I can't approve membership or change your "
+            "unit assignment from this assistant.",
             ["Your maintenance requests", "Published estate notices"],
         )
 
@@ -136,7 +146,9 @@ def _resident_answer(
         summary = (
             "Current published estate notices: " + " ".join(notices)
             if notices else
-            "There are no active published estate notices available in VALORA right now. This only reflects notices published to the platform; it does not prove that no offline notice exists. For urgent building or safety matters, contact your estate office or the appropriate emergency service."
+            "There are no active published estate notices available in VALORA right now. This only reflects notices "
+            "published to the platform; it does not prove that no offline notice exists. For urgent building or "
+            "safety matters, contact your estate office or the appropriate emergency service."
         )
         return summary, ["Your maintenance requests", "Published Living Score"]
 
@@ -147,58 +159,84 @@ def _resident_answer(
         )
         return summary, ["Your maintenance requests", "Published estate notices"]
 
-    if reporting_request and not any(term in q for term in ("my request", "my complaint", "my repair", "status", "progress", "update", "already submitted")):
+    if reporting_request and not any(term in q for term in (
+        "my request", "my complaint", "my repair", "status", "progress", "update", "already submitted",
+    )):
         return (
-            "To report a new issue, open Complaints, choose the unit linked to your account, describe what happened and where, then attach clear photos or evidence if relevant. "
-            "After submitting, use your request list to follow its recorded status. If your unit isn't available to select, ask your HOA to link it to your account. "
+            "To report a new issue, open Complaints, choose the unit linked to your account, describe what happened "
+            "and where, then attach clear photos or evidence if relevant. After submitting, use your request list to "
+            "follow its recorded status. If your unit isn't available to select, ask your HOA to link it to your account. "
             "For immediate danger, contact emergency services or estate security directly.",
             ["Your maintenance requests", "Published estate notices"],
         )
 
     if any(term in q for term in timeline_terms):
-        matching = [issue for issue in issues if str(issue.status).casefold() not in active_statuses]
-        # The status filter above is intentionally not used to infer a completion date.
-        if matching:
+        active = [issue for issue in issues if str(issue.status).casefold() not in completed_statuses]
+        if active:
             summary = (
                 "VALORA does not have a verified completion estimate for your request"
-                + ("s" if len(matching) > 1 else "") + ". "
-                + "; ".join(f"#{issue.id} {issue.title}: recorded status is {issue.status}" for issue in matching)
+                + ("s" if len(active) > 1 else "") + ". "
+                + "; ".join(
+                    f"#{issue.id} {issue.title}: recorded status is {issue.status}"
+                    for issue in active
+                )
                 + ". The estate team or assigned provider must confirm the expected date."
             )
         else:
-            summary = "I can't verify a completion timeline from your current request records. Check your active request for updates or contact your estate office for an estimate."
+            summary = (
+                "I can't verify a completion timeline from your current request records. Check your active request "
+                "for updates or contact your estate office for an estimate."
+            )
         return summary, ["Your maintenance requests"]
 
     if any(term in q for term in issue_terms):
         matching = list(issues)
-        issue_match = re.search(r"(?:request|complaint|issue|ticket)\s*#?\s*(\d{1,8})|#(\d{1,8})", q)
+        issue_match = re.search(
+            r"(?:request|complaint|issue|ticket)\s*#?\s*(\d{1,8})|#(\d{1,8})",
+            q,
+        )
         if issue_match:
             requested_id = int(issue_match.group(1) or issue_match.group(2))
             matching = [issue for issue in matching if int(issue.id) == requested_id]
         elif any(term in q for term in ("open", "unresolved", "still active", "in progress")):
-            matching = [issue for issue in matching if str(issue.status).casefold() not in active_statuses]
+            matching = [
+                issue for issue in matching
+                if str(issue.status).casefold() not in completed_statuses
+            ]
         elif any(term in q for term in ("resolved", "closed", "fixed", "completed")):
-            matching = [issue for issue in matching if str(issue.status).casefold() in active_statuses]
+            matching = [
+                issue for issue in matching
+                if str(issue.status).casefold() in completed_statuses
+            ]
         summary = (
             "Your recorded maintenance requests: " + "; ".join(
-                f"#{issue.id} {issue.title} — status: {issue.status} (logged {issue.logged_date or 'date not recorded'})"
+                f"#{issue.id} {issue.title} — status: {issue.status} "
+                f"(logged {issue.logged_date or 'date not recorded'})"
                 for issue in matching
             ) if matching else
-            "I couldn't find a matching request in the records available to your account. If you haven't reported the issue yet, use Complaints to log it. If you already submitted it, confirm you're viewing the correct estate or contact your HOA."
+            "I couldn't find a matching request in the records available to your account. If you haven't reported "
+            "the issue yet, use Complaints to log it. If you already submitted it, confirm you're viewing the correct "
+            "estate or contact your HOA."
         )
         return summary, ["Report a maintenance issue", "Published estate notices"]
 
-    community_terms = ("neighbour", "neighbor", "noise", "parking", "pet", "bylaw", "rule", "amenity", "facility", "security concern")
+    community_terms = (
+        "neighbour", "neighbor", "noise", "parking", "pet", "bylaw", "rule",
+        "amenity", "facility", "security concern",
+    )
     if any(term in q for term in community_terms):
         return (
-            "I can only confirm community information that has been published in VALORA, and I don't have enough verified information here to decide a neighbour dispute or confirm an estate rule. "
-            "Check published estate notices or contact your HOA/estate office. If someone is in immediate danger, contact emergency services or estate security.",
+            "I can only confirm community information that has been published in VALORA, and I don't have enough "
+            "verified information here to decide a neighbour dispute or confirm an estate rule. Check published "
+            "estate notices or contact your HOA/estate office. If someone is in immediate danger, contact emergency "
+            "services or estate security.",
             ["Published estate notices", "Report a maintenance issue"],
         )
 
     return (
-        "I can help you check your own maintenance-request status, explain how to report a new issue, find published estate notices, and check whether a Living Score is available. "
-        "I can't see private requests from other residents, approve estate access, or promise a repair date that the estate hasn't recorded.",
+        "I can help you check your own maintenance-request status, explain how to report a new issue, find published "
+        "estate notices, and check whether a Living Score is available. I can't see private requests from other "
+        "residents, approve estate access, or promise a repair date that the estate hasn't recorded.",
         [
             "What is the status of my maintenance requests?",
             "How do I report a new maintenance issue?",
@@ -206,7 +244,6 @@ def _resident_answer(
             "Is a Living Score published for my estate?",
         ],
     )
-
 
 class IntelligenceService:
     def __init__(self, db: AsyncSession):
