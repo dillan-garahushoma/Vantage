@@ -189,8 +189,8 @@ function PropertyDrawer({ property, mine, isAdmin, onClose, onEdit, }) {
 
         <div className="border-l-2 border-l-ochre bg-ochre-wash px-3.5 py-3">
           <p className="text-[12.5px] text-ink-soft">
-            This unit is the operational anchor for resident access, maintenance issues and the
-            evidence that follows their resolution. VALORA does not use it as a market listing.
+            This unit remains the operational anchor for resident access and maintenance history.
+            Its public showcase details are managed separately above and never expose private occupancy data.
           </p>
         </div>
         {isAdmin ? <Button variant="secondary" onClick={onEdit}>Edit unit</Button> : null}
