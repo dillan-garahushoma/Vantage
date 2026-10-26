@@ -182,29 +182,26 @@ function IntelligenceBody() {
                 </span>
               </div>
               <p className="mt-1 text-xs text-ink/70 sm:text-sm">
-                Ask questions. Get clear, actionable insights about your estate.
+                {isResident
+                  ? "Understand your requests, read estate updates, and find your next step."
+                  : isProvider
+                    ? "Understand assigned work, recorded instructions, and due dates."
+                    : "Turn authorised estate records into clear, evidence-led decisions."}
               </p>
             </div>
           </div>
 
-          {/* Right side: Estate dossier preview */}
-          <div className="flex items-center gap-3 rounded-xl border border-line/80 bg-canvas/60 p-2 sm:max-w-xs">
-            <div className="h-10 w-14 shrink-0 overflow-hidden rounded-lg bg-line">
-              <img
-                src="/estates/willowbrook-mews-01-hero.jpg"
-                alt={estate?.estate_name ?? 'Estate view'}
-                className="h-full w-full object-cover"
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-              />
-            </div>
+          <div className="flex items-center gap-3 rounded-xl border border-line/80 bg-canvas/60 p-3 sm:max-w-xs">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-wash text-brand-ink">
+              {isResident ? <ShieldCheck className="h-5 w-5" /> : isProvider ? <FileCheck2 className="h-5 w-5" /> : <Layers className="h-5 w-5" />}
+            </span>
             <div className="min-w-0 pr-1">
               <p className="truncate text-xs font-semibold text-ink">
-                {estate?.estate_name ?? intelligence?.estate_name ?? 'Active estate'}
+                {estate?.estate_name ?? intelligence?.estate_name ?? 'Selected estate'}
               </p>
-              <div className="flex items-center gap-1.5 text-[11px] text-ink-muted">
-                <span className="h-1.5 w-1.5 rounded-full bg-mint" />
-                <span>Live estate record</span>
-              </div>
+              <p className="text-[11px] text-ink-muted">
+                {isResident ? "Your resident view" : isProvider ? "Your assigned work" : "Authorised estate records"}
+              </p>
             </div>
           </div>
         </div>
