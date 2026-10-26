@@ -743,7 +743,6 @@ function AdminSetupBody() {
 
     return (
       <div className="space-y-5">
-        <AdminSetupBanner />
         <header>
           <p className="num text-[11px] tracking-[0.18em] text-accent-ink uppercase">
             Estate administration
