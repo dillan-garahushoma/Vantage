@@ -456,133 +456,72 @@ function IntelligenceBody() {
             {/* ---------- TAB 2: CONTEXT ---------- */}
             {activeTab === 'context' && (
               <div className="space-y-4">
-                {/* Active Estate Card */}
-                <div className="space-y-2">
-                  <div className="h-28 w-full overflow-hidden rounded-xl border border-line bg-canvas">
-                    <img
-                      src="/estates/willowbrook-mews-01-hero.jpg"
-                      alt={estate?.estate_name ?? 'Estate'}
-                      className="h-full w-full object-cover"
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-heading text-sm font-bold text-ink">
-                        {estate?.estate_name ?? intelligence?.estate_name ?? 'Estate Profile'}
-                      </h3>
-                      <span className="rounded-full bg-mint-wash px-2 py-0.5 text-[10px] font-semibold text-mint-ink">
-                        Live estate
-                      </span>
-                    </div>
-                    <p className="mt-0.5 text-xs text-ink-muted">
-                      Gauteng, South Africa · {estate?.property_ids?.length ?? 14} managed units
-                    </p>
-                  </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-ink/40">Selected community</p>
+                  <h3 className="font-heading text-sm font-bold text-ink">
+                    {estate?.estate_name ?? intelligence?.estate_name ?? 'Selected estate'}
+                  </h3>
+                  <p className="text-xs text-ink-muted">Intelligence is scoped to the selected estate and your current role.</p>
                 </div>
-
-                {/* Key Metrics */}
-                <div className="rounded-xl border border-line bg-canvas p-3 space-y-2.5">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-ink/40">
-                    Health Indicators
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-lg border border-line/60 bg-surface p-2">
-                      <p className="text-[10px] font-medium text-ink-muted">Living Score</p>
-                      <p className="text-base font-bold text-ink">
-                        {livingScore?.value ?? 82}
-                        <span className="ml-1 text-[11px] text-mint-ink font-normal">↑ 4%</span>
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-line/60 bg-surface p-2">
-                      <p className="text-[10px] font-medium text-ink-muted">Complaints</p>
-                      <p className="text-base font-bold text-ink">
-                        {intelligence?.operational_signals?.open_complaints ?? 105}
-                      </p>
-                    </div>
+                {livingScore?.value != null ? (
+                  <div className="border-t border-line pt-3">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-ink/40">Living Score</p>
+                    <p className="mt-1 text-xl font-semibold tabular-nums text-ink">{livingScore.value}<span className="ml-1 text-xs font-normal text-ink-muted">/100</span></p>
+                    {livingScore.label ? <p className="mt-1 text-xs text-ink-muted">{livingScore.label}</p> : null}
                   </div>
-                </div>
-
-                {/* Related Documents */}
-                <div className="space-y-2">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-ink/40">
-                    Linked Documents
-                  </p>
-                  <div className="space-y-1.5 text-xs">
-                    <Link
-                      to="/app/work-orders"
-                      className="flex items-center justify-between rounded-lg border border-line p-2 text-ink/80 hover:border-brand-soft hover:text-brand-ink"
-                    >
-                      <span className="truncate">WO #52 · Pump Motor Overdue</span>
-                      <ExternalLink className="h-3 w-3 shrink-0 text-ink/40" />
-                    </Link>
-                    <Link
-                      to="/app/complaints"
-                      className="flex items-center justify-between rounded-lg border border-line p-2 text-ink/80 hover:border-brand-soft hover:text-brand-ink"
-                    >
-                      <span className="truncate">Complaint #12 · Low Pressure Log</span>
-                      <ExternalLink className="h-3 w-3 shrink-0 text-ink/40" />
-                    </Link>
+                ) : null}
+                {signals.length ? (
+                  <div className="border-t border-line pt-3">
+                    <SignalField signals={signals} label="Measured operational signals" />
                   </div>
+                ) : null}
+                <div className="border-t border-line pt-3 space-y-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-ink/40">Explore records</p>
+                  <Link to="/app/health" className="flex items-center justify-between rounded-lg border border-line p-2 text-xs text-ink/80 hover:border-brand-soft hover:text-brand-ink">
+                    <span>Estate health</span><ArrowRight className="h-3 w-3" />
+                  </Link>
+                  {isHoaAdmin ? (
+                    <>
+                      <Link to="/app/complaints" className="flex items-center justify-between rounded-lg border border-line p-2 text-xs text-ink/80 hover:border-brand-soft hover:text-brand-ink">
+                        <span>Complaints</span><ArrowRight className="h-3 w-3" />
+                      </Link>
+                      <Link to="/app/work-orders" className="flex items-center justify-between rounded-lg border border-line p-2 text-xs text-ink/80 hover:border-brand-soft hover:text-brand-ink">
+                        <span>Work orders</span><ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </>
+                  ) : null}
                 </div>
-
-                {/* Start New Chat CTA */}
-                <div className="pt-2 border-t border-line">
-                  <button
-                    type="button"
-                    onClick={() => setChatKey((k) => k + 1)}
-                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-line bg-canvas py-2 text-xs font-semibold text-ink hover:bg-surface"
-                  >
-                    <RefreshCw className="h-3.5 w-3.5 text-brand" />
-                    Start a new chat
-                  </button>
-                </div>
+                <button type="button" onClick={() => setChatKey((k) => k + 1)} className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-line bg-canvas py-2 text-xs font-semibold text-ink hover:bg-surface">
+                  <RefreshCw className="h-3.5 w-3.5 text-brand" /> Start a new chat
+                </button>
               </div>
             )}
 
             {/* ---------- TAB 3: RELATED ---------- */}
             {activeTab === 'related' && (
               <div className="space-y-3">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-ink/40">
-                  Open Operational Records
-                </p>
-                <div className="space-y-2 text-xs">
-                  <div className="rounded-xl border border-line bg-canvas p-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-ink">WO-0052</span>
-                      <span className="text-[10px] font-bold uppercase text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded">
-                        Overdue
-                      </span>
-                    </div>
-                    <p className="mt-1 text-ink/70">Pump plant capacitor replacement</p>
-                    <Link
-                      to="/app/work-orders"
-                      state={{ focusWorkOrderId: 52 }}
-                      className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-brand-ink hover:underline"
-                    >
-                      Open work order <ArrowRight className="h-3 w-3" />
-                    </Link>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-ink/40">Related to this briefing</p>
+                {activeRecommendations.length ? (
+                  <div className="divide-y divide-line">
+                    {activeRecommendations.map((recommendation) => (
+                      <div key={recommendation.id} className="py-3">
+                        <p className="text-xs font-semibold text-ink">{recommendation.title}</p>
+                        <p className="mt-1 text-xs leading-relaxed text-ink/65">{recommendation.summary}</p>
+                        {recommendation.evidence?.length ? (
+                          <p className="mt-1 text-[11px] text-ink-muted">{recommendation.evidence.length} supporting source{recommendation.evidence.length === 1 ? '' : 's'}</p>
+                        ) : null}
+                        <button type="button" onClick={() => { setReviewing(recommendation); setActiveTab('evidence'); }} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-brand-ink hover:underline">
+                          Review finding <ArrowRight className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-
-                  <div className="rounded-xl border border-line bg-canvas p-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-ink">Complaint #12</span>
-                      <span className="text-[10px] font-bold uppercase text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
-                        Submitted
-                      </span>
-                    </div>
-                    <p className="mt-1 text-ink/70">Irrigation pressure low across Block C</p>
-                    <Link
-                      to="/app/complaints"
-                      state={{ focusComplaintId: 12 }}
-                      className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-brand-ink hover:underline"
-                    >
-                      Open complaint <ArrowRight className="h-3 w-3" />
-                    </Link>
-                  </div>
-                </div>
+                ) : (
+                  <p className="text-xs leading-relaxed text-ink-muted">No related findings were returned for this view. VALORA will not invent records to fill this panel.</p>
+                )}
               </div>
             )}
+
           </Surface>
         </aside> : null}
       </div>
