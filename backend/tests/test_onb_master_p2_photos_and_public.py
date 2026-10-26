@@ -764,6 +764,9 @@ async def test_public_complex_detail_contains_only_published_available_unit_list
         headers=admin,
     )
     assert photo.status_code == 201, photo.text
+    photo_id = photo.json()["public_id"]
+    # Uploading a photo does not make a private unit public.
+    assert (await async_client.get(f"{BASE}/public/photos/{photo_id}")).status_code == 404
 
     updated = await async_client.patch(
         f"{BASE}/properties/{first['id']}?estate_id={estate_id}",
@@ -780,6 +783,9 @@ async def test_public_complex_detail_contains_only_published_available_unit_list
         headers=admin,
     )
     assert updated.status_code == 200, updated.text
+    public_photo = await async_client.get(f"{BASE}/public/photos/{photo_id}?size=thumb")
+    assert public_photo.status_code == 200, public_photo.text
+    assert public_photo.headers["content-type"] == "image/jpeg"
 
     hidden = await async_client.patch(
         f"{BASE}/properties/{second['id']}?estate_id={estate_id}",
