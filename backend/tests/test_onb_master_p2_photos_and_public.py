@@ -765,7 +765,12 @@ async def test_public_complex_detail_contains_only_published_available_unit_list
     )
     assert photo.status_code == 201, photo.text
     photo_id = photo.json()["public_id"]
-    # Uploading a photo does not make a private unit public.
+    # The estate admin can preview private photos, but anonymous visitors cannot.
+    private_preview = await async_client.get(
+        f"{BASE}/properties/{first['id']}/photos/{photo.json()['photo_id']}/image?estate_id={estate_id}",
+        headers=admin,
+    )
+    assert private_preview.status_code == 200, private_preview.text
     assert (await async_client.get(f"{BASE}/public/photos/{photo_id}")).status_code == 404
 
     updated = await async_client.patch(
