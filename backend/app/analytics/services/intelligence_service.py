@@ -776,10 +776,10 @@ class IntelligenceService:
             for h in prior_turns:
                 role_val = getattr(h, "role", None) or (h.get("role") if isinstance(h, dict) else "user")
                 content_val = getattr(h, "content", None) or (h.get("content") if isinstance(h, dict) else "")
-                # Only prior user questions are replayed. Assistant text is model output,
-                # not trusted policy or evidence, and is never promoted into system context.
-                if role_val == "user" and content_val:
-                    msg_list.append({"role": "user", "content": str(content_val)[:1000]})
+                # Replay bounded user/assistant turns so follow-up questions have context.
+                # Assistant output is untrusted conversation history, never estate evidence or policy.
+                if role_val in {"user", "assistant"} and content_val:
+                    msg_list.append({"role": role_val, "content": str(content_val)[:1000]})
         msg_list.append({"role": "user", "content": question})
 
         async def _generator():
