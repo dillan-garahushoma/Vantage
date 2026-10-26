@@ -339,7 +339,11 @@ async def test_public_detail_allows_explicitly_published_demo_classified_estate(
         )
     )
     service._photos = SimpleNamespace(list_for_estate=AsyncMock(return_value=[]))
-    service._properties = SimpleNamespace(count=AsyncMock(return_value=8))
+    service._properties = SimpleNamespace(
+        count=AsyncMock(return_value=8),
+        list_public_available=AsyncMock(return_value=[]),
+    )
+    service._unit_photos = SimpleNamespace(list_for_properties=AsyncMock(return_value=[]))
 
     detail = await service.get_estate(7)
 
@@ -388,9 +392,14 @@ def test_public_dtos_are_allow_lists() -> None:
         "description",
         "unit_count",
         "photos",
+        "available_units",
         "living_score",
     }
     assert set(PublicPhotoResponse.model_fields) == {"public_id", "caption"}
+    assert set(PublicUnitListing.model_fields) == {
+        "title", "description", "bedrooms", "bathrooms", "size_m2",
+        "amenities", "availability_status", "photos",
+    }
     assert set(PublicLivingScoreSummary.model_fields) == {
         "overall_score",
         "status",
