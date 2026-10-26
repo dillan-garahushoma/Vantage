@@ -355,8 +355,8 @@ function DetailBody({ estateId }) {
             </div>
             {(detail.available_units ?? []).length ? (
               <div className="mt-5 grid gap-5 sm:grid-cols-2">
-                {detail.available_units.map((unit, index) => (
-                  <article key={unit.title + '-' + index} className="group overflow-hidden rounded-2xl border border-ink/15 bg-surface transition-shadow hover:shadow-md">
+                {detail.available_units.map((unit) => (
+                  <article key={unit.listing_id} className="group overflow-hidden rounded-2xl border border-white/70 bg-surface shadow-[0_18px_46px_-26px_rgba(36,31,68,0.32)] ring-1 ring-black/[0.025] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_26px_56px_-24px_rgba(36,31,68,0.36)]">
                     <div className="grid grid-cols-2 gap-1 bg-paper">
                       {unit.photos?.length ? unit.photos.slice(0, 2).map((photo) => (
                         <img key={photo.public_id} src={publicPhotoUrl(photo.public_id, 'thumb')} alt={photo.caption || unit.title} loading="lazy" className="aspect-[4/3] h-full w-full object-cover" />
