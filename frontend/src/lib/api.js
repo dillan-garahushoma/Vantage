@@ -99,14 +99,15 @@ async function request(path, options = {}) {
         if (token)
             headers.Authorization = `Bearer ${token}`;
     }
-    if (body !== undefined)
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+    if (body !== undefined && !isFormData)
         headers['Content-Type'] = 'application/json';
     let response;
     try {
         response = await fetch(buildUrl(path, params), {
             method,
             headers,
-            body: body === undefined ? undefined : JSON.stringify(body),
+            body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
         });
     }
     catch {
@@ -149,6 +150,7 @@ export const api = {
     }),
     get: (path, params) => request(path, { params }),
     post: (path, body, params) => request(path, { method: 'POST', body, params }),
+    upload: (path, formData, params) => request(path, { method: 'POST', body: formData, params }),
     patch: (path, body, params) => request(path, { method: 'PATCH', body, params }),
     remove: (path, params) => request(path, { method: 'DELETE', params }),
     login: (email, password) => request('/api/v1/auth/login', {
