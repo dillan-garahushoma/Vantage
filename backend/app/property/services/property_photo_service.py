@@ -78,6 +78,20 @@ class PropertyPhotoService:
         logger.info("unit photo stored (estate_id=%s property_id=%s photo_id=%s)", estate_id, property_id, photo.photo_id)
         return self._dto(photo)
 
+    async def read_photo(self, *, property_id: int, photo_id: int, estate_id: int, actor: User, size: str = "full") -> tuple[bytes, str]:
+        """Serve a unit photo only to a member of the estate that owns the unit."""
+        await self._authorization.require_membership(actor=actor, estate_id=estate_id)
+        unit = await self._properties.get_by_id_in_estate(unit_id=property_id, estate_id=estate_id)
+        if unit is None:
+            raise NotFoundException(f"Unit {property_id} was not found.")
+        photo = await self._photos.get_by_id_in_property(photo_id=photo_id, property_id=property_id)
+        if photo is None:
+            raise NotFoundException(f"Photo {photo_id} was not found.")
+        path = photo_path(self._upload_dir, photo.public_id, thumb=size == "thumb")
+        if not path.is_file():
+            raise NotFoundException("That unit photograph is not available.")
+        return path.read_bytes(), photo.content_type
+
     async def delete_photo(self, *, property_id: int, photo_id: int, estate_id: int, actor: User) -> None:
         await self._authorization.require_role(
             actor=actor, estate_id=estate_id, allowed_roles=(UserRole.hoa_admin.value,)
