@@ -35,11 +35,13 @@ from app.property.models.estate import Estate
 from app.property.repositories.estate_photo_repository import EstatePhotoRepository
 from app.property.repositories.estate_repository import EstateRepository
 from app.property.repositories.property_repository import PropertyRepository
+from app.property.repositories.property_photo_repository import PropertyPhotoRepository
 from app.property.schemas.public_directory import (
     PublicEstateDetailResponse,
     PublicEstateListItem,
     PublicLivingScoreSummary,
     PublicPhotoResponse,
+    PublicUnitListing,
 )
 
 NOT_PUBLIC_MESSAGE = "That estate is not available."
@@ -51,6 +53,7 @@ class PublicDirectoryService:
         self._estates = EstateRepository(db)
         self._photos = EstatePhotoRepository(db)
         self._properties = PropertyRepository(db)
+        self._unit_photos = PropertyPhotoRepository(db)
         self._snapshots = LivingScoreSnapshotRepository(db)
         self._allow_demo = get_settings().ENVIRONMENT in ('development', 'test')
         self._upload_dir = Path(
@@ -97,6 +100,15 @@ class PublicDirectoryService:
 
         photos = await self._photos.list_for_estate(estate_id=estate_id)
         unit_count = await self._properties.count(estate_id=estate_id)
+        units = await self._properties.list_public_available(estate_id=estate_id)
+        unit_photos = await self._unit_photos.list_for_properties(
+            property_ids=[unit.unit_id for unit in units]
+        )
+        photos_by_unit: dict[int, list[PublicPhotoResponse]] = {}
+        for photo in unit_photos:
+            photos_by_unit.setdefault(photo.property_id, []).append(
+                PublicPhotoResponse(public_id=photo.public_id, caption=photo.caption)
+            )
         return PublicEstateDetailResponse(
             estate_id=estate.estate_id,
             name=estate.name,
@@ -109,17 +121,45 @@ class PublicDirectoryService:
                 PublicPhotoResponse(public_id=photo.public_id, caption=photo.caption)
                 for photo in photos
             ],
+            available_units=[
+                PublicUnitListing(
+                    title=unit.listing_title or f"{unit.bedrooms}-bedroom residence",
+                    description=unit.listing_description or "",
+                    bedrooms=unit.bedrooms,
+                    bathrooms=unit.bathrooms,
+                    size_m2=unit.size_m2,
+                    amenities=unit.amenities or [],
+                    availability_status=unit.availability_status,
+                    photos=photos_by_unit.get(unit.unit_id, []),
+                )
+                for unit in units
+                if unit.bedrooms is not None and unit.bathrooms is not None and unit.size_m2 is not None
+            ],
             living_score=await self._living_score_summary(estate),
         )
 
     async def read_photo(self, public_id: str, *, size: str) -> tuple[bytes, str]:
         """The stored bytes of one photo, by its public handle."""
-        photo = await self._photos.get_by_public_id(public_id)
-        if photo is None:
-            raise NotFoundException(PHOTO_NOT_FOUND_MESSAGE)
-        if not self._allow_demo:
+        unit_photo = await self._unit_photos.get_by_public_id(public_id)
+        if unit_photo is not None:
+            from app.property.models.property import Property
+
+            unit_result = await self._properties._db.execute(
+                __import__("sqlalchemy").select(Property).where(Property.unit_id == unit_photo.property_id)
+            )
+            unit = unit_result.scalar_one_or_none()
+            if unit is None or not unit.is_public_listing or unit.availability_status != "available" or unit.estate_id is None:
+                raise NotFoundException(PHOTO_NOT_FOUND_MESSAGE)
+            estate = await self._estates.get_by_id(unit.estate_id)
+            if estate is None or not estate.is_public or (not self._allow_demo and estate.is_demo):
+                raise NotFoundException(PHOTO_NOT_FOUND_MESSAGE)
+            photo = unit_photo
+        else:
+            photo = await self._photos.get_by_public_id(public_id)
+            if photo is None:
+                raise NotFoundException(PHOTO_NOT_FOUND_MESSAGE)
             estate = await self._estates.get_by_id(photo.estate_id)
-            if estate is None or estate.is_demo:
+            if estate is None or not estate.is_public or (not self._allow_demo and estate.is_demo):
                 raise NotFoundException(PHOTO_NOT_FOUND_MESSAGE)
         path = photo_path(self._upload_dir, public_id, thumb=size == "thumb")
         if not path.is_file():
