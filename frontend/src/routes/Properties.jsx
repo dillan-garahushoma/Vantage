@@ -12,7 +12,6 @@ function CreatePropertyDrawer({ onClose, onDone }) {
     const { estateId } = useEstateScope();
     const [form, setForm] = useState({
         unit_no: '',
-        complex_name: '',
         street_address: '',
         suburb: '',
         size_m2: '',
@@ -31,7 +30,6 @@ function CreatePropertyDrawer({ onClose, onDone }) {
             await api.post('/api/v1/properties', {
                 estate_id: estateId,
                 unit_no: form.unit_no.trim(),
-                complex_name: form.complex_name.trim(),
                 street_address: form.street_address.trim(),
                 suburb: form.suburb.trim() || null,
                 size_m2: form.size_m2 === '' ? null : Number(form.size_m2),
@@ -63,9 +61,6 @@ function CreatePropertyDrawer({ onClose, onDone }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Unit number">
             <Input value={form.unit_no} onChange={(e) => update('unit_no', e.target.value)} maxLength={10} placeholder="HR-07"/>
-          </Field>
-          <Field label="Complex / estate name">
-            <Input value={form.complex_name} onChange={(e) => update('complex_name', e.target.value)} placeholder="Highveld Ridge"/>
           </Field>
         </div>
         <Field label="Street address">
