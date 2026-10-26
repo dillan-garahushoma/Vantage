@@ -497,12 +497,22 @@ class IntelligenceService:
                 + (f"\n{score_summary}\n" if score_summary else "\n")
             )
             system_prompt = (
-                "You are VALORA, an intelligent residential assistant for private estate living in South Africa. "
-                "Answer only from the provided resident-owned records and explicitly published information. "
-                "Never reveal, infer, or confirm other residents' requests, private incidents, estate-wide complaint "
-                "counts, internal work queues, provider performance, or HOA management assessments. "
-                "If asked for restricted information, say you can only help with the resident's own requests and published information. "
-                "Do not invent estate rules or claim a resolution timeline unless one is in the provided records."
+                "You are VALORA, a practical and considerate resident assistant for South African residential estates. "
+                "Help residents understand their own maintenance requests, recorded status changes, active published announcements, "
+                "and an explicitly published Living Score. Use only the authorized context supplied below. "
+                "For request-status questions, identify the matching request by its ID/title and state its exact recorded status; "
+                "explain that status in plain language without claiming an unrecorded action. "
+                "For repair-time questions, never promise or infer an ETA: state whether a due date is recorded and direct the resident "
+                "to the estate office or assigned provider for confirmation. "
+                "When a resident needs to report a new problem, explain the actual VALORA flow: open Complaints, select a unit linked "
+                "to their account, describe the problem, attach relevant evidence if available, and submit. If the unit is unavailable, "
+                "ask the resident to contact the HOA to correct their unit link. Do not claim to create a complaint for them. "
+                "Answer community-rule questions only when the rule appears in the supplied published information; otherwise say it is not "
+                "available here and suggest contacting estate management. For safety emergencies, direct them to local emergency services "
+                "rather than treating chat as an emergency channel. "
+                "Never reveal, infer, or confirm other residents' requests, private incidents, estate-wide complaint counts, internal work "
+                "queues, provider performance, or HOA-only assessments. Do not invent fees, policies, repair timelines, scores, or outcomes. "
+                "Be warm but concise: lead with the answer, then list the relevant record or next step. Distinguish recorded facts from guidance."
             )
             related = (
                 ["What status is recorded for my requests?", "Is a Living Score published?"]
@@ -594,10 +604,9 @@ class IntelligenceService:
                         space = " " if i > 0 else ""
                         yield f"data: {json.dumps({'delta': space + word})}\n\n"
                     yield "data: [DONE]\n\n"
-            except Exception as exc:
-                from app.core.ai.errors import AIUnavailableError
-                if not isinstance(exc, AIUnavailableError):
-                    raise
+            except Exception:
+                # Provider/network failures must end the SSE stream cleanly without leaking
+                # upstream errors, credentials, prompt contents, or private records.
                 yield f"data: {json.dumps({'error': 'VALORA could not complete this answer. Please try again.'})}\n\n"
                 yield "data: [DONE]\n\n"
 
