@@ -392,10 +392,10 @@ class IntelligenceService:
         briefing = WeeklyBriefing(
             headline=f"Resident Health Overview · {estate.name}",
             body=(
-                f"You have {len(unit_issues)} maintenance requests logged with estate management. "
+                f"Your latest {len(unit_issues)} maintenance request records are available below. "
                 f"{score_summary}"
                 if unit_issues else
-                f"You have no maintenance requests on record. {score_summary}"
+                f"No maintenance requests are currently recorded for your account. {score_summary}"
             ),
             window_label="Live Status",
             signals_reviewed=len(unit_issues),
@@ -413,7 +413,7 @@ class IntelligenceService:
             data_origin='demo' if bool(getattr(estate, 'is_demo', False)) else 'live',
             facts={},
             evidence=(
-                [f"Your maintenance requests: {len(unit_issues)} recorded."]
+                [f"Your latest maintenance request records returned: {len(unit_issues)}."]
                 if unit_issues
                 else []
             ) + [
@@ -648,9 +648,20 @@ class IntelligenceService:
         full_system = f"{system_prompt}\n\nAuthorized Context:\n{context}"
         msg_list: list[dict[str, str]] = [{"role": "system", "content": full_system}]
         if history:
-            for h in history[-8:]:
+            prior_turns = history[-8:]
+            # The frontend includes the current question in its context window.
+            # Append it exactly once to avoid the model treating it as a repeated turn.
+            if prior_turns:
+                last = prior_turns[-1]
+                last_role = getattr(last, "role", None) or (last.get("role") if isinstance(last, dict) else "user")
+                last_content = getattr(last, "content", None) or (last.get("content") if isinstance(last, dict) else "")
+                if last_role == "user" and str(last_content).strip() == question.strip():
+                    prior_turns = prior_turns[:-1]
+            for h in prior_turns:
                 role_val = getattr(h, "role", None) or (h.get("role") if isinstance(h, dict) else "user")
                 content_val = getattr(h, "content", None) or (h.get("content") if isinstance(h, dict) else "")
+                # Only prior user questions are replayed. Assistant text is model output,
+                # not trusted policy or evidence, and is never promoted into system context.
                 if role_val == "user" and content_val:
                     msg_list.append({"role": "user", "content": str(content_val)[:1000]})
         msg_list.append({"role": "user", "content": question})
