@@ -34,7 +34,7 @@ def test_upgrade_adds_private_by_default_listing_fields_and_photo_table(monkeypa
     module.upgrade()
     calls = repr(recorder.calls).lower()
     assert module.down_revision == "e8c3a1f9d5b7"
-    for field in ("listing_title", "listing_description", "amenities", "is_public_listing", "availability_status"):
+    for field in ("listing_title", "listing_description", "amenities", "is_public_listing", "availability_status", "public_listing_id", "ck_properties_availability_status"):
         assert field in calls
     assert recorder.created_tables == ["property_photos"]
     assert "ondelete='cascade'" in calls
