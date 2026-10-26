@@ -142,12 +142,7 @@ class PublicDirectoryService:
         """The stored bytes of one photo, by its public handle."""
         unit_photo = await self._unit_photos.get_by_public_id(public_id)
         if unit_photo is not None:
-            from app.property.models.property import Property
-
-            unit_result = await self._properties._db.execute(
-                __import__("sqlalchemy").select(Property).where(Property.unit_id == unit_photo.property_id)
-            )
-            unit = unit_result.scalar_one_or_none()
+            unit = await self._properties.get_public_unit(unit_photo.property_id)
             if unit is None or not unit.is_public_listing or unit.availability_status != "available" or unit.estate_id is None:
                 raise NotFoundException(PHOTO_NOT_FOUND_MESSAGE)
             estate = await self._estates.get_by_id(unit.estate_id)
