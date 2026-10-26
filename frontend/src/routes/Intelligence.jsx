@@ -182,29 +182,26 @@ function IntelligenceBody() {
                 </span>
               </div>
               <p className="mt-1 text-xs text-ink/70 sm:text-sm">
-                Ask questions. Get clear, actionable insights about your estate.
+                {isResident
+                  ? "Understand your requests, read estate updates, and find your next step."
+                  : isProvider
+                    ? "Understand assigned work, recorded instructions, and due dates."
+                    : "Turn authorised estate records into clear, evidence-led decisions."}
               </p>
             </div>
           </div>
 
-          {/* Right side: Estate dossier preview */}
-          <div className="flex items-center gap-3 rounded-xl border border-line/80 bg-canvas/60 p-2 sm:max-w-xs">
-            <div className="h-10 w-14 shrink-0 overflow-hidden rounded-lg bg-line">
-              <img
-                src="/estates/willowbrook-mews-01-hero.jpg"
-                alt={estate?.estate_name ?? 'Estate view'}
-                className="h-full w-full object-cover"
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-              />
-            </div>
+          <div className="flex items-center gap-3 rounded-xl border border-line/80 bg-canvas/60 p-3 sm:max-w-xs">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-wash text-brand-ink">
+              {isResident ? <ShieldCheck className="h-5 w-5" /> : isProvider ? <FileCheck2 className="h-5 w-5" /> : <Layers className="h-5 w-5" />}
+            </span>
             <div className="min-w-0 pr-1">
               <p className="truncate text-xs font-semibold text-ink">
-                {estate?.estate_name ?? intelligence?.estate_name ?? 'Active estate'}
+                {estate?.estate_name ?? intelligence?.estate_name ?? 'Selected estate'}
               </p>
-              <div className="flex items-center gap-1.5 text-[11px] text-ink-muted">
-                <span className="h-1.5 w-1.5 rounded-full bg-mint" />
-                <span>Live estate record</span>
-              </div>
+              <p className="text-[11px] text-ink-muted">
+                {isResident ? "Your resident view" : isProvider ? "Your assigned work" : "Authorised estate records"}
+              </p>
             </div>
           </div>
         </div>
@@ -227,15 +224,15 @@ function IntelligenceBody() {
       ) : null}
 
       {/* -------------------- Main 3-Column Grid -------------------- */}
-      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)_340px] items-start">
+      <div className={cn("grid gap-6 items-start", isResident ? "grid-cols-1" : isHoaAdmin ? "xl:grid-cols-[240px_minmax(0,1fr)_320px]" : "grid-cols-1")}>
         {/* ==================== LEFT COLUMN (Recent & History) ==================== */}
-        <aside className="space-y-4 xl:sticky xl:top-24">
+        {isHoaAdmin ? <aside className="space-y-4 xl:sticky xl:top-24">
           <Surface className="space-y-4" padded={true}>
             <div className="flex items-center justify-between border-b border-line pb-3">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-brand" />
                 <h2 className="font-heading text-xs font-bold tracking-wider text-ink uppercase">
-                  Recent conversations
+                  Saved briefings
                 </h2>
               </div>
               <button
@@ -248,38 +245,6 @@ function IntelligenceBody() {
               </button>
             </div>
 
-            {/* Conversation Threads */}
-            <div className="space-y-2">
-              <div className="rounded-xl border border-brand-soft/60 bg-brand-wash/20 p-2.5 transition-colors">
-                <p className="text-xs font-semibold text-ink truncate">
-                  Water pressure in Block B
-                </p>
-                <div className="mt-1 flex items-center justify-between text-[10px] text-ink/50">
-                  <span>Active inquiry</span>
-                  <span>4 records</span>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-line bg-canvas/40 p-2.5 transition-colors hover:border-brand-soft">
-                <p className="text-xs font-medium text-ink/80 truncate">
-                  Estate health summary
-                </p>
-                <div className="mt-1 flex items-center justify-between text-[10px] text-ink-muted">
-                  <span>Score breakdown</span>
-                  <span>90 days</span>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-line bg-canvas/40 p-2.5 transition-colors hover:border-brand-soft">
-                <p className="text-xs font-medium text-ink/80 truncate">
-                  Security incident analysis
-                </p>
-                <div className="mt-1 flex items-center justify-between text-[10px] text-ink-muted">
-                  <span>Gate relay logs</span>
-                  <span>1 issue</span>
-                </div>
-              </div>
-            </div>
 
             {/* Saved Briefings for HOA Admin */}
             {isHoaAdmin ? (
@@ -332,33 +297,18 @@ function IntelligenceBody() {
               </div>
             ) : null}
 
-            {/* Promo / Sample prompt tip */}
-            <div className="rounded-xl border border-line bg-canvas p-3 text-xs">
-              <p className="font-semibold text-ink">Get deeper insights</p>
-              <p className="mt-1 text-ink/65 text-[11px] leading-relaxed">
-                Try asking about historical complaint trends or contractor turnaround times.
-              </p>
-              <button
-                type="button"
-                onClick={() => setChatKey((k) => k + 1)}
-                className="mt-2 inline-flex items-center gap-1 font-semibold text-brand-ink hover:underline"
-              >
-                <span>Try a sample question</span>
-                <ArrowRight className="h-3 w-3" />
-              </button>
-            </div>
           </Surface>
-        </aside>
+        </aside> : null}
 
         {/* ==================== CENTER COLUMN (AI Conversation Workbench) ==================== */}
         <main className="space-y-4">
-          <Surface className="h-[min(680px,80vh)] min-h-[500px] overflow-hidden" padded={false}>
+          <Surface className={cn("overflow-hidden", isResident ? "min-h-[420px] md:min-h-[480px]" : "h-[min(680px,80vh)] min-h-[500px]")} padded={false}>
             <AskValora key={`${estateId}-${chatKey}`} estateId={estateId} role={resolvedRole} />
           </Surface>
         </main>
 
         {/* ==================== RIGHT COLUMN (Context, Evidence, Related) ==================== */}
-        <aside className="space-y-4 xl:sticky xl:top-24">
+        {isHoaAdmin ? <aside className="space-y-4 xl:sticky xl:top-24">
           <Surface className="space-y-4" padded={true}>
             {/* 3 Tab Switcher */}
             <div className="flex rounded-xl border border-line bg-canvas p-1" role="tablist">
@@ -503,135 +453,74 @@ function IntelligenceBody() {
             {/* ---------- TAB 2: CONTEXT ---------- */}
             {activeTab === 'context' && (
               <div className="space-y-4">
-                {/* Active Estate Card */}
-                <div className="space-y-2">
-                  <div className="h-28 w-full overflow-hidden rounded-xl border border-line bg-canvas">
-                    <img
-                      src="/estates/willowbrook-mews-01-hero.jpg"
-                      alt={estate?.estate_name ?? 'Estate'}
-                      className="h-full w-full object-cover"
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-heading text-sm font-bold text-ink">
-                        {estate?.estate_name ?? intelligence?.estate_name ?? 'Estate Profile'}
-                      </h3>
-                      <span className="rounded-full bg-mint-wash px-2 py-0.5 text-[10px] font-semibold text-mint-ink">
-                        Live estate
-                      </span>
-                    </div>
-                    <p className="mt-0.5 text-xs text-ink-muted">
-                      Gauteng, South Africa · {estate?.property_ids?.length ?? 14} managed units
-                    </p>
-                  </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-ink/40">Selected community</p>
+                  <h3 className="font-heading text-sm font-bold text-ink">
+                    {estate?.estate_name ?? intelligence?.estate_name ?? 'Selected estate'}
+                  </h3>
+                  <p className="text-xs text-ink-muted">Intelligence is scoped to the selected estate and your current role.</p>
                 </div>
-
-                {/* Key Metrics */}
-                <div className="rounded-xl border border-line bg-canvas p-3 space-y-2.5">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-ink/40">
-                    Health Indicators
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-lg border border-line/60 bg-surface p-2">
-                      <p className="text-[10px] font-medium text-ink-muted">Living Score</p>
-                      <p className="text-base font-bold text-ink">
-                        {livingScore?.value ?? 82}
-                        <span className="ml-1 text-[11px] text-mint-ink font-normal">↑ 4%</span>
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-line/60 bg-surface p-2">
-                      <p className="text-[10px] font-medium text-ink-muted">Complaints</p>
-                      <p className="text-base font-bold text-ink">
-                        {intelligence?.operational_signals?.open_complaints ?? 105}
-                      </p>
-                    </div>
+                {livingScore?.value != null ? (
+                  <div className="border-t border-line pt-3">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-ink/40">Living Score</p>
+                    <p className="mt-1 text-xl font-semibold tabular-nums text-ink">{livingScore.value}<span className="ml-1 text-xs font-normal text-ink-muted">/100</span></p>
+                    {livingScore.label ? <p className="mt-1 text-xs text-ink-muted">{livingScore.label}</p> : null}
                   </div>
-                </div>
-
-                {/* Related Documents */}
-                <div className="space-y-2">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-ink/40">
-                    Linked Documents
-                  </p>
-                  <div className="space-y-1.5 text-xs">
-                    <Link
-                      to="/app/work-orders"
-                      className="flex items-center justify-between rounded-lg border border-line p-2 text-ink/80 hover:border-brand-soft hover:text-brand-ink"
-                    >
-                      <span className="truncate">WO #52 · Pump Motor Overdue</span>
-                      <ExternalLink className="h-3 w-3 shrink-0 text-ink/40" />
-                    </Link>
-                    <Link
-                      to="/app/complaints"
-                      className="flex items-center justify-between rounded-lg border border-line p-2 text-ink/80 hover:border-brand-soft hover:text-brand-ink"
-                    >
-                      <span className="truncate">Complaint #12 · Low Pressure Log</span>
-                      <ExternalLink className="h-3 w-3 shrink-0 text-ink/40" />
-                    </Link>
+                ) : null}
+                {signals.length ? (
+                  <div className="border-t border-line pt-3">
+                    <SignalField signals={signals} label="Measured operational signals" />
                   </div>
+                ) : null}
+                <div className="border-t border-line pt-3 space-y-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-ink/40">Explore records</p>
+                  <Link to="/app/health" className="flex items-center justify-between rounded-lg border border-line p-2 text-xs text-ink/80 hover:border-brand-soft hover:text-brand-ink">
+                    <span>Estate health</span><ArrowRight className="h-3 w-3" />
+                  </Link>
+                  {isHoaAdmin ? (
+                    <>
+                      <Link to="/app/complaints" className="flex items-center justify-between rounded-lg border border-line p-2 text-xs text-ink/80 hover:border-brand-soft hover:text-brand-ink">
+                        <span>Complaints</span><ArrowRight className="h-3 w-3" />
+                      </Link>
+                      <Link to="/app/work-orders" className="flex items-center justify-between rounded-lg border border-line p-2 text-xs text-ink/80 hover:border-brand-soft hover:text-brand-ink">
+                        <span>Work orders</span><ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </>
+                  ) : null}
                 </div>
-
-                {/* Start New Chat CTA */}
-                <div className="pt-2 border-t border-line">
-                  <button
-                    type="button"
-                    onClick={() => setChatKey((k) => k + 1)}
-                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-line bg-canvas py-2 text-xs font-semibold text-ink hover:bg-surface"
-                  >
-                    <RefreshCw className="h-3.5 w-3.5 text-brand" />
-                    Start a new chat
-                  </button>
-                </div>
+                <button type="button" onClick={() => setChatKey((k) => k + 1)} className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-line bg-canvas py-2 text-xs font-semibold text-ink hover:bg-surface">
+                  <RefreshCw className="h-3.5 w-3.5 text-brand" /> Start a new chat
+                </button>
               </div>
             )}
 
             {/* ---------- TAB 3: RELATED ---------- */}
             {activeTab === 'related' && (
               <div className="space-y-3">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-ink/40">
-                  Open Operational Records
-                </p>
-                <div className="space-y-2 text-xs">
-                  <div className="rounded-xl border border-line bg-canvas p-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-ink">WO-0052</span>
-                      <span className="text-[10px] font-bold uppercase text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded">
-                        Overdue
-                      </span>
-                    </div>
-                    <p className="mt-1 text-ink/70">Pump plant capacitor replacement</p>
-                    <Link
-                      to="/app/work-orders"
-                      state={{ focusWorkOrderId: 52 }}
-                      className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-brand-ink hover:underline"
-                    >
-                      Open work order <ArrowRight className="h-3 w-3" />
-                    </Link>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-ink/40">Related to this briefing</p>
+                {activeRecommendations.length ? (
+                  <div className="divide-y divide-line">
+                    {activeRecommendations.map((recommendation) => (
+                      <div key={recommendation.id} className="py-3">
+                        <p className="text-xs font-semibold text-ink">{recommendation.title}</p>
+                        <p className="mt-1 text-xs leading-relaxed text-ink/65">{recommendation.summary}</p>
+                        {recommendation.evidence?.length ? (
+                          <p className="mt-1 text-[11px] text-ink-muted">{recommendation.evidence.length} supporting source{recommendation.evidence.length === 1 ? '' : 's'}</p>
+                        ) : null}
+                        <button type="button" onClick={() => { setReviewing(recommendation); setActiveTab('evidence'); }} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-brand-ink hover:underline">
+                          Review finding <ArrowRight className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-
-                  <div className="rounded-xl border border-line bg-canvas p-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-ink">Complaint #12</span>
-                      <span className="text-[10px] font-bold uppercase text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
-                        Submitted
-                      </span>
-                    </div>
-                    <p className="mt-1 text-ink/70">Irrigation pressure low across Block C</p>
-                    <Link
-                      to="/app/complaints"
-                      state={{ focusComplaintId: 12 }}
-                      className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-brand-ink hover:underline"
-                    >
-                      Open complaint <ArrowRight className="h-3 w-3" />
-                    </Link>
-                  </div>
-                </div>
+                ) : (
+                  <p className="text-xs leading-relaxed text-ink-muted">No related findings were returned for this view. VALORA will not invent records to fill this panel.</p>
+                )}
               </div>
             )}
+
           </Surface>
-        </aside>
+        </aside> : null}
       </div>
 
       {/* -------------------- Resident Scoped Extra Info -------------------- */}
@@ -640,16 +529,24 @@ function IntelligenceBody() {
           <Surface>
             <div className="flex items-center justify-between border-b border-line pb-3">
               <h2 className="font-heading text-sm font-bold text-ink">
-                Your Logged Requests & Unit Health
+                Your maintenance requests
               </h2>
-              <span className="rounded-full bg-brand-wash px-2.5 py-0.5 text-xs font-semibold text-brand-ink">
-                {intelligence?.resident_view?.unit_issues?.length ?? 0} tracked
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="rounded-full bg-brand-wash px-2.5 py-0.5 text-xs font-semibold text-brand-ink">
+                  {intelligence?.resident_view?.unit_issues?.length ?? 0} recent
+                </span>
+                <Link to="/app/complaints" className="inline-flex items-center gap-1 text-xs font-semibold text-brand-ink hover:underline">
+                  Report an issue <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
             </div>
             {(intelligence?.resident_view?.unit_issues ?? []).length === 0 ? (
               <div className="py-6 text-center text-ink/60">
                 <CheckCircle2 className="mx-auto h-6 w-6 text-mint-ink" />
-                <p className="mt-2 text-xs font-medium">No open maintenance issues logged for your unit.</p>
+                <p className="mt-2 text-xs font-medium">No maintenance requests are recorded for your account.</p>
+                <Link to="/app/complaints" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-ink hover:underline">
+                  Report a maintenance issue <ArrowRight className="h-3 w-3" />
+                </Link>
               </div>
             ) : (
               <div className="mt-2 divide-y divide-line-soft">
@@ -673,7 +570,7 @@ function IntelligenceBody() {
               </span>
               <div>
                 <p className="text-sm font-semibold text-ink">
-                  How Living Score Protects Property Values
+                  Community health
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-ink/65">
                   {intelligence?.resident_view?.living_score_summary || 'A Living Score has not been published for this estate.'}
@@ -682,6 +579,41 @@ function IntelligenceBody() {
             </div>
           </Surface>
         </div>
+      ) : null}
+
+      {isResident ? (
+        <section className="pt-1">
+          <Surface>
+            <div className="flex items-start justify-between gap-4 border-b border-line pb-3">
+              <div>
+                <h2 className="font-heading text-sm font-bold text-ink">Estate notices</h2>
+                <p className="mt-1 text-xs text-ink-muted">Updates published by your estate team.</p>
+              </div>
+              <span className="rounded-full bg-canvas px-2.5 py-1 text-xs font-medium text-ink-muted">
+                {intelligence?.resident_view?.community_notices?.length ?? 0}
+              </span>
+            </div>
+            {(intelligence?.resident_view?.community_notices ?? []).length ? (
+              <ul className="divide-y divide-line-soft">
+                {intelligence.resident_view.community_notices.map((notice, index) => {
+                  const separator = notice.indexOf(':');
+                  const title = separator > 0 ? notice.slice(0, separator) : 'Estate update';
+                  const message = separator > 0 ? notice.slice(separator + 1).trim() : notice;
+                  return (
+                    <li key={`${title}-${index}`} className="py-3">
+                      <p className="text-sm font-semibold text-ink">{title}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-ink/70">{message}</p>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="py-4 text-xs leading-relaxed text-ink-muted">
+                There are no active published notices available. Ask VALORA if you need help with your own requests.
+              </p>
+            )}
+          </Surface>
+        </section>
       ) : null}
 
       {/* -------------------- Provider Scoped Extra Info -------------------- */}
@@ -799,8 +731,11 @@ function IntelligenceBody() {
       ) : null}
 
       <p className="text-[11px] text-ink/40 text-center pt-2">
-        Scope: {estate?.estate_name ?? 'no estate selected'} · recommendations are advisory and never
-        written back to the estate’s records without a work order.
+        {isResident
+          ? "VALORA uses your own request records and information published by your estate. It cannot see other residents' private requests."
+          : isProvider
+            ? "VALORA uses work assigned to your provider account. Confirm site instructions with the assigning estate team when records are incomplete."
+            : `Scope: ${estate?.estate_name ?? 'no estate selected'} · recommendations are advisory and never written back to estate records without an authorised action.`}
       </p>
     </div>
   );

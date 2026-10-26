@@ -63,7 +63,7 @@ class IntelligenceRepository:
         score = LivingScoreSnapshot
         row = (await self._db.execute(
             select(score.overall_score, score.as_of, score.status)
-            .where(score.estate_id == estate_id)
+            .where(score.estate_id == estate_id, score.status == "published")
             .order_by(score.as_of.desc(), score.snapshot_id.desc())
             .limit(1)
         )).one_or_none()
