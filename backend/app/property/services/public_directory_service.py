@@ -130,6 +130,7 @@ class PublicDirectoryService:
                     size_m2=unit.size_m2,
                     amenities=unit.amenities or [],
                     availability_status=unit.availability_status,
+                    listing_id=unit.public_listing_id,
                     photos=photos_by_unit.get(unit.unit_id, []),
                 )
                 for unit in units
