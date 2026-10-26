@@ -815,11 +815,12 @@ async def test_public_complex_detail_contains_only_published_available_unit_list
     unit = payload["available_units"][0]
     assert set(unit) == set(PublicUnitListing.model_fields)
     assert unit["title"] == "Two-bedroom garden residence"
+    assert len(unit["listing_id"]) >= 24
     assert unit["amenities"] == ["Private garden", "Secure parking", "Fibre-ready"]
     assert len(unit["photos"]) == 1
     assert set(unit["photos"][0]) == {"public_id", "caption"}
     # Internal identifiers and addresses never cross the public DTO boundary.
-    assert "unit_no" not in unit and "street_address" not in unit and "property_id" not in unit
+    assert "unit_no" not in unit and "street_address" not in unit and "property_id" not in unit and "estate_id" not in unit
 
 
 @pytest.mark.integration
