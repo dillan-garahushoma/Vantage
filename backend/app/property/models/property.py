@@ -1,5 +1,6 @@
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Column,
     ForeignKey,
     Index,
@@ -23,6 +24,10 @@ class Property(Base):
     __tablename__ = "properties"
     __table_args__ = (
         UniqueConstraint("estate_id", "unit_no", name="uq_properties_estate_unit_no"),
+        CheckConstraint(
+            "availability_status IN ('available', 'occupied', 'not_available')",
+            name="ck_properties_availability_status",
+        ),
         Index(
             "uq_properties_legacy_unit_no",
             "unit_no",
@@ -56,6 +61,8 @@ class Property(Base):
     listing_description = Column(Text, nullable=True)
     amenities = Column(JSON, nullable=False, default=list, server_default=text("'[]'"))
     is_public_listing = Column(Boolean, nullable=False, server_default=text("false"))
+    # Random public reference used only when a unit is published; never the unit number.
+    public_listing_id = Column(String(32), nullable=True, unique=True)
     availability_status = Column(
         String(20), nullable=False, server_default=text("'not_available'")
     )
