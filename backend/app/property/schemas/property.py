@@ -30,7 +30,6 @@ class PropertyResponse(BaseModel):
 class PropertyCreate(BaseModel):
     estate_id: int = Field(..., gt=0)
     unit_no: str = Field(..., min_length=1, max_length=10)
-    complex_name: str = Field(..., min_length=1, max_length=255)
     street_address: str = Field(..., min_length=1, max_length=255)
     suburb: str | None = Field(default=None, max_length=255)
     size_m2: Decimal | None = Field(default=None, gt=0, max_digits=8, decimal_places=2)
