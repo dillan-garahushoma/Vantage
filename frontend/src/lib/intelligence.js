@@ -2,9 +2,9 @@
 import { api, API_BASE, session } from './api';
 
 export const askValoraPrompts = [
-  'Why did our estate health score change?',
-  'What is likely to need attention next month?',
-  'Summarise infrastructure risks for the board.',
+  'What is the status of my maintenance requests?',
+  'Are there any published estate notices?',
+  'Is a Living Score published for my estate?',
 ];
 
 export const rolePrompts = {
@@ -14,9 +14,11 @@ export const rolePrompts = {
     'Summarise open complaints and contractor performance.',
   ],
   resident: [
-    'What updates are recorded on my maintenance requests?',
-    'Which of my requests is still open?',
+    'What is the status of my maintenance requests?',
+    'How do I report a new maintenance issue?',
+    'Are there any published estate notices?',
     'Is a Living Score published for my estate?',
+    'When can I expect my repair to be completed?',
   ],
   service_provider: [
     'What work is assigned to my provider account?',
