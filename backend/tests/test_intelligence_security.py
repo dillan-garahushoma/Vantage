@@ -97,7 +97,7 @@ async def test_resident_question_uses_only_personal_intelligence(monkeypatch):
     assert answer.estate_id == 1
     assert 'My water request' in answer.summary
     assert 'estate-wide' not in answer.summary.lower()
-    assert answer.related == ['Your maintenance requests']
+    assert answer.related == ['Report a maintenance issue', 'Published estate notices']
     service._records.facts.assert_not_called()
 
 
