@@ -17,7 +17,7 @@ class PropertyPhoto(Base):
         Index("ix_property_photos_property_id_position", "property_id", "position"),
     )
 
-    photo_id = Column(Integer, primary_key=True, index=True)
+    photo_id = Column(Integer, primary_key=True)
     property_id = Column(Integer, ForeignKey("properties.unit_id", ondelete="CASCADE"), nullable=False)
     public_id = Column(String(UNIT_PHOTO_PUBLIC_ID_LENGTH), nullable=False, unique=True)
     content_type = Column(String(32), nullable=False, server_default="image/jpeg")
