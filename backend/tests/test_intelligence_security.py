@@ -411,7 +411,7 @@ async def test_resident_unknown_question_does_not_fabricate_policies_or_other_re
         SimpleNamespace(user_id=9),
     )
 
-    assert 'I can help you track your own maintenance requests' in answer.summary
+    assert 'I can help with your own maintenance-request status' in answer.summary
     assert 'private requests' in answer.summary
     assert answer.recommendation == ''
     service._records.facts.assert_not_called()
