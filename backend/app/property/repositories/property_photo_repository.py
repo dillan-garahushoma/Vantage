@@ -16,6 +16,16 @@ class PropertyPhotoRepository:
         )
         return list(result.scalars().all())
 
+    async def list_for_properties(self, *, property_ids: list[int]) -> list[PropertyPhoto]:
+        if not property_ids:
+            return []
+        result = await self._db.execute(
+            select(PropertyPhoto)
+            .where(PropertyPhoto.property_id.in_(property_ids))
+            .order_by(PropertyPhoto.position.asc(), PropertyPhoto.photo_id.asc())
+        )
+        return list(result.scalars().all())
+
     async def get_by_public_id(self, public_id: str) -> PropertyPhoto | None:
         result = await self._db.execute(
             select(PropertyPhoto).where(PropertyPhoto.public_id == public_id)
