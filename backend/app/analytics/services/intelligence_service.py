@@ -141,6 +141,14 @@ def _resident_answer(
             ["Your maintenance requests", "Published estate notices"],
         )
 
+    if "other resident" in q or "other residents" in q:
+        if any(term in q for term in ("complaint", "request", "issue", "incident", "account")):
+            return (
+                "I can help with your own maintenance-request status, but I can't access or share private requests, complaints, or incidents belonging to other residents. "
+                "For community-wide information, check notices published by your estate or contact the HOA.",
+                ["Your maintenance requests", "Published estate notices"],
+            )
+
     if any(term in q for term in notice_terms):
         summary = (
             "Current published estate notices: " + " ".join(notices)
