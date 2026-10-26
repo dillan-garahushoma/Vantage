@@ -531,9 +531,14 @@ function IntelligenceBody() {
               <h2 className="font-heading text-sm font-bold text-ink">
                 Your maintenance requests
               </h2>
-              <span className="rounded-full bg-brand-wash px-2.5 py-0.5 text-xs font-semibold text-brand-ink">
-                {intelligence?.resident_view?.unit_issues?.length ?? 0} tracked
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="rounded-full bg-brand-wash px-2.5 py-0.5 text-xs font-semibold text-brand-ink">
+                  {intelligence?.resident_view?.unit_issues?.length ?? 0} recent
+                </span>
+                <Link to="/app/complaints" className="inline-flex items-center gap-1 text-xs font-semibold text-brand-ink hover:underline">
+                  Report an issue <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
             </div>
             {(intelligence?.resident_view?.unit_issues ?? []).length === 0 ? (
               <div className="py-6 text-center text-ink/60">
@@ -574,6 +579,41 @@ function IntelligenceBody() {
             </div>
           </Surface>
         </div>
+      ) : null}
+
+      {isResident ? (
+        <section className="pt-1">
+          <Surface>
+            <div className="flex items-start justify-between gap-4 border-b border-line pb-3">
+              <div>
+                <h2 className="font-heading text-sm font-bold text-ink">Estate notices</h2>
+                <p className="mt-1 text-xs text-ink-muted">Updates published by your estate team.</p>
+              </div>
+              <span className="rounded-full bg-canvas px-2.5 py-1 text-xs font-medium text-ink-muted">
+                {intelligence?.resident_view?.community_notices?.length ?? 0}
+              </span>
+            </div>
+            {(intelligence?.resident_view?.community_notices ?? []).length ? (
+              <ul className="divide-y divide-line-soft">
+                {intelligence.resident_view.community_notices.map((notice, index) => {
+                  const separator = notice.indexOf(':');
+                  const title = separator > 0 ? notice.slice(0, separator) : 'Estate update';
+                  const message = separator > 0 ? notice.slice(separator + 1).trim() : notice;
+                  return (
+                    <li key={`${title}-${index}`} className="py-3">
+                      <p className="text-sm font-semibold text-ink">{title}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-ink/70">{message}</p>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="py-4 text-xs leading-relaxed text-ink-muted">
+                There are no active published notices available. Ask VALORA if you need help with your own requests.
+              </p>
+            )}
+          </Surface>
+        </section>
       ) : null}
 
       {/* -------------------- Provider Scoped Extra Info -------------------- */}
