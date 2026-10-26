@@ -207,6 +207,112 @@ def _resident_answer(
     )
 
 
+def _resident_answer(
+    question: str,
+    issues: list[Any],
+    notices: list[str],
+    score_summary: str,
+    score_published: bool,
+) -> tuple[str, list[str]]:
+    """Deterministic resident guidance grounded in personal records and published data."""
+    import re
+
+    q = question.casefold()
+    issue_terms = ("request", "complaint", "repair", "maintenance", "issue", "status", "progress", "update", "fixed", "resolved")
+    notice_terms = ("announcement", "announcements", "notice", "notices", "water interruption", "pool", "closure", "community update")
+    score_terms = ("living score", "score", "community health", "estate health")
+    reporting_terms = ("report", "log", "submit", "raise", "new issue", "new complaint", "leak", "broken", "not working")
+    timeline_terms = ("how long", "when will", "timeline", "when can", "eta", "expected resolution")
+    emergency_terms = ("fire", "smoke", "medical emergency", "heart attack", "intruder", "break-in in progress", "life threatening", "life-threatening")
+    status_label = {
+        "submitted": "submitted for review",
+        "reviewed": "reviewed by estate management",
+        "assigned": "assigned for action",
+        "in_progress": "in progress",
+        "resolved": "marked resolved",
+        "rated": "completed and rated",
+        "closed": "closed",
+    }
+
+    if any(term in q for term in emergency_terms):
+        return (
+            "This may be an emergency. Contact local emergency services now and follow your estate's emergency procedure; do not wait for VALORA. "
+            "Once everyone is safe, you can notify estate management through the normal reporting process.",
+            ["How do I report a maintenance issue?"],
+        )
+
+    if any(term in q for term in ("can't see my unit", "cannot see my unit", "unit not listed", "unit missing", "access request", "join the estate", "membership")):
+        return (
+            "Your unit or resident access needs to be checked by the estate administrator. Contact your HOA and ask them to confirm your unit link and membership. "
+            "I can't approve membership or change your access from this chat.",
+            ["How do I report a maintenance issue?"],
+        )
+
+    if any(term in q for term in notice_terms):
+        return (
+            "Published estate notices: " + " ".join(notices)
+            if notices else
+            "There are no active published estate notices in VALORA right now. This does not prove that no offline notice exists; contact your estate office if you need confirmation.",
+            ["What is the status of my maintenance requests?", "Is a Living Score published for my estate?"],
+        )
+
+    if any(term in q for term in score_terms):
+        return (
+            score_summary if score_published and score_summary else
+            "A Living Score is not currently published for this estate, so I can't give you a verified score. You can still follow your own requests and read published community notices.",
+            ["What is the status of my maintenance requests?", "Are there any published estate notices?"],
+        )
+
+    if any(term in q for term in reporting_terms) and not any(term in q for term in ("my request", "my complaint", "my repair", "status", "progress", "update")):
+        return (
+            "To report a problem, open Complaints in VALORA, select a unit linked to your account, describe what happened, attach clear photos or other evidence if relevant, and submit. "
+            "Then follow the recorded status in your request list. If your unit is not available to select, ask your HOA to link it to your account. "
+            "I can't submit the complaint on your behalf from this chat.",
+            ["Report a maintenance issue", "Your maintenance requests"],
+        )
+
+    if any(term in q for term in timeline_terms):
+        matching = [issue for issue in issues if str(issue.status).casefold() not in {"resolved", "rated", "closed"}]
+        if matching:
+            summary = (
+                "VALORA does not have a verified completion estimate for your request"
+                + ("s" if len(matching) > 1 else "") + ". "
+                + "; ".join(
+                    f"#{issue.id} {issue.title}: recorded status is {issue.status}. The estate team or assigned provider must confirm the expected date"
+                    for issue in matching
+                ) + "."
+            )
+        else:
+            summary = "I can't verify a completion timeline from your current request records. Check any active request for updates or contact your estate office for an estimate."
+        return summary, ["Your maintenance requests"]
+
+    request_match = re.search(r"\b(?:request|complaint|issue)\s*#?\s*(\d+)\b", q)
+    selected_id = int(request_match.group(1)) if request_match else None
+    matching = list(issues)
+    if selected_id is not None:
+        matching = [issue for issue in matching if str(issue.id) == str(selected_id)]
+    elif any(term in q for term in ("open", "unresolved", "still active")):
+        matching = [issue for issue in matching if str(issue.status).casefold() not in {"resolved", "rated", "closed"}]
+    elif any(term in q for term in ("resolved", "closed", "fixed", "completed")):
+        matching = [issue for issue in matching if str(issue.status).casefold() in {"resolved", "rated", "closed"}]
+
+    if any(term in q for term in issue_terms):
+        summary = (
+            "Your recorded maintenance requests: " + "; ".join(
+                f"#{issue.id} {issue.title} — status: {issue.status} ({status_label.get(str(issue.status).casefold(), 'check the latest update')})"
+                for issue in matching
+            ) if matching else
+            "I couldn't find a matching request in your account's records. If you haven't reported the issue yet, use Complaints to log it. If you already submitted it, check that you're viewing the correct estate."
+        )
+        return summary, ["Report a maintenance issue", "Published estate notices"]
+
+    return (
+        "I can help with your own maintenance-request status, how to report a problem, published estate notices, and whether a Living Score is available. "
+        "I can't see private requests from other residents or promise a repair date that the estate hasn't recorded.",
+        ["How do I report a new maintenance issue?", "What is the status of my maintenance requests?", "Is a Living Score published for my estate?"],
+    )
+
+
 class IntelligenceService:
     def __init__(self, db: AsyncSession):
         self._db = db
