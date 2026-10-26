@@ -371,6 +371,7 @@ export function Register() {
                       checked={selected}
                       onChange={() => {
                         update('accountType', item.value);
+                        setSignupStep(1);
                         setErrors({});
                         setError(null);
                       }}
