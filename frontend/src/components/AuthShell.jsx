@@ -30,7 +30,7 @@ export function AuthShell({
   return (
     <PublicShell>
       <div className="min-h-[calc(100vh-64px)] bg-paper px-4 py-6 sm:px-6 sm:py-10">
-        <div className="mx-auto grid max-w-[1080px] overflow-hidden rounded-2xl border border-line bg-surface shadow-soft lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="mx-auto grid max-w-[1080px] overflow-hidden rounded-2xl border border-white/70 bg-surface shadow-[0_28px_80px_-24px_rgba(36,31,68,0.30),0_10px_28px_-14px_rgba(36,31,68,0.18)] ring-1 ring-black/[0.025] lg:grid-cols-[1.1fr_0.9fr]">
           <section className="min-w-0 px-6 py-8 sm:px-12 sm:py-10">
             {backTo ? (
               <Link
