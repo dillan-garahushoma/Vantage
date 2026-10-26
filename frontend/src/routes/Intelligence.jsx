@@ -226,7 +226,7 @@ function IntelligenceBody() {
       {/* -------------------- Main 3-Column Grid -------------------- */}
       <div className={cn("grid gap-6 items-start", isResident ? "grid-cols-1" : isHoaAdmin ? "xl:grid-cols-[240px_minmax(0,1fr)_320px]" : "grid-cols-1")}>
         {/* ==================== LEFT COLUMN (Recent & History) ==================== */}
-        {isHoaAdmin ? {isHoaAdmin ? <aside className="space-y-4 xl:sticky xl:top-24">
+        {isHoaAdmin ? <aside className="space-y-4 xl:sticky xl:top-24">
           <Surface className="space-y-4" padded={true}>
             <div className="flex items-center justify-between border-b border-line pb-3">
               <div className="flex items-center gap-2">
@@ -308,7 +308,7 @@ function IntelligenceBody() {
         </main>
 
         {/* ==================== RIGHT COLUMN (Context, Evidence, Related) ==================== */}
-        <aside className="space-y-4 xl:sticky xl:top-24">
+        {isHoaAdmin ? <aside className="space-y-4 xl:sticky xl:top-24">
           <Surface className="space-y-4" padded={true}>
             {/* 3 Tab Switcher */}
             <div className="flex rounded-xl border border-line bg-canvas p-1" role="tablist">
