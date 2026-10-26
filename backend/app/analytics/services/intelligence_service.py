@@ -582,7 +582,6 @@ class IntelligenceService:
                 score_summary=score_summary,
                 score_published=score_published,
             )
-
             return AskValoraResponse(
                 summary=summary,
                 evidence=personal.evidence,
