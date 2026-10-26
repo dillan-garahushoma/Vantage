@@ -35,11 +35,6 @@ class PropertyService:
             allowed_roles=('hoa_admin',))
         unit = await self._get_or_404_in_estate(unit_id=unit_id, estate_id=estate_id)
         changes = payload.model_dump(exclude_unset=True)
-        # Public identifiers are stable random handles, never internal unit numbers.
-        if changes.get("is_public_listing") is True and not unit.public_listing_id:
-            unit.public_listing_id = secrets.token_urlsafe(24)[:32]
-        if changes.get("is_public_listing") is False:
-            unit.public_listing_id = None
         if 'street_address' in changes:
             if not changes['street_address'] or not changes['street_address'].strip():
                 raise ConflictException('A street address is required.')
@@ -62,6 +57,10 @@ class PropertyService:
                 raise ConflictException('Add bedrooms, bathrooms and floor area before publishing this unit.')
             if await self._photo_repo.count_for_property(property_id=unit.unit_id) < 1:
                 raise ConflictException('Upload at least one photograph before publishing this unit.')
+            if not unit.public_listing_id:
+                changes['public_listing_id'] = secrets.token_urlsafe(24)[:32]
+        if changes.get('is_public_listing') is False:
+            changes['public_listing_id'] = None
         for key, value in changes.items():
             setattr(unit, key, value)
         await self._repo.flush()
