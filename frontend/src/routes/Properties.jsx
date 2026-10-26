@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { IconHome, IconPlus } from '../components/Icons';
 import { RequireEstate } from '../components/RequireEstate';
 import { Button, Card, Chip, Drawer, EmptyState, ErrorState, Field, Input, LoadingState, Select, TableShell, Td, Th, Textarea, cx, } from '../components/ui';
@@ -6,7 +6,6 @@ import { useAuth } from '../context/AuthContext';
 import { useEstateScope } from '../context/EstateContext';
 import { api, ApiError } from '../lib/api';
 import { metres } from '../lib/format';
-import { publicPhotoUrl } from '../lib/publicDirectory';
 import { useAsync } from '../lib/useAsync';
 function CreatePropertyDrawer({ onClose, onDone }) {
     const { estateId } = useEstateScope();
@@ -93,7 +92,29 @@ function EditPropertyDrawer({ property, onClose, onDone }) {
     const [photoBusy, setPhotoBusy] = useState(false);
     const [error, setError] = useState(null);
     const [photoError, setPhotoError] = useState(null);
+    const [photoUrls, setPhotoUrls] = useState({});
     const photos = useAsync(() => api.get(`/api/v1/properties/${property.id}/photos`, { estate_id: estateId }), [property.id, estateId]);
+    useEffect(() => {
+        let cancelled = false;
+        const objectUrls = [];
+        Promise.all((photos.data ?? []).map(async (photo) => {
+            try {
+                const blob = await api.blob(`/api/v1/properties/${property.id}/photos/${photo.photo_id}/image`, { estate_id: estateId, size: 'thumb' });
+                const url = URL.createObjectURL(blob);
+                if (cancelled) URL.revokeObjectURL(url);
+                else objectUrls.push(url);
+                return [photo.photo_id, cancelled ? null : url];
+            } catch {
+                return [photo.photo_id, null];
+            }
+        })).then((entries) => {
+            if (!cancelled) setPhotoUrls(Object.fromEntries(entries.filter((entry) => entry[1])));
+        });
+        return () => {
+            cancelled = true;
+            objectUrls.forEach((url) => URL.revokeObjectURL(url));
+        };
+    }, [photos.data, estateId, property.id]);
     function update(key, value) { setForm((previous) => ({ ...previous, [key]: value })); }
     async function submit() {
         setBusy(true);
@@ -161,7 +182,7 @@ function EditPropertyDrawer({ property, onClose, onDone }) {
           <div className="flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-ink">Unit photographs</h3><p className="mt-1 text-xs text-ink-muted">{(photos.data ?? []).length} of 8 photographs</p></div><label className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border border-ink/15 px-3 text-xs font-medium hover:bg-ink/5">{photoBusy ? 'Uploading…' : 'Add photo'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadPhoto} disabled={photoBusy || (photos.data?.length ?? 0) >= 8} className="sr-only"/></label></div>
           {photoError ? <ErrorState message={photoError.message} requestId={photoError.requestId}/> : null}
           {photos.error ? <ErrorState message={photos.error.message} requestId={photos.error.requestId} action={<Button variant="secondary" onClick={photos.reload}>Try again</Button>}/> : null}
-          {photos.loading ? <LoadingState label="Loading unit photographs"/> : (photos.data ?? []).length ? <div className="grid grid-cols-2 gap-3">{photos.data.map((photo) => <div key={photo.photo_id} className="overflow-hidden rounded-lg border border-ink/10"><img src={publicPhotoUrl(photo.public_id, 'thumb')} alt={photo.caption || form.listing_title || property.unit_no} className="aspect-[4/3] w-full object-cover"/><div className="flex items-center justify-between gap-2 p-2"><span className="truncate text-[11px] text-ink-muted">{photo.caption || 'Unit photograph'}</span><button type="button" onClick={() => deletePhoto(photo.photo_id)} className="text-[11px] font-medium text-signal hover:underline">Remove</button></div></div>)}</div> : <p className="rounded-lg border border-dashed border-ink/20 px-4 py-5 text-center text-xs text-ink-muted">Add clear photographs of this specific unit, not just the complex.</p>}
+          {photos.loading ? <LoadingState label="Loading unit photographs"/> : (photos.data ?? []).length ? <div className="grid grid-cols-2 gap-3">{photos.data.map((photo) => <div key={photo.photo_id} className="overflow-hidden rounded-lg border border-ink/10">{photoUrls[photo.photo_id] ? <img src={photoUrls[photo.photo_id]} alt={photo.caption || form.listing_title || property.unit_no} className="aspect-[4/3] w-full object-cover"/> : <div className="flex aspect-[4/3] items-center justify-center bg-paper text-[11px] text-ink-muted">Loading preview…</div>}<div className="flex items-center justify-between gap-2 p-2"><span className="truncate text-[11px] text-ink-muted">{photo.caption || 'Unit photograph'}</span><button type="button" onClick={() => deletePhoto(photo.photo_id)} className="text-[11px] font-medium text-signal hover:underline">Remove</button></div></div>)}</div> : <p className="rounded-lg border border-dashed border-ink/20 px-4 py-5 text-center text-xs text-ink-muted">Add clear photographs of this specific unit, not just the complex.</p>}
         </section>
       </div>
     </Drawer>;
