@@ -7,7 +7,7 @@ import { ApiError, api } from '../lib/api';
 import { ACCEPTED_IMAGE_LABEL, ACCEPTED_IMAGE_TYPES, MAX_ESTATE_PHOTOS, MAX_UPLOAD_BYTES, UPLOAD_HINT, createUnitsBulk, currentJoinCode, deleteEstatePhoto, listEstatePhotos, parseUnitLines, rotateJoinCode, updateEstatePhoto, updateEstateProfile, uploadEstatePhoto, } from '../lib/estateAdmin';
 import { fullDate } from '../lib/format';
 import { useAsync } from '../lib/useAsync';
-import { IconCheck, IconClose, IconPlus, IconSearch } from '../components/Icons';
+import { IconClose, IconPlus } from '../components/Icons';
 function toApiError(cause, fallback) {
     return cause instanceof ApiError ? cause : new ApiError(0, fallback);
 }
@@ -44,109 +44,6 @@ export function setupChecklist({ profile, unitCount, photoCount, hasJoinCode }) 
             hint: 'Until this is on, the estate is invisible in the public directory.',
         },
     ];
-}
-function ChecklistPanel({ input, onPublish, publishing }) {
-  const items = setupChecklist(input);
-  const nonPublishItems = items.filter((i) => i.key !== 'publish');
-  const readyToPublish = nonPublishItems.every((i) => i.done);
-  const isPublished = items.find((i) => i.key === 'publish')?.done;
-  const doneCount = items.filter((i) => i.done).length;
-
-  return (
-    <div className="flex flex-col gap-3 self-start lg:sticky lg:top-24">
-      {/* Glass progress card */}
-      <div
-        style={{
-          background: 'color-mix(in srgb, var(--color-surface) 82%, transparent)',
-          backdropFilter: 'blur(16px) saturate(1.4)',
-          WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
-        }}
-        className="rounded-2xl border border-line/60 p-5 shadow-soft"
-      >
-        <p className="text-[11px] font-semibold tracking-[0.14em] text-ink/40 uppercase">
-          Setup progress
-        </p>
-
-        {/* Progress bar */}
-        <div className="mt-3 flex items-center gap-3">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
-            <div
-              className="h-full rounded-full bg-accent transition-[width] duration-500 ease-soft"
-              style={{ width: `${(doneCount / items.length) * 100}%` }}
-            />
-          </div>
-          <span className="num text-[12px] text-ink-muted">
-            {doneCount}/{items.length}
-          </span>
-        </div>
-
-        {/* Steps (excluding publish — shown separately) */}
-        <ol className="mt-4 space-y-3">
-          {nonPublishItems.map((item) => (
-            <li key={item.key} className="flex items-start gap-3">
-              <span
-                className={
-                  item.done
-                    ? 'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-mint-wash border border-mint/30'
-                    : 'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-ink/20 bg-surface/60'
-                }
-              >
-                {item.done ? (
-                  <IconCheck size={11} className="text-mint-ink" />
-                ) : (
-                  <span className="h-1.5 w-1.5 rounded-full bg-ink/20" />
-                )}
-              </span>
-              <span>
-                <span
-                  className={`block text-[13px] font-medium ${
-                    item.done ? 'text-ink/50 line-through' : 'text-ink'
-                  }`}
-                >
-                  {item.label}
-                </span>
-                <span className="block text-[11.5px] text-ink-muted">{item.hint}</span>
-              </span>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      {/* Publish button / state */}
-      {isPublished ? (
-        <div
-          style={{
-            background: 'color-mix(in srgb, var(--color-mint-wash) 80%, transparent)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-          }}
-          className="rounded-2xl border border-mint/20 px-4 py-3 text-center"
-        >
-          <span className="text-[13px] font-semibold text-mint-ink">✓ Estate published</span>
-        </div>
-      ) : readyToPublish ? (
-        <button
-          type="button"
-          onClick={onPublish}
-          disabled={publishing}
-          className="w-full rounded-2xl bg-accent px-4 py-3.5 text-[14px] font-semibold text-white shadow-lift transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {publishing ? 'Publishing…' : '🚀 Publish estate'}
-        </button>
-      ) : (
-        <div
-          style={{
-            background: 'color-mix(in srgb, var(--color-surface) 70%, transparent)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-          }}
-          className="rounded-2xl border border-line/40 px-4 py-3 text-center opacity-60"
-        >
-          <span className="text-[12px] text-ink-muted">Complete steps above to publish</span>
-        </div>
-      )}
-    </div>
-  );
 }
 /* ------------------------------------------------------------- description */
 function DescriptionEditor({ profile, onSaved, }) {
@@ -777,24 +674,6 @@ function AdminSetupBody() {
       </div>
     );
 }
-function AdminSetupBanner() {
-  return (
-    <div className="mb-6 rounded-xl border border-accent/20 bg-accent-wash/40 px-5 py-4">
-      <div className="flex items-center gap-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-[13px] font-bold text-white">
-          1
-        </div>
-        <div>
-          <p className="text-[13px] font-semibold text-ink">Estate setup</p>
-          <p className="text-[12px] text-ink-muted">
-            Complete the checklist below to go live. Each step unlocks the next for your residents.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function AdminSetup() {
     return (<RequireEstate>
       <AdminSetupBody />
