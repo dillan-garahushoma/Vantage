@@ -66,7 +66,7 @@ test('a backend denial never displays fictional pump or savings claims', async (
 test('residents see their personal assistant without management aggregates or save controls', async ({ page }) => {
     await intelligenceWorld(page, { admin: false });
     await page.goto('/intelligence');
-    await expect(page.getByText('No open maintenance issues logged for your unit.')).toBeVisible();
+    await expect(page.getByText('No maintenance requests are recorded for your account.')).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Ask VALORA a question' })).toBeEnabled();
     await expect(page.getByText('105', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Save current briefing' })).toHaveCount(0);
