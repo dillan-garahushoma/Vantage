@@ -49,7 +49,10 @@ class PropertyService:
                 raise ConflictException('Add a listing title and description before publishing this unit.')
             if not amenities:
                 raise ConflictException('Add at least one amenity before publishing this unit.')
-            if unit.bedrooms is None or unit.bathrooms is None or unit.size_m2 is None:
+            bedrooms = changes.get('bedrooms', unit.bedrooms)
+            bathrooms = changes.get('bathrooms', unit.bathrooms)
+            size_m2 = changes.get('size_m2', unit.size_m2)
+            if bedrooms is None or bathrooms is None or size_m2 is None:
                 raise ConflictException('Add bedrooms, bathrooms and floor area before publishing this unit.')
             if await self._photo_repo.count_for_property(property_id=unit.unit_id) < 1:
                 raise ConflictException('Upload at least one photograph before publishing this unit.')
