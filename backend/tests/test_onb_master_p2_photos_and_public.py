@@ -50,6 +50,7 @@ from app.property.schemas.public_directory import (
     PublicEstateListItem,
     PublicLivingScoreSummary,
     PublicPhotoResponse,
+    PublicUnitListing,
 )
 from app.property.services.estate_photo_service import (
     MAX_PHOTOS_PER_ESTATE,
@@ -725,6 +726,80 @@ async def test_public_directory_lists_only_published_estates(
     assert len(payload["photos"]) == 1
     assert set(payload["photos"][0]) == {"public_id", "caption"}
     assert payload["living_score"] is None  # opted out, and not scored anyway
+
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_public_complex_detail_contains_only_published_available_unit_listings(
+    db_session, async_client, upload_dir
+) -> None:
+    admin, estate_id = await _estate_world(
+        async_client, name="Unit Showcase Estate", email="p2_unit_showcase@example.com", units=("A-1", "A-2")
+    )
+    units_response = await async_client.get(
+        f"{BASE}/properties?estate_id={estate_id}&size=100", headers=admin
+    )
+    assert units_response.status_code == 200, units_response.text
+    first, second = units_response.json()["items"]
+
+    await async_client.patch(
+        f"{BASE}/estates/profile?estate_id={estate_id}",
+        json={"is_public": True, "description": "A private residential complex with garden residences."},
+        headers=admin,
+    )
+    photo = await async_client.post(
+        f"{BASE}/properties/{first['id']}/photos?estate_id={estate_id}",
+        files={"file": ("unit.jpg", _jpeg_bytes(), "image/jpeg")},
+        data={"caption": "Living room"},
+        headers=admin,
+    )
+    assert photo.status_code == 201, photo.text
+
+    updated = await async_client.patch(
+        f"{BASE}/properties/{first['id']}?estate_id={estate_id}",
+        json={
+            "listing_title": "Two-bedroom garden residence",
+            "listing_description": "A light-filled home with a private garden and secure parking.",
+            "amenities": ["Private garden", "Secure parking", "Fibre-ready"],
+            "bedrooms": 2,
+            "bathrooms": 1,
+            "size_m2": 88,
+            "availability_status": "available",
+            "is_public_listing": True,
+        },
+        headers=admin,
+    )
+    assert updated.status_code == 200, updated.text
+
+    hidden = await async_client.patch(
+        f"{BASE}/properties/{second['id']}?estate_id={estate_id}",
+        json={
+            "listing_title": "Unpublished unit",
+            "listing_description": "This unit should not appear.",
+            "amenities": ["Parking"],
+            "bedrooms": 2,
+            "bathrooms": 1,
+            "size_m2": 75,
+            "availability_status": "available",
+            "is_public_listing": False,
+        },
+        headers=admin,
+    )
+    assert hidden.status_code == 200, hidden.text
+
+    response = await async_client.get(f"{BASE}/public/estates/{estate_id}")
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert len(payload["available_units"]) == 1
+    unit = payload["available_units"][0]
+    assert set(unit) == set(PublicUnitListing.model_fields)
+    assert unit["title"] == "Two-bedroom garden residence"
+    assert unit["amenities"] == ["Private garden", "Secure parking", "Fibre-ready"]
+    assert len(unit["photos"]) == 1
+    assert set(unit["photos"][0]) == {"public_id", "caption"}
+    # Internal identifiers and addresses never cross the public DTO boundary.
+    assert "unit_no" not in unit and "street_address" not in unit and "property_id" not in unit
 
 
 @pytest.mark.integration
