@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Building2, Check, Search } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Building2, Check, Search } from 'lucide-react';
 import { Keyline } from '../components/Brand';
 import { AuthShell } from '../components/AuthShell';
 import { Button, EmptyState, ErrorState, Field, Input, LoadingState, Select, Textarea } from '../components/ui';
@@ -232,6 +232,7 @@ export function Register() {
   const { user, register, registerEstate, logout } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState(EMPTY);
+  const [signupStep, setSignupStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -338,9 +339,9 @@ export function Register() {
   return (
     <AuthShell
       eyebrow="Estate access"
-      step={1}
+      step={signupStep}
       totalSteps={3}
-      stepLabels={['Account', 'Join estate', "You're in"]}
+      stepLabels={form.accountType === 'estate_admin' ? ['Your account', 'Estate details', 'Review & create'] : ['Your account', 'Your estate', 'Review & create']}
       title="Find your way into VALORA."
       intro="Choose the path that fits your role. Residents request estate access, HOAs create an estate workspace, and providers apply to an estate for review."
     >
@@ -392,45 +393,35 @@ export function Register() {
 
         {form.accountType === 'resident' ? (
           <>
-            <form className="space-y-4" onSubmit={submit} noValidate>
-              {error ? (
-                <ErrorState title="Could not create the account" message={error.message} requestId={error.requestId} />
-              ) : null}
-
-              <Field label="Full name" error={errors.full_name}>
-                <Input name="full_name" autoComplete="name" value={form.full_name}
-                  onChange={(event) => update('full_name', event.target.value)} placeholder="Thandi Nkosi" required />
-              </Field>
-
-              <Field label="Email address" error={errors.email}>
-                <Input type="email" name="email" autoComplete="email" value={form.email}
-                  onChange={(event) => update('email', event.target.value)} placeholder="you@example.co.za" required />
-              </Field>
-
-              <Field label="Password" error={errors.password} hint="At least 8 characters.">
-                <Input type="password" name="password" autoComplete="new-password" value={form.password}
-                  onChange={(event) => update('password', event.target.value)} required />
-              </Field>
-
-              <EstatePicker
-                value={selectedEstate}
-                onSelect={chooseEstate}
-                onClear={clearEstate}
-                query={estateQuery}
-                onQueryChange={setEstateQuery}
-                committedQuery={committedEstateQuery}
-                onSearch={() => setCommittedEstateQuery(estateQuery.trim())}
-                directory={directory}
-              />
-
-              <Field label="Phone (optional)">
-                <Input name="phoneno" autoComplete="tel" value={form.phoneno}
-                  onChange={(event) => update('phoneno', event.target.value)} placeholder="082 000 0000" />
-              </Field>
-
-              <Button type="submit" variant="primary" className="w-full py-2.5" disabled={busy}>
-                {busy ? 'Creating account…' : 'Create resident account'}
-              </Button>
+            <form className="space-y-5" onSubmit={submit} noValidate>
+              <div className="mb-5">
+                <div className="flex items-center justify-between text-xs text-ink-muted"><span>Account setup</span><span>Step {signupStep} of 3</span></div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-ink/10"><div className="h-full rounded-full bg-accent transition-all duration-300" style={{ width: ((signupStep / 3) * 100) + "%" }} /></div>
+              </div>
+              {error ? <ErrorState title="Could not create the account" message={error.message} requestId={error.requestId} /> : null}
+              {signupStep === 1 ? (
+                <section className="space-y-4" aria-labelledby="resident-account-step">
+                  <div><h2 id="resident-account-step" className="text-lg font-semibold tracking-tight text-ink">Let’s start with you.</h2><p className="mt-1 text-sm text-ink-muted">Create the secure account you’ll use across VALORA.</p></div>
+                  <Field label="Full name" error={errors.full_name}><Input name="full_name" autoComplete="name" value={form.full_name} onChange={(event) => update("full_name", event.target.value)} placeholder="Thandi Nkosi" required /></Field>
+                  <Field label="Email address" error={errors.email}><Input type="email" name="email" autoComplete="email" value={form.email} onChange={(event) => update("email", event.target.value)} placeholder="you@example.co.za" required /></Field>
+                  <Field label="Password" error={errors.password} hint="At least 8 characters."><Input type="password" name="password" autoComplete="new-password" value={form.password} onChange={(event) => update("password", event.target.value)} required /></Field>
+                  <Field label="Phone number (optional)"><Input name="phoneno" autoComplete="tel" value={form.phoneno} onChange={(event) => update("phoneno", event.target.value)} placeholder="082 000 0000" /></Field>
+                </section>
+              ) : signupStep === 2 ? (
+                <section className="space-y-4" aria-labelledby="resident-estate-step">
+                  <div><h2 id="resident-estate-step" className="text-lg font-semibold tracking-tight text-ink">Where do you live?</h2><p className="mt-1 text-sm text-ink-muted">Choose your complex now, or skip this and request access later.</p></div>
+                  <EstatePicker value={selectedEstate} onSelect={chooseEstate} onClear={clearEstate} query={estateQuery} onQueryChange={setEstateQuery} committedQuery={committedEstateQuery} onSearch={() => setCommittedEstateQuery(estateQuery.trim())} directory={directory} />
+                </section>
+              ) : (
+                <section className="space-y-4" aria-labelledby="resident-review-step">
+                  <div><h2 id="resident-review-step" className="text-lg font-semibold tracking-tight text-ink">Everything look right?</h2><p className="mt-1 text-sm text-ink-muted">Review your details before creating your account.</p></div>
+                  <div className="space-y-3 rounded-xl border border-line bg-paper/60 p-4"><div><p className="text-xs text-ink-muted">Full name</p><p className="mt-0.5 text-sm font-medium text-ink">{form.full_name || "Not provided"}</p></div><div><p className="text-xs text-ink-muted">Email</p><p className="mt-0.5 break-all text-sm font-medium text-ink">{form.email || "Not provided"}</p></div><div><p className="text-xs text-ink-muted">Phone</p><p className="mt-0.5 text-sm font-medium text-ink">{form.phoneno || "Not provided"}</p></div><div><p className="text-xs text-ink-muted">Estate</p><p className="mt-0.5 text-sm font-medium text-ink">{selectedEstate?.name || "I’ll choose an estate later"}</p><p className="mt-1 text-xs leading-relaxed text-ink-muted">Choosing an estate does not grant access. Your estate office still needs to approve your membership.</p></div></div>
+                </section>
+              )}
+              <div className="flex items-center gap-3 border-t border-line pt-4">
+                {signupStep > 1 ? <Button type="button" variant="secondary" className="flex-1" onClick={() => setSignupStep((step) => step - 1)}><ArrowLeft className="mr-2 h-4 w-4" />Back</Button> : null}
+                {signupStep < 3 ? <Button type="button" variant="primary" className="flex-1" onClick={() => { const found = signupStep === 1 ? validate(form) : {}; setErrors(found); if (Object.keys(found).length === 0) setSignupStep((step) => step + 1); }}>Continue<ArrowRight className="ml-2 h-4 w-4" /></Button> : <Button type="submit" variant="primary" className="flex-1" disabled={busy}>{busy ? "Creating account…" : "Create account"}</Button>}
+              </div>
             </form>
 
             <p className="text-[13px] text-ink-muted">
@@ -441,60 +432,32 @@ export function Register() {
             </p>
           </>
         ) : form.accountType === 'estate_admin' ? (
-          <form className="space-y-4" onSubmit={submitEstateRegistration} noValidate>
+          <form className="space-y-5" onSubmit={submitEstateRegistration} noValidate>
+            <div className="mb-5"><div className="flex items-center justify-between text-xs text-ink-muted"><span>Estate onboarding</span><span>Step {signupStep} of 3</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-ink/10"><div className="h-full rounded-full bg-accent transition-all duration-300" style={{ width: ((signupStep / 3) * 100) + "%" }} /></div><div className="mt-2 grid grid-cols-3 text-[11px] text-ink-muted"><span className={signupStep === 1 ? "font-semibold text-accent-ink" : ""}>Your account</span><span className={"text-center " + (signupStep === 2 ? "font-semibold text-accent-ink" : "")}>Estate details</span><span className={"text-right " + (signupStep === 3 ? "font-semibold text-accent-ink" : "")}>Review</span></div></div>
             {error ? <ErrorState title="Could not create the estate account" message={error.message} requestId={error.requestId} /> : null}
-            <p className="text-sm leading-relaxed text-ink-soft">
-              Create the HOA administrator account and estate together. You will be signed in and can continue setup immediately.
-            </p>
-            <Field label="Your full name" error={errors.full_name}>
-              <Input name="full_name" autoComplete="name" value={form.full_name}
-                onChange={(event) => update('full_name', event.target.value)} required />
-            </Field>
-            <Field label="Email address" error={errors.email}>
-              <Input type="email" name="email" autoComplete="email" value={form.email}
-                onChange={(event) => update('email', event.target.value)} required />
-            </Field>
-            <Field label="Password" error={errors.password} hint="At least 8 characters.">
-              <Input type="password" name="password" autoComplete="new-password" value={form.password}
-                onChange={(event) => update('password', event.target.value)} required />
-            </Field>
-            <Field label="Phone (optional)">
-              <Input name="phoneno" autoComplete="tel" value={form.phoneno}
-                onChange={(event) => update('phoneno', event.target.value)} />
-            </Field>
-            <Keyline />
-            <Field label="Estate name" error={errors.estateName}>
-              <Input name="estate_name" value={form.estateName}
-                onChange={(event) => update('estateName', event.target.value)} required />
-            </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Suburb" error={errors.estateSuburb}>
-                <Input name="estate_suburb" value={form.estateSuburb}
-                  onChange={(event) => update('estateSuburb', event.target.value)} required />
-              </Field>
-              <Field label="City" error={errors.estateCity}>
-                <Input name="estate_city" value={form.estateCity}
-                  onChange={(event) => update('estateCity', event.target.value)} required />
-              </Field>
-            </div>
-            <Field label="Province" error={errors.estateProvince}>
-              <Select name="estate_province" value={form.estateProvince}
-                onChange={(event) => update('estateProvince', event.target.value)} required>
-                {PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
-              </Select>
-            </Field>
-            <Field label="Description (optional)">
-              <Textarea name="estate_description" value={form.estateDescription} maxLength={5000}
-                onChange={(event) => update('estateDescription', event.target.value)}
-                placeholder="A short introduction to your estate." />
-            </Field>
-            <Button type="submit" variant="primary" className="w-full py-2.5" disabled={busy}>
-              {busy ? 'Creating estate…' : 'Create estate and HOA account'}
-            </Button>
-            <p className="text-[13px] text-ink-muted">
-              Already have an account? <Link to="/login" className="font-medium text-accent-ink hover:underline">Sign in</Link>.
-            </p>
+            {signupStep === 1 ? (
+              <section className="space-y-4" aria-labelledby="hoa-account-step"><div><h2 id="hoa-account-step" className="text-lg font-semibold tracking-tight text-ink">Your administrator account</h2><p className="mt-1 text-sm text-ink-muted">These details will be used to manage your estate workspace.</p></div>
+                <Field label="Your full name" error={errors.full_name}><Input name="full_name" autoComplete="name" value={form.full_name} onChange={(event) => update("full_name", event.target.value)} required /></Field>
+                <Field label="Email address" error={errors.email}><Input type="email" name="email" autoComplete="email" value={form.email} onChange={(event) => update("email", event.target.value)} required /></Field>
+                <Field label="Password" error={errors.password} hint="At least 8 characters."><Input type="password" name="password" autoComplete="new-password" value={form.password} onChange={(event) => update("password", event.target.value)} required /></Field>
+                <Field label="Phone number (optional)"><Input name="phoneno" autoComplete="tel" value={form.phoneno} onChange={(event) => update("phoneno", event.target.value)} /></Field>
+              </section>
+            ) : signupStep === 2 ? (
+              <section className="space-y-4" aria-labelledby="hoa-estate-step"><div><h2 id="hoa-estate-step" className="text-lg font-semibold tracking-tight text-ink">Tell us about the estate.</h2><p className="mt-1 text-sm text-ink-muted">Start with the essentials. You can complete the rest of your estate profile after setup.</p></div>
+                <Field label="Estate / complex name" error={errors.estateName}><Input name="estate_name" value={form.estateName} onChange={(event) => update("estateName", event.target.value)} placeholder="e.g. The Willows Estate" required /></Field>
+                <div className="grid gap-4 sm:grid-cols-2"><Field label="Suburb" error={errors.estateSuburb}><Input name="estate_suburb" value={form.estateSuburb} onChange={(event) => update("estateSuburb", event.target.value)} required /></Field><Field label="City" error={errors.estateCity}><Input name="estate_city" value={form.estateCity} onChange={(event) => update("estateCity", event.target.value)} required /></Field></div>
+                <Field label="Province" error={errors.estateProvince}><Select name="estate_province" value={form.estateProvince} onChange={(event) => update("estateProvince", event.target.value)} required>{PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}</Select></Field>
+                <Field label="Short description (optional)"><Textarea name="estate_description" value={form.estateDescription} maxLength={5000} onChange={(event) => update("estateDescription", event.target.value)} placeholder="A short introduction to your estate." /></Field>
+              </section>
+            ) : (
+              <section className="space-y-4" aria-labelledby="hoa-review-step"><div><h2 id="hoa-review-step" className="text-lg font-semibold tracking-tight text-ink">Ready to create your workspace?</h2><p className="mt-1 text-sm text-ink-muted">Check the administrator and estate details below.</p></div>
+                <div className="space-y-3 rounded-xl border border-line bg-paper/60 p-4"><div><p className="text-xs text-ink-muted">Administrator</p><p className="mt-0.5 text-sm font-medium text-ink">{form.full_name}</p><p className="mt-0.5 break-all text-xs text-ink-muted">{form.email}</p></div><div className="border-t border-line pt-3"><p className="text-xs text-ink-muted">Estate / complex</p><p className="mt-0.5 text-sm font-medium text-ink">{form.estateName}</p><p className="mt-0.5 text-sm text-ink-muted">{[form.estateSuburb, form.estateCity, form.estateProvince].filter(Boolean).join(", ")}</p></div>{form.estateDescription.trim() ? <p className="border-t border-line pt-3 text-sm leading-relaxed text-ink-soft">{form.estateDescription}</p> : null}</div>
+                <p className="text-xs leading-relaxed text-ink-muted">Creating this workspace establishes your HOA administrator account and estate together. You can add units, photos and publish the estate from the setup dashboard.</p>
+              </section>
+            )}
+            <div className="flex items-center gap-3 border-t border-line pt-4">{signupStep > 1 ? <Button type="button" variant="secondary" className="flex-1" onClick={() => setSignupStep((step) => step - 1)}><ArrowLeft className="mr-2 h-4 w-4" />Back</Button> : null}{signupStep < 3 ? <Button type="button" variant="primary" className="flex-1" onClick={() => { let found = {}; if (signupStep === 1) found = validate(form); if (signupStep === 2) found = validateEstateRegistration(form); setErrors(found); if (Object.keys(found).length === 0) setSignupStep((step) => step + 1); }}>Continue<ArrowRight className="ml-2 h-4 w-4" /></Button> : <Button type="submit" variant="primary" className="flex-1" disabled={busy}>{busy ? "Creating estate…" : "Create estate & account"}</Button>}</div>
           </form>
+          <p className="text-[13px] text-ink-muted">Already have an account? <Link to="/login" className="font-medium text-accent-ink hover:underline">Sign in</Link>.</p>
         ) : (
           <div className="space-y-4 border-l-2 border-accent bg-canvas p-4">
             <p className="text-sm leading-relaxed text-ink-soft">
