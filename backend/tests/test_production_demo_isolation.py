@@ -44,6 +44,7 @@ async def test_production_detail_refuses_demo_even_if_published(production):
 async def test_production_photo_refuses_a_demo_estate(production):
     service = PublicDirectoryService(AsyncMock())
     service._photos = SimpleNamespace(get_by_public_id=AsyncMock(return_value=SimpleNamespace(estate_id=7)))
+    service._unit_photos = SimpleNamespace(get_by_public_id=AsyncMock(return_value=None))
     service._estates = SimpleNamespace(get_by_id=AsyncMock(return_value=SimpleNamespace(is_demo=True)))
     with pytest.raises(NotFoundException):
         await service.read_photo('old-sample-photo', size='full')
