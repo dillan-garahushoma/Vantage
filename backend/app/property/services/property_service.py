@@ -11,6 +11,7 @@ from app.identity.services.estate_authorization_service import EstateAuthorizati
 from app.property.models.property import Property
 from app.property.repositories.estate_repository import EstateRepository
 from app.property.repositories.property_repository import PropertyRepository
+from app.property.repositories.property_photo_repository import PropertyPhotoRepository
 from app.property.schemas.property import (
     BulkUnitsRequest,
     PropertyCreate,
@@ -23,6 +24,7 @@ class PropertyService:
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
         self._repo = PropertyRepository(db)
+        self._photo_repo = PropertyPhotoRepository(db)
         self._estate_repo = EstateRepository(db)
         self._estate_authorization = EstateAuthorizationService(db)
 
@@ -49,6 +51,8 @@ class PropertyService:
                 raise ConflictException('Add at least one amenity before publishing this unit.')
             if unit.bedrooms is None or unit.bathrooms is None or unit.size_m2 is None:
                 raise ConflictException('Add bedrooms, bathrooms and floor area before publishing this unit.')
+            if await self._photo_repo.count_for_property(property_id=unit.unit_id) < 1:
+                raise ConflictException('Upload at least one photograph before publishing this unit.')
         for key, value in changes.items():
             setattr(unit, key, value)
         await self._repo.flush()
