@@ -102,6 +102,16 @@ class PropertyRepository:
         )
         return list(result.scalars().all())
 
+    async def get_public_unit(self, unit_id: int) -> Property | None:
+        result = await self._db.execute(
+            select(Property).where(
+                Property.unit_id == unit_id,
+                Property.is_public_listing.is_(True),
+                Property.availability_status == "available",
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def get_by_id(self, unit_id: int) -> Property | None:
         result = await self._db.execute(select(Property).where(Property.unit_id == unit_id))
         return result.scalar_one_or_none()
