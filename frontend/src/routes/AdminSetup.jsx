@@ -754,10 +754,6 @@ function AdminSetupBody() {
           </p>
         </header>
 
-        {publishError ? (
-          <ErrorState message={publishError.message} requestId={publishError.requestId} />
-        ) : null}
-
         {(() => {
           const checklist = setupChecklist({ profile: detail, unitCount: units.data?.total ?? 0, photoCount: photos.data?.length ?? 0, hasJoinCode: code.error ? (code.error.status === 404 ? false : null) : Boolean(code.data) });
           const completed = checklist.filter((item) => item.done).length;
@@ -778,7 +774,6 @@ function AdminSetupBody() {
             <div className="p-5 sm:p-7">{stepContent}<div className="mt-7 flex items-center justify-between gap-3 border-t border-line pt-5"><Button type="button" variant="secondary" disabled={activeStep === 1} onClick={() => setActiveStep((step) => Math.max(1, step - 1))}>Back</Button><div className="flex items-center gap-3"><span className="hidden text-xs text-ink-muted sm:inline">Step {activeStep} of 5</span>{activeStep < 5 ? <Button type="button" variant="primary" onClick={() => setActiveStep((step) => Math.min(5, step + 1))}>Next step <span aria-hidden="true">→</span></Button> : <Button type="button" variant="secondary" onClick={() => window.location.assign("/app")}>Go to dashboard</Button>}</div></div></div>
           </section>;
         })()}
-        <Card as="section" className="p-5"><SectionTitle title="Ready for the next step?" hint="You can manage your community after the initial setup."/><div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => window.location.assign("/app/members")}><IconSearch size={16}/>Manage members</Button><Button variant="secondary" onClick={() => window.location.assign("/app")}>Go to dashboard</Button></div></Card>
       </div>
     );
 }
