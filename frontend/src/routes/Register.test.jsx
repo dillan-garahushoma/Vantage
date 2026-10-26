@@ -189,7 +189,7 @@ describe('Register — role paths and safe permissions', () => {
     renderRegister();
     await user.click(screen.getByRole('radio', { name: /hoa \/ estate manager/i }));
     await user.click(screen.getByRole('radio', { name: /^resident/i }));
-    expect(screen.getByRole('button', { name: /create resident account/i })).toBeVisible();
+    expect(screen.getByRole('button', { name: /continue to estate/i })).toBeVisible();
     expect(screen.getByRole('textbox', { name: /full name/i })).toBeVisible();
   });
 });
@@ -199,6 +199,10 @@ describe('Register — estate discovery and context', () => {
   it('loads published estates from the directory endpoint and lets a resident select one', async () => {
     const user = userEvent.setup();
     renderRegister();
+    await user.type(screen.getByRole('textbox', { name: /full name/i }), 'Thandi Nkosi');
+    await user.type(screen.getByRole('textbox', { name: /email address/i }), 'thandi@example.co.za');
+    await user.type(screen.getByLabelText(/password/i), 'aGoodPassword1');
+    await user.click(screen.getByRole('button', { name: /continue to estate/i }));
 
     expect(await screen.findByRole('button', { name: /ridge close estate/i })).toBeVisible();
     expect(mocks.listPublic).toHaveBeenCalledWith({ q: '', page: 1, page_size: 6 });
@@ -221,16 +225,17 @@ describe('Register — estate discovery and context', () => {
     }));
     const user = userEvent.setup();
     renderRegister();
+    await user.type(screen.getByRole('textbox', { name: /full name/i }), 'Thandi Nkosi');
+    await user.type(screen.getByRole('textbox', { name: /email address/i }), 'thandi@example.co.za');
+    await user.type(screen.getByLabelText(/password/i), 'aGoodPassword1');
+    await user.click(screen.getByRole('button', { name: /continue to estate/i }));
 
     await user.clear(screen.getByRole('textbox', { name: /search published complexes/i }));
     await user.type(screen.getByRole('textbox', { name: /search published complexes/i }), 'Ridge');
     await user.click(screen.getByRole('button', { name: /^search$/i }));
     await user.click(await screen.findByRole('button', { name: /ridge close estate/i }));
-
-    await user.type(screen.getByRole('textbox', { name: /full name/i }), 'Thandi Nkosi');
-    await user.type(screen.getByRole('textbox', { name: /email address/i }), 'thandi@example.co.za');
-    await user.type(screen.getByLabelText(/password/i), 'aGoodPassword1');
-    await user.click(screen.getByRole('button', { name: /create resident account/i }));
+    await user.click(screen.getByRole('button', { name: /review details/i }));
+    await user.click(screen.getByRole('button', { name: /create account/i }));
 
     expect(screen.queryByRole('textbox', { name: /unit number/i })).toBeNull();
     expect(mocks.register).toHaveBeenCalledWith({
@@ -249,12 +254,13 @@ describe('Register — estate discovery and context', () => {
     mocks.register.mockResolvedValue({});
     const user = userEvent.setup();
     renderRegister();
-
-    await user.click(await screen.findByRole('button', { name: /ridge close estate/i }));
     await user.type(screen.getByRole('textbox', { name: /full name/i }), 'Thandi Nkosi');
     await user.type(screen.getByRole('textbox', { name: /email address/i }), 'thandi@example.co.za');
     await user.type(screen.getByLabelText(/password/i), 'aGoodPassword1');
-    await user.click(screen.getByRole('button', { name: /create resident account/i }));
+    await user.click(screen.getByRole('button', { name: /continue to estate/i }));
+    await user.click(await screen.findByRole('button', { name: /ridge close estate/i }));
+    await user.click(screen.getByRole('button', { name: /review details/i }));
+    await user.click(screen.getByRole('button', { name: /create account/i }));
 
     expect(mocks.register).toHaveBeenCalledWith({
       full_name: 'Thandi Nkosi',
