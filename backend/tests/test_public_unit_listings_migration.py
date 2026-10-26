@@ -37,8 +37,8 @@ def test_upgrade_adds_private_by_default_listing_fields_and_photo_table(monkeypa
     for field in ("listing_title", "listing_description", "amenities", "is_public_listing", "availability_status"):
         assert field in calls
     assert recorder.created_tables == ["property_photos"]
-    assert "on delete cascade" in calls
-    assert "on delete set null" in calls
+    assert "ondelete='cascade'" in calls
+    assert "ondelete='set null'" in calls
 
 
 def test_downgrade_removes_only_new_listing_structures(monkeypatch):
