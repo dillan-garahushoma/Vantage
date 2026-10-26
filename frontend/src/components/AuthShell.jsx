@@ -6,9 +6,8 @@ import { Button } from './ui';
 /**
  * AuthShell — the one layout for every account screen.
  *
- * A split screen, not a card on a background: the left panel carries page
- * context on paper, the right panel holds the active form on the surface ground,
- * and one hairline divides them. Below `lg` the panels stack, still divided.
+ * One accessible form column beside an explicitly illustrative architectural
+ * panel. All role-specific onboarding fields and actions remain in the caller.
  *
  * `aside` is the left column's extra content (the resident's request history,
  * for instance); `footer` sits under the form inside the card.
@@ -24,22 +23,15 @@ export function AuthShell({
   backTo = null,
   backLabel = 'Back',
   cardTitle = null,
-  progress = null,
   aside = null,
   children,
   footer = null,
 }) {
   return (
     <PublicShell>
-      {/*
-        A true split screen: the claim and the form are two panels with their own
-        ground, divided by one hairline. The claim sits directly on paper rather
-        than inside a translucent card, which was reading as a box floating over a
-        blurred photograph instead of as the page's own left column.
-      */}
-      <div className="grid min-h-[calc(100vh-64px)] bg-paper lg:grid-cols-2">
-        <section className="flex min-w-0 flex-col justify-center border-b border-line px-5 py-10 sm:px-8 lg:border-b-0 lg:px-12 lg:py-16">
-          <div className="mx-auto w-full max-w-[480px] lg:mx-0 lg:ml-auto">
+      <div className="min-h-[calc(100vh-64px)] bg-paper px-4 py-6 sm:px-6 sm:py-10">
+        <div className="mx-auto grid max-w-[1080px] overflow-hidden rounded-2xl border border-line bg-surface shadow-soft lg:grid-cols-[1.1fr_0.9fr]">
+          <section className="min-w-0 px-6 py-8 sm:px-12 sm:py-10">
             {backTo ? (
               <Link
                 to={backTo}
@@ -51,7 +43,7 @@ export function AuthShell({
             ) : null}
 
             <p className="num text-[11px] tracking-[0.18em] text-accent-ink uppercase">{eyebrow}</p>
-            <h1 className="mt-3 font-display text-[34px] leading-[1.08] font-normal tracking-[-0.01em] text-ink sm:text-[40px]">
+            <h1 className="mt-3 font-heading text-[28px] leading-tight font-semibold tracking-tight text-ink sm:text-[32px]">
               {title}
             </h1>
             {intro ? (
@@ -76,24 +68,26 @@ export function AuthShell({
             ) : null}
 
             {aside}
-          </div>
-        </section>
-
-        <section className="flex min-w-0 flex-col justify-center bg-surface px-5 py-10 sm:px-8 lg:border-l lg:border-line lg:px-12 lg:py-16">
-          <div className="mx-auto w-full max-w-[480px] lg:mx-0">
-            {progress}
-            {cardTitle ? (
-              <h2 className="text-[16px] font-semibold text-ink">{cardTitle}</h2>
-            ) : null}
-            {/* With no title above it, a keyline becomes a stray rule floating at
-                the top of the panel, so it only appears when it divides something. */}
-            {cardTitle || progress ? (
+            <div className="mt-6 min-w-0">
+              {cardTitle ? (
+                <h2 className="text-[16px] font-semibold text-ink">{cardTitle}</h2>
+              ) : null}
               <Keyline className={cardTitle ? 'mt-3 mb-5' : 'mb-5'} />
-            ) : null}
-            {children}
-            {footer}
-          </div>
-        </section>
+              {children}
+              {footer}
+            </div>
+          </section>
+          <aside className="relative hidden min-h-[620px] overflow-hidden bg-brand-wash lg:block" aria-label="About VALORA">
+            <img src="/estate-hero.jpg" alt="Illustrative residential architecture" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#241532]/90 via-[#241532]/5 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-9 text-white">
+              <p className="text-[11px] font-medium tracking-[0.15em] text-white/75 uppercase">Made for your community</p>
+              <h2 className="mt-3 max-w-xs font-heading text-3xl font-semibold leading-tight text-white">More than a home.<br />A connected community.</h2>
+              <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/80">Report an issue. Follow the repair. Stay informed about the place you call home.</p>
+              <p className="mt-8 text-[11px] text-white/65">Illustrative architecture · your estate appears after sign-in.</p>
+            </div>
+          </aside>
+        </div>
       </div>
     </PublicShell>
   );
