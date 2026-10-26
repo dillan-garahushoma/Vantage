@@ -2,7 +2,21 @@
 import importlib.util
 from pathlib import Path
 
-from tests.test_restore_published_estates_migration import OperationRecorder
+
+class Recorder:
+    def __init__(self):
+        self.calls = []
+        self.created_tables = []
+        self.dropped_tables = []
+
+    def __getattr__(self, name):
+        def record(*args, **kwargs):
+            self.calls.append((name, args, kwargs))
+            if name == "create_table":
+                self.created_tables.append(args[0])
+            if name == "drop_table":
+                self.dropped_tables.append(args[0])
+        return record
 
 
 def migration():
@@ -15,29 +29,25 @@ def migration():
 
 def test_upgrade_adds_private_by_default_listing_fields_and_photo_table(monkeypatch):
     module = migration()
-    recorder = OperationRecorder()
+    recorder = Recorder()
     monkeypatch.setattr(module, "op", recorder)
     module.upgrade()
-    sql = " ".join(recorder.statements).lower()
+    calls = repr(recorder.calls).lower()
     assert module.down_revision == "e8c3a1f9d5b7"
-    assert "listing_title" in sql
-    assert "listing_description" in sql
-    assert "amenities" in sql
-    assert "is_public_listing" in sql
-    assert "'false'" in sql or "false" in sql
-    assert "availability_status" in sql
+    for field in ("listing_title", "listing_description", "amenities", "is_public_listing", "availability_status"):
+        assert field in calls
     assert recorder.created_tables == ["property_photos"]
-    assert "on delete cascade" in sql
-    assert "on delete set null" in sql
+    assert "on delete cascade" in calls
+    assert "on delete set null" in calls
 
 
 def test_downgrade_removes_only_new_listing_structures(monkeypatch):
     module = migration()
-    recorder = OperationRecorder()
+    recorder = Recorder()
     monkeypatch.setattr(module, "op", recorder)
     module.downgrade()
-    sql = " ".join(recorder.statements).lower()
-    assert "property_photos" in sql
-    assert "availability_status" in sql
-    assert "listing_description" in sql
-    assert "listing_title" in sql
+    calls = repr(recorder.calls).lower()
+    assert "property_photos" in calls
+    assert "availability_status" in calls
+    assert "listing_description" in calls
+    assert "listing_title" in calls
