@@ -1,7 +1,7 @@
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.pagination import Page
@@ -150,6 +150,26 @@ async def upload_unit_photo(
         content_type=file.content_type,
         data=data,
         caption=caption,
+    )
+
+
+@router.get("/{unit_id}/photos/{photo_id}/image")
+async def read_unit_photo(
+    unit_id: int,
+    photo_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: CurrentUser,
+    estate_id: Annotated[int, Query(gt=0)],
+    size: Annotated[Literal["thumb", "full"], Query()] = "thumb",
+) -> Response:
+    """Read a unit photo inside the authenticated estate boundary, including unpublished listings."""
+    content, content_type = await PropertyPhotoService(db).read_photo(
+        property_id=unit_id, photo_id=photo_id, estate_id=estate_id, actor=current_user, size=size
+    )
+    return Response(
+        content=content,
+        media_type=content_type,
+        headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store"},
     )
 
 
