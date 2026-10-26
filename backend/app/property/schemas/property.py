@@ -14,11 +14,11 @@ class PropertyResponse(BaseModel):
     size_m2: Decimal | None
     bedrooms: int | None
     bathrooms: int | None
-    listing_title: str | None
-    listing_description: str | None
-    amenities: list[str]
-    is_public_listing: bool
-    availability_status: str
+    listing_title: str | None = None
+    listing_description: str | None = None
+    amenities: list[str] = Field(default_factory=list)
+    is_public_listing: bool = False
+    availability_status: str = "not_available"
 
     model_config = {
         "from_attributes": True,
