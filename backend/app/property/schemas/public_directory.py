@@ -37,6 +37,7 @@ class PublicUnitListing(BaseModel):
     size_m2: Decimal
     amenities: list[str]
     availability_status: str
+    listing_id: str
     photos: list[PublicPhotoResponse] = Field(default_factory=list)
 
 
