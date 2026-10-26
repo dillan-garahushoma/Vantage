@@ -21,7 +21,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ValoraChatProvider } from '../context/ValoraChatContext';
 import { priorityRecommendations, weeklyBriefing } from '../../test-fixtures/intelligence';
 
-const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), streamAskValora: vi.fn() }));
+const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), streamAskValora: vi.fn(), role: 'hoa_admin' }));
 
 vi.mock('../lib/api', () => ({
     ApiError: class ApiError extends Error {
@@ -56,14 +56,14 @@ vi.mock('../lib/intelligence', async (importOriginal) => {
 
 vi.mock('../context/AuthContext', () => ({
     useAuth: () => ({
-        user: { id: 1, full_name: 'Thandi Nkosi', role: 'hoa_admin' },
+        user: { id: 1, full_name: 'Thandi Nkosi', role: mocks.role },
         checking: false,
     }),
 }));
 vi.mock('../context/EstateContext', () => ({
     useEstateScope: () => ({
         estateId: 1,
-        estate: { is_estate_admin: true, estate_id: 1, estate_name: 'Greenhaven Estate', property_ids: [4, 9] },
+        estate: { is_estate_admin: mocks.role === 'hoa_admin', is_estate_provider: mocks.role === 'service_provider', estate_id: 1, estate_name: 'Greenhaven Estate', property_ids: [4, 9] },
         loading: false,
         error: null,
         reload: vi.fn(),
@@ -79,7 +79,7 @@ vi.mock('../context/EstateContext', () => ({
     }),
     useEstate: () => ({
         estates: [],
-        active: { estate_id: 1, estate_name: 'Greenhaven Estate' },
+        active: { estate_id: 1, estate_name: 'Greenhaven Estate', is_estate_admin: mocks.role === 'hoa_admin', is_estate_provider: mocks.role === 'service_provider' },
         loading: false,
         error: null,
         awaitingProvisioning: false,
@@ -122,6 +122,7 @@ function pageOf(items, total = items.length) {
     return { items, total, page: 1, size: 20, pages: 1 };
 }
 beforeEach(() => {
+    mocks.role = 'hoa_admin';
     mocks.get.mockReset();
     mocks.post.mockReset();
     mocks.streamAskValora.mockReset();
@@ -384,5 +385,62 @@ describe('VALORA Intelligence', () => {
         expect(await screen.findByText('WO-0052')).toBeVisible();
         await waitFor(() => expect(screen.getByTestId('route-probe'))
             .toHaveTextContent('/app/work-orders null'));
+    });
+
+
+    it('gives residents a personal workspace and no fictional management records', async () => {
+        mocks.role = 'resident';
+        mocks.get.mockImplementation(async (path) => {
+            if (path === '/api/v1/analytics/intelligence') {
+                return {
+                    estate_id: 1,
+                    estate_name: 'Greenhaven Estate',
+                    role: 'resident',
+                    source: 'stored_records',
+                    briefing: {
+                        headline: 'Your community, clearly understood',
+                        body: 'Follow your requests and read published estate updates.',
+                        windowLabel: 'Current records',
+                        signalsReviewed: 1,
+                        sources: 1,
+                        avoidableZar: null,
+                    },
+                    recommendations: [],
+                    operational_signals: null,
+                    resident_view: {
+                        unit_issues: [{
+                            id: 41,
+                            title: 'Kitchen tap leak',
+                            status: 'in_progress',
+                            logged_date: '2026-10-20',
+                            category: 'plumbing',
+                        }],
+                        living_score_label: 'Not published',
+                        living_score_summary: '',
+                        community_notices: ['Water interruption: Supply is scheduled to resume at 14:00.'],
+                    },
+                    evidence: ['Your maintenance requests: 1 recorded.'],
+                    limitations: ['Only your requests and published information are included.'],
+                };
+            }
+            return { items: [], total: 0, page: 1, size: 10, pages: 0 };
+        });
+        const user = userEvent.setup();
+        renderPage();
+
+        expect(await screen.findByText('Kitchen tap leak')).toBeVisible();
+        expect(screen.getByText('Your maintenance requests')).toBeVisible();
+        expect(screen.queryByText('Recent conversations')).not.toBeInTheDocument();
+        expect(screen.queryByText('Pool Pump 02')).not.toBeInTheDocument();
+        expect(screen.queryByText('105', { exact: true })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Save current briefing' })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'How do I report a new maintenance issue?' })).toBeEnabled();
+        await user.click(screen.getByRole('button', { name: 'How do I report a new maintenance issue?' }));
+        await waitFor(() => expect(mocks.streamAskValora).toHaveBeenCalledWith(
+            'How do I report a new maintenance issue?',
+            { estateId: 1, role: 'resident' },
+            expect.any(Object),
+            expect.any(Array),
+        ));
     });
 });
