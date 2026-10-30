@@ -1,4 +1,5 @@
 from decimal import Decimal
+import secrets
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +12,7 @@ from app.identity.services.estate_authorization_service import EstateAuthorizati
 from app.property.models.property import Property
 from app.property.repositories.estate_repository import EstateRepository
 from app.property.repositories.property_repository import PropertyRepository
+from app.property.repositories.property_photo_repository import PropertyPhotoRepository
 from app.property.schemas.property import (
     BulkUnitsRequest,
     PropertyCreate,
@@ -23,6 +25,7 @@ class PropertyService:
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
         self._repo = PropertyRepository(db)
+        self._photo_repo = PropertyPhotoRepository(db)
         self._estate_repo = EstateRepository(db)
         self._estate_authorization = EstateAuthorizationService(db)
 
@@ -36,6 +39,28 @@ class PropertyService:
             if not changes['street_address'] or not changes['street_address'].strip():
                 raise ConflictException('A street address is required.')
             changes['street_address'] = changes['street_address'].strip()
+        for key in ('listing_title', 'listing_description'):
+            if key in changes and isinstance(changes[key], str):
+                changes[key] = changes[key].strip() or None
+        if changes.get('is_public_listing') is True:
+            title = changes.get('listing_title', unit.listing_title)
+            description = changes.get('listing_description', unit.listing_description)
+            amenities = changes.get('amenities', unit.amenities or [])
+            if not title or not title.strip() or not description or not description.strip():
+                raise ConflictException('Add a listing title and description before publishing this unit.')
+            if not amenities:
+                raise ConflictException('Add at least one amenity before publishing this unit.')
+            bedrooms = changes.get('bedrooms', unit.bedrooms)
+            bathrooms = changes.get('bathrooms', unit.bathrooms)
+            size_m2 = changes.get('size_m2', unit.size_m2)
+            if bedrooms is None or bathrooms is None or size_m2 is None:
+                raise ConflictException('Add bedrooms, bathrooms and floor area before publishing this unit.')
+            if await self._photo_repo.count_for_property(property_id=unit.unit_id) < 1:
+                raise ConflictException('Upload at least one photograph before publishing this unit.')
+            if not unit.public_listing_id:
+                changes['public_listing_id'] = secrets.token_urlsafe(24)[:32]
+        if changes.get('is_public_listing') is False:
+            changes['public_listing_id'] = None
         for key, value in changes.items():
             setattr(unit, key, value)
         await self._repo.flush()
@@ -104,7 +129,19 @@ class PropertyService:
         )
         if await self._repo.get_by_unit_no_in_estate(estate_id=payload.estate_id, unit_no=payload.unit_no) is not None:
             raise ConflictException(f"A property with unit number {payload.unit_no} already exists in this estate.")
-        property_ = await self._repo.create(**payload.model_dump())
+        fields = payload.model_dump()
+        fields['unit_no'] = fields['unit_no'].strip()
+        fields['complex_name'] = fields['complex_name'].strip()
+        fields['street_address'] = fields['street_address'].strip()
+        if fields.get('suburb'):
+            fields['suburb'] = fields['suburb'].strip()
+        # Complex and suburb are sourced from the authoritative estate record.
+        estate = await self._estate_repo.get_by_id(payload.estate_id)
+        if estate is None:
+            raise NotFoundException(f"Estate with id {payload.estate_id} was not found.")
+        fields['complex_name'] = estate.name
+        fields['suburb'] = estate.suburb
+        property_ = await self._repo.create(**fields)
         return PropertyResponse.model_validate(property_)
 
     async def create_units_bulk(

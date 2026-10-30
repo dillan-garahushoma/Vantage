@@ -23,6 +23,7 @@ from app.identity.models.login_attempt import LoginAttempts  # noqa: F401
 from app.property.models.estate import Estate  # noqa: F401
 from app.property.models.estate_photo import EstatePhoto  # noqa: F401
 from app.property.models.property import Property  # noqa: F401
+from app.property.models.property_photo import PropertyPhoto  # noqa: F401
 from app.property.models.investment_scenario import InvestmentScenario  # noqa: F401
 from app.property.models.market import (  # noqa: F401
     MarketingAuthority, MarketingRequest, MarketListing,

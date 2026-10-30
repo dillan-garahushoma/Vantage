@@ -27,6 +27,20 @@ class PublicPhotoResponse(BaseModel):
     caption: str | None
 
 
+class PublicUnitListing(BaseModel):
+    """Publicly published, currently available unit; never exposes internal unit identifiers."""
+
+    title: str
+    description: str
+    bedrooms: int
+    bathrooms: int
+    size_m2: Decimal
+    amenities: list[str]
+    availability_status: str
+    listing_id: str
+    photos: list[PublicPhotoResponse] = Field(default_factory=list)
+
+
 class PublicEstateListItem(BaseModel):
     """One row of the public grid."""
 
@@ -67,4 +81,5 @@ class PublicEstateDetailResponse(BaseModel):
     description: str | None
     unit_count: int
     photos: list[PublicPhotoResponse] = Field(default_factory=list)
+    available_units: list[PublicUnitListing] = Field(default_factory=list)
     living_score: PublicLivingScoreSummary | None = None

@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Properties } from './Properties';
 
-const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn() }));
+const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), blob: vi.fn() }));
 vi.mock('../lib/api', () => ({
     api,
     ApiError: class ApiError extends Error { constructor(status, message) { super(message); this.status = status; } },
@@ -19,8 +19,9 @@ const unit = { id: 7, estate_id: 1, unit_no: 'A-101', complex_name: 'Ridge Close
 const page = (items) => ({ items, total: items.length, page: 1, size: 100, pages: 1 });
 
 beforeEach(() => {
-    api.get.mockReset(); api.post.mockReset(); api.patch.mockReset();
-    api.get.mockResolvedValue(page([unit]));
+    api.get.mockReset(); api.post.mockReset(); api.patch.mockReset(); api.blob.mockReset();
+    api.get.mockImplementation((path) => path.endsWith('/photos') ? Promise.resolve([]) : Promise.resolve(page([unit])));
+    api.blob.mockResolvedValue(new Blob(['image']));
 });
 
 describe('Properties — management edits', () => {
@@ -30,12 +31,14 @@ describe('Properties — management edits', () => {
         render(<MemoryRouter><Properties /></MemoryRouter>);
         await user.click(await screen.findByText('A-101'));
         await user.click(screen.getByRole('button', { name: 'Edit unit' }));
-        const address = screen.getByLabelText('Street address');
+        const address = screen.getByLabelText('Internal street address');
         await user.clear(address);
         await user.type(address, '11 Ridge Close');
         await user.click(screen.getByRole('button', { name: 'Save unit changes' }));
         await waitFor(() => expect(api.patch).toHaveBeenCalledWith('/api/v1/properties/7', {
             street_address: '11 Ridge Close', size_m2: '88.00', bedrooms: 2, bathrooms: 1,
+            listing_title: null, listing_description: null, amenities: [],
+            availability_status: 'not_available', is_public_listing: false,
         }, { estate_id: 1 }));
     });
 });

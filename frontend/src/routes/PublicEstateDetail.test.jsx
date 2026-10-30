@@ -145,6 +145,26 @@ describe('PublicEstateDetail', () => {
         expect(screen.getByText(/street addresses and unit numbers/i)).toBeVisible();
         expect(screen.getByText(/suburb-level only — no street address, no pin/i)).toBeVisible();
     });
+    it('shows available unit listings inside the selected complex, without internal unit identifiers', async () => {
+        mocks.get.mockResolvedValue(detail({
+            available_units: [{
+                title: 'Two-bedroom garden residence',
+                description: 'A light-filled home with a private garden.',
+                bedrooms: 2,
+                bathrooms: 1,
+                size_m2: '88.00',
+                amenities: ['Private garden', 'Secure parking'],
+                availability_status: 'available',
+                photos: [{ public_id: 'unit-photo-1', caption: 'Garden-facing lounge' }],
+            }],
+        }));
+        renderPage();
+        expect(await screen.findByRole('heading', { name: 'Two-bedroom garden residence' })).toBeVisible();
+        expect(screen.getByText(/2 bedrooms.*1 bathrooms.*88 m²/i)).toBeVisible();
+        expect(screen.getByText('Private garden')).toBeVisible();
+        expect(screen.getByAltText('Garden-facing lounge')).toHaveAttribute('src', 'http://api.test/photo/unit-photo-1?size=thumb');
+        expect(screen.queryByText('A-101')).not.toBeInTheDocument();
+    });
     it('reserves the gallery box while the estate loads', async () => {
         mocks.get.mockReturnValue(new Promise(() => { }));
         const { container } = renderPage();
