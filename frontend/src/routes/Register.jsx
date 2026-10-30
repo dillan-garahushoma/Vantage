@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Building2, Check, Search } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Building2, Check, Search } from 'lucide-react';
 import { Keyline } from '../components/Brand';
 import { AuthShell } from '../components/AuthShell';
 import { Button, EmptyState, ErrorState, Field, Input, LoadingState, Select, Textarea } from '../components/ui';
@@ -94,12 +94,13 @@ function validateEstateDetails(form) {
 }
 
 const ESTATE_SETUP_STEPS = ['Account', 'Estate details', 'Review'];
+const RESIDENT_SETUP_STEPS = ['Your account', 'Your estate', 'Review'];
 
-function EstateSetupStepper({ step }) {
+function EstateSetupStepper({ step, labels = ESTATE_SETUP_STEPS, label = 'Estate setup progress' }) {
   return (
-    <nav aria-label="Estate setup progress" className="mb-6">
+    <nav aria-label={label} className="mb-6">
       <ol className="grid grid-cols-3">
-        {ESTATE_SETUP_STEPS.map((label, index) => {
+        {labels.map((label, index) => {
           const number = index + 1;
           const complete = number < step;
           const current = number === step;
@@ -281,6 +282,7 @@ export function Register() {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [estateStep, setEstateStep] = useState(1);
+  const [residentStep, setResidentStep] = useState(1);
   const [estateQuery, setEstateQuery] = useState('');
   const [committedEstateQuery, setCommittedEstateQuery] = useState('');
   const [selectedEstate, setSelectedEstate] = useState(() => selectedPublicEstate());
@@ -385,6 +387,26 @@ export function Register() {
     setEstateStep(3);
   }
 
+  function continueResidentAccount(event) {
+    event.preventDefault();
+    const found = validate(form);
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
+    setResidentStep(2);
+  }
+
+  function reviewResidentDetails(event) {
+    event.preventDefault();
+    setErrors({});
+    setResidentStep(3);
+  }
+
+  function moveToResidentStep(step) {
+    setResidentStep(step);
+    setErrors({});
+    setError(null);
+  }
+
   function moveToEstateStep(step) {
     setEstateStep(step);
     setErrors({});
@@ -406,9 +428,9 @@ export function Register() {
   return (
     <AuthShell
       eyebrow="Estate access"
-      step={form.accountType === 'estate_admin' ? null : 1}
+      step={form.accountType === 'estate_admin' ? null : form.accountType === 'resident' ? residentStep : 1}
       totalSteps={3}
-      stepLabels={['Account', 'Join estate', "You're in"]}
+      stepLabels={form.accountType === 'resident' ? RESIDENT_SETUP_STEPS : ['Account', 'Join estate', "You're in"]}
       title={form.accountType === 'estate_admin' ? 'Set up your estate on VALORA.' : 'Find your way into VALORA.'}
       intro={form.accountType === 'estate_admin'
         ? 'Create your administrator account, add your estate details, and review everything before setup.'
@@ -417,7 +439,7 @@ export function Register() {
       <div className="space-y-5">
         {form.accountType === 'estate_admin' ? <EstateSetupStepper step={estateStep} /> : null}
 
-        {form.accountType !== 'estate_admin' || estateStep === 1 ? (
+        {(form.accountType !== 'estate_admin' || estateStep === 1) && (form.accountType !== 'resident' || residentStep === 1) ? (
           <>
             <fieldset>
               <legend className="mb-3 text-sm font-semibold text-ink">How will you use VALORA?</legend>
@@ -470,45 +492,37 @@ export function Register() {
 
         {form.accountType === 'resident' ? (
           <>
-            <form className="space-y-4" onSubmit={submit} noValidate>
-              {error ? (
-                <ErrorState title="Could not create the account" message={error.message} requestId={error.requestId} />
-              ) : null}
-
-              <Field label="Full name" error={errors.full_name}>
-                <Input name="full_name" autoComplete="name" value={form.full_name}
-                  onChange={(event) => update('full_name', event.target.value)} placeholder="Your full name" required />
-              </Field>
-
-              <Field label="Email address" error={errors.email}>
-                <Input type="email" name="email" autoComplete="email" value={form.email}
-                  onChange={(event) => update('email', event.target.value)} placeholder="you@example.co.za" required />
-              </Field>
-
-              <Field label="Password" error={errors.password} hint="At least 8 characters.">
-                <Input type="password" name="password" autoComplete="new-password" value={form.password}
-                  onChange={(event) => update('password', event.target.value)} required />
-              </Field>
-
-              <EstatePicker
-                value={selectedEstate}
-                onSelect={chooseEstate}
-                onClear={clearEstate}
-                query={estateQuery}
-                onQueryChange={setEstateQuery}
-                committedQuery={committedEstateQuery}
-                onSearch={() => setCommittedEstateQuery(estateQuery.trim())}
-                directory={directory}
-              />
-
-              <Field label="Phone (optional)">
-                <Input name="phoneno" autoComplete="tel" value={form.phoneno}
-                  onChange={(event) => update('phoneno', event.target.value)} placeholder="082 000 0000" />
-              </Field>
-
-              <Button type="submit" variant="primary" className="w-full py-2.5" disabled={busy}>
-                {busy ? 'Creating account…' : 'Create resident account'}
-              </Button>
+            <form className="space-y-5" onSubmit={residentStep === 1 ? continueResidentAccount : residentStep === 2 ? reviewResidentDetails : submit} noValidate>
+              {error ? <ErrorState title="Could not create the account" message={error.message} requestId={error.requestId} /> : null}
+              {residentStep === 1 ? (
+                <section className="space-y-4" aria-labelledby="resident-account-step">
+                  <div><h2 id="resident-account-step" className="text-lg font-semibold tracking-tight text-ink">Let’s start with you.</h2><p className="mt-1 text-sm text-ink-muted">Create the secure account you’ll use across VALORA.</p></div>
+                  <Field label="Full name" error={errors.full_name}><Input name="full_name" autoComplete="name" value={form.full_name} onChange={(event) => update("full_name", event.target.value)} placeholder="Your full name" required /></Field>
+                  <Field label="Email address" error={errors.email}><Input type="email" name="email" autoComplete="email" value={form.email} onChange={(event) => update("email", event.target.value)} placeholder="you@example.co.za" required /></Field>
+                  <Field label="Password" error={errors.password} hint="At least 8 characters."><Input type="password" name="password" autoComplete="new-password" value={form.password} onChange={(event) => update("password", event.target.value)} required /></Field>
+                  <Field label="Phone (optional)"><Input name="phoneno" autoComplete="tel" value={form.phoneno} onChange={(event) => update("phoneno", event.target.value)} placeholder="082 000 0000" /></Field>
+                </section>
+              ) : residentStep === 2 ? (
+                <section className="space-y-4" aria-labelledby="resident-estate-step">
+                  <div><h2 id="resident-estate-step" className="text-lg font-semibold tracking-tight text-ink">Where do you live?</h2><p className="mt-1 text-sm text-ink-muted">Choose your complex now, or skip this and request access later.</p></div>
+                  <EstatePicker value={selectedEstate} onSelect={chooseEstate} onClear={clearEstate} query={estateQuery} onQueryChange={setEstateQuery} committedQuery={committedEstateQuery} onSearch={() => setCommittedEstateQuery(estateQuery.trim())} directory={directory} />
+                </section>
+              ) : (
+                <section className="space-y-4" aria-labelledby="resident-review-step">
+                  <div><h2 id="resident-review-step" className="text-lg font-semibold tracking-tight text-ink">Review your details.</h2><p className="mt-1 text-sm text-ink-muted">Check everything before creating your account.</p></div>
+                  <dl className="divide-y divide-line rounded-xl border border-line bg-paper/50 px-4">
+                    <div className="py-3"><dt className="text-xs text-ink-muted">Full name</dt><dd className="mt-1 text-sm font-medium text-ink">{form.full_name}</dd></div>
+                    <div className="py-3"><dt className="text-xs text-ink-muted">Email address</dt><dd className="mt-1 break-all text-sm font-medium text-ink">{form.email}</dd></div>
+                    {form.phoneno.trim() ? <div className="py-3"><dt className="text-xs text-ink-muted">Phone</dt><dd className="mt-1 text-sm text-ink">{form.phoneno.trim()}</dd></div> : null}
+                    <div className="py-3"><dt className="text-xs text-ink-muted">Estate</dt><dd className="mt-1 text-sm font-medium text-ink">{selectedEstate?.name || "Choose an estate later"}</dd><dd className="mt-1 text-xs leading-relaxed text-ink-muted">Selecting an estate does not grant access. The estate office still needs to approve your membership.</dd></div>
+                  </dl>
+                  <button type="button" disabled={busy} onClick={() => moveToResidentStep(1)} className="min-h-11 text-sm font-medium text-accent-ink underline underline-offset-2">Edit account details</button>
+                </section>
+              )}
+              <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
+                {residentStep > 1 ? <Button type="button" variant="secondary" onClick={() => moveToResidentStep(residentStep - 1)} disabled={busy}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Back</Button> : <span /> }
+                <Button type="submit" variant="primary" className="min-h-11 px-5" disabled={busy}>{residentStep === 1 ? "Continue to estate" : residentStep === 2 ? "Review details" : busy ? "Creating account…" : "Create account"}<ArrowRight className="h-4 w-4" aria-hidden="true" /></Button>
+              </div>
             </form>
 
             <p className="text-[13px] text-ink-muted">
